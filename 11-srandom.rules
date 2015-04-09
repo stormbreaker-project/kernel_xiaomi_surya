@@ -1,0 +1,3 @@
+ACTION=="add", KERNEL=="srandom", MODE="0444", RUN+="/bin/bash -c '/usr/bin/srandom set'"
+ACTION=="change", KERNEL=="srandom", MODE="0444", RUN+="/bin/bash -c '/usr/bin/srandom set'"
+ACTION=="remove", KERNEL=="srandom", RUN+="/bin/bash -c '/usr/bin/srandom default'"

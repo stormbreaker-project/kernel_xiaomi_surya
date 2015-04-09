@@ -1,1 +1,240 @@
-# srandom
+Introduction
+------------
+
+srandom is a Linux kernel module that can be used to replace the built-in /dev/urandom device files.  It is secure and VERY fast.   My tests show it over 40x faster then /dev/urandom.   It should compile and install on any Linux 3.10+ kernel.   It passes all the randomness tests using the dieharder tests.
+
+srandom was created as an improvement to the built-in random number generators.  I wanted a much faster random number generator to wipe hard disks.  Through many hours of testing and trial-and-error, I came up with an algorithm that is many times faster than urandom, but still produces excellent random numbers.  It produces random numbers faster then the speed of hdisk writes.   The built-in generators (/dev/random and /dev/urandom) are technically not flawed.  /dev/random (the true random number generator) is BLOCKED most of the time waiting for more entropy.  If you are running your Linux in a VM, /dev/random is basically unusable.  /dev/urandom is unblocked, but still very slow. 
+
+
+What is the most important part of random numbers?  Unpredictability!
+
+srandom includes all these features to make it's generator produce unpredictable/random numbers.
+  * srandom uses two separate and different 64bit PRNGs.
+  * srandom uses two separate seeds and reseeds and different times.
+  * srandom uses two different algorithms to XOR the the 64bit PSRNGs together.
+  * srandom will seed the PSRNGs twice on load.
+  * srandom randomly reseeds.
+  * srandom throws away data. (you cannot predict the future if you don't know the past...)
+
+The best part of srandom is it's effeciency and very high speed...  I tested many PSRNGs and found two that worked very fast and had a good distribution of numbers.  Two to three 64bit numbers are combined using XOR which is also very fast.  The results is unpredictable and very high speed generation of numbers.
+
+
+
+Compile and installation
+------------------------
+
+To build & compile the kernel module.  A pre-req is "kernel-devel".  Use yum or apt to install.
+
+    make 
+
+To load the kernel module into the running kernel (temporary).
+
+    make load
+
+To unload the kernel module from the running kernel.
+
+    make unload
+
+To install the kernel module on your system (persistant on reboot).
+
+    make install ; make load
+
+To uninstall the kernel module from your system.
+
+    make uninstall
+
+
+Usage
+-----
+
+You can load the kernel module temporary, or you can install the kernel module to be persistant on reboot.
+
+  * If you want to just test the kernel module, you should run "make load".  This will load the kernel module into the running kernel and create a /dev/srandom accessible to root only.   It can be removed with "make unload".   You can monitor the load process in /var/log/messages. 
+  * When you run "make install", the srandom kernel module is moved to /usr/lib/modules/.../kernel/drivers/.  If you run "make load" or reboot, the kernel module will be loaded into the running kernel, but now will replace the /dev/urandom device file.  The old /dev/urandom device is renamed (keeping it's inode number).  This allows any running process that had /dev/urandom to continue running without issues. All new requests for /dev/urandom will use the srandom kernel module.
+  * Once the kernel module is loaded, you can access the module information through the /proc filesystem. For example:
+```
+# cat /proc/srandom
+-----------------------:----------------------
+Device                 : /dev/srandom
+Module version         : 1.10
+Current open count     : 0
+Total open count       : 71
+Total K bytes          : 71
+PRNG1 reseed count     : 2
+PRNG2 reseed count     : 2
+-----------------------:----------------------
+Author                 : Jonathan Senkerik
+Website                : http://www.jintegrate.co
+github                 : http://github.com/josenk/srandom
+```
+  * Use the /usr/bin/srandom tool to set srandom as the system PRNG, set the system back to default PRNG, or get the status.
+```
+# /usr/bin/srandom help
+
+# /usr/bin/srandom status
+Module loaded
+srandom if functioning correctly
+/dev/urandom is LINKED to /dev/srandom (system is using srandom)
+
+```
+  * To completely remove the srandom module, use "make uninstall".   Depending if there is processes accessing /dev/srandom, you may not be able to remove the module from the running kernel.   Try "make unload", if the module is busy, then a reboot is requied.
+
+
+
+
+Testing & performance
+---------------------
+
+A simple dd command to read from the /dev/srandom device will display the performance of the generator.  The results below are typical from my system for example.  Of course, your performance will vary.
+
+
+The "Improved" srandom number generator
+
+```
+time dd if=/dev/srandom of=/dev/null count=1024k
+
+1048576+0 records in
+1048576+0 records out
+536870912 bytes (537 MB) copied, 0.791438 s, 678 MB/s
+
+real    0m0.793s
+user    0m0.148s
+sys     0m0.645s
+```
+
+
+
+
+The "Non-Blocking" urandom number generator
+
+```
+time dd if=/dev/urandom of=/dev/null count=1024k
+
+1048576+0 records in
+1048576+0 records out
+536870912 bytes (537 MB) copied, 35.4003 s, 15.2 MB/s
+
+real    0m35.402s
+user    0m0.161s
+sys     0m35.182s
+```
+
+
+
+The "Blocking" random number generator.  ( I pressed [CTRL-C] after 5minutes and got 35 bytes!  If you really NEED to test this, You might need to leave this running for days, or weeks....)
+
+```
+time dd if=/dev/random of=/dev/null count=1024k
+[CTRL]-C
+0+35 records in
+0+0 records out
+0 bytes (0 B) copied, 325.303 s, 0.0 kB/s
+
+real    5m25.306s
+user    0m0.001s
+sys     0m0.003s
+```
+
+
+
+
+
+
+Testing randomness
+------------------
+
+The most important part of the random number device file is that is produces random/unpredictable numbers.  The golden standard of testing randomness is the dieharder test suite (http://www.phy.duke.edu/~rgb/General/dieharder.php).  The dieharder tool with easily detect flawed random number generators.   After you install dieharder, use the following command to put /dev/srandom through the battery of tests.
+
+Just a note about some tests assessments that can randomly show as "WEAK"...  If the test is repeatedly "FAILED" or "WEAK",then that is a problem.  So, please retest a few times to verify if it passes. 
+
+
+```
+dd if=/dev/srandom |dieharder -g 200 -f - -a
+
+#=============================================================================#
+#            dieharder version 3.31.1 Copyright 2003 Robert G. Brown          #
+#=============================================================================#
+   rng_name    |           filename             |rands/second|
+stdin_input_raw|                               -|  2.83e+07  |
+#=============================================================================#
+        test_name   |ntup| tsamples |psamples|  p-value |Assessment
+#=============================================================================#
+   diehard_birthdays|   0|       100|     100|0.81047982|  PASSED
+      diehard_operm5|   0|   1000000|     100|0.05511543|  PASSED
+  diehard_rank_32x32|   0|     40000|     100|0.01261989|  PASSED
+    diehard_rank_6x8|   0|    100000|     100|0.47316309|  PASSED
+   diehard_bitstream|   0|   2097152|     100|0.74346434|  PASSED
+        diehard_opso|   0|   2097152|     100|0.98820557|  PASSED
+        diehard_oqso|   0|   2097152|     100|0.38452940|  PASSED
+         diehard_dna|   0|   2097152|     100|0.23079735|  PASSED
+diehard_count_1s_str|   0|    256000|     100|0.35819763|  PASSED
+diehard_count_1s_byt|   0|    256000|     100|0.18753110|  PASSED
+ diehard_parking_lot|   0|     12000|     100|0.29327315|  PASSED
+    diehard_2dsphere|   2|      8000|     100|0.35160725|  PASSED
+    diehard_3dsphere|   3|      4000|     100|0.49118105|  PASSED
+     diehard_squeeze|   0|    100000|     100|0.33775434|  PASSED
+        diehard_sums|   0|       100|     100|0.37711818|  PASSED
+        diehard_runs|   0|    100000|     100|0.54179533|  PASSED
+        diehard_runs|   0|    100000|     100|0.73976903|  PASSED
+       diehard_craps|   0|    200000|     100|0.66525469|  PASSED
+       diehard_craps|   0|    200000|     100|0.84537370|  PASSED
+ marsaglia_tsang_gcd|   0|  10000000|     100|0.10708190|  PASSED
+ marsaglia_tsang_gcd|   0|  10000000|     100|0.87071126|  PASSED
+         sts_monobit|   1|    100000|     100|0.30011393|  PASSED
+            sts_runs|   2|    100000|     100|0.91175959|  PASSED
+              <<<   etc...   >>>
+```
+
+
+
+How to configure your apps
+--------------------------
+
+  If you installed the kernel module to load on reboot, then you do not need to modify any applications to use the srandom kernel module.   It will be linked to /dev/urandom, so all applications will use it automatically.   However, if you do not want ot link /dev/srandom to /dev/urandom, then you can configure your applications to use whichever device you want.   Here is a few examples....
+
+  Java:  Use the following command line argument to tell Java to use the new random device
+
+    -Djava.security.egd=file:///dev/srandom switch
+
+       or
+
+    -Djava.security.egd=file:/dev/./srandom
+
+  Java: To make the setting as default, add the following line to the configuration file. ($JAVA_HOME/jre/lib/security/java.security)
+
+    securerandom.source=file:/dev/./srandom
+
+
+  https: (Apache SSL), Configure /etc/httpd/conf.d/ssl.conf
+
+    SSLRandomSeed startup file:/dev/srandom 512
+    SSLRandomSeed connect file:/dev/srandom 512
+
+
+  Postfix: Change the following line in /etc/postfix/main.cf
+
+    tls_random_source = dev:/dev/srandom
+
+
+  PHP: Change the following line in PHP config file.
+
+    session.entropy_file = /dev/srandom
+
+
+  OpenLDAP:  Change the following line in /etc/openldap/slapd.conf
+
+    TLSRandFile /dev/srandom
+
+
+
+Using /dev/srandom to securely wipe hard disks.
+-----------------------------------------------
+
+
+*** This will DESTROY DATA!   Use with caution! ***
+
+*** Replace /dev/sdXX with your disk device you want to wipe.
+
+
+    dd if=/dev/srandom of=/dev/sdXX bs=4k
+
