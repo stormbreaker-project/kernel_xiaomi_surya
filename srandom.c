@@ -17,8 +17,24 @@
 #define PAID 0
 #define SUCCESS 0
 
+/*
+Copyright (C) 2015 Jonathan Senkerik
 
-/*  Prototypes - this would normally go in a .h file */
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/*  Prototypes */
 static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
 static ssize_t sdevice_read(struct file *, char *, size_t, loff_t *);
@@ -32,8 +48,6 @@ static int proc_open(struct inode *inode, struct  file *file);
 
 
 /* Global variables are declared as static, so are global within the file.  */
-
-
 static struct file_operations sfops = {
 	.owner = THIS_MODULE,
 	.open = device_open,
@@ -59,13 +73,11 @@ static const struct file_operations proc_fops = {
 
 
 // Global variables
-//uint8_t  PAID;
 uint64_t x;                    // Used for xorshft64
 uint64_t s[ 2 ];               // Used for xorshft128
 uint64_t *sarr_RND;            // Array of SECURE RND numbers
-int16_t  reSEEDx;              // reseed x for xorshft64
-int16_t  reSEEDs;              // reseed s for xorshft128
-
+int16_t  reSEEDx;              // countdown to reseed x for xorshft64
+int16_t  reSEEDs;              // countdown to reseed s for xorshft128
 uint64_t tm_seed;
 struct timespec ts;
 
@@ -84,7 +96,7 @@ int mod_init(void)
   int16_t C;
   int ret;
 
-  //PAID=AppPAID;
+  // Init variables
   sdev_open=0;
   sdev_openCount=0;
   PRNGCount=0;
@@ -115,21 +127,21 @@ int mod_init(void)
     printk(KERN_INFO "/proc/srandom registion regisered..\n");
   }
 
-  printk("Module version         : "AppVERSION"\n");
+  printk(KERN_INFO "Module version         : "AppVERSION"\n");
   if ( PAID==0){
-    printk("-----------------------:----------------------\n");
-    printk("Please support my work and efforts contributing\n");
-    printk("to the Linux community.  A $25 payment per\n");
-    printk("server would be highly appreciated.\n");
+    printk(KERN_INFO "-----------------------:----------------------\n");
+    printk(KERN_INFO "Please support my work and efforts contributing\n");
+    printk(KERN_INFO "to the Linux community.  A $25 payment per\n");
+    printk(KERN_INFO "server would be highly appreciated.\n");
   }
-  printk("-----------------------:----------------------\n");
-  printk("Author                 : Jonathan Senkerik\n");
-  printk("Website                : http://www.jintegrate.co\n");
-  printk("github                 : http://github.com/josenk/srandom\n");
+  printk(KERN_INFO "-----------------------:----------------------\n");
+  printk(KERN_INFO "Author                 : Jonathan Senkerik\n");
+  printk(KERN_INFO "Website                : http://www.jintegrate.co\n");
+  printk(KERN_INFO "github                 : http://github.com/josenk/srandom\n");
   if ( PAID==0){
-    printk("Paypal                 : josenk@jintegrate.co\n");
-    printk("Bitcoin                : 1MTNg7SqcEWs5uwLKwNiAfYqBfnKFJu65p\n");
-    printk("Commercial Invoice     : Avail on request.\n");
+    printk(KERN_INFO "Paypal                 : josenk@jintegrate.co\n");
+    printk(KERN_INFO "Bitcoin                : 1MTNg7SqcEWs5uwLKwNiAfYqBfnKFJu65p\n");
+    printk(KERN_INFO "Commercial Invoice     : Avail on request.\n");
   }
 
 
@@ -274,7 +286,7 @@ void update_sarray(void){
 
 
 
-//   Seed xorshft64 & xorshft128
+//   Seed xorshft128
 void seed_PRND(void) {
   getnstimeofday(&ts);
   s[0]=(s[0]<<31) ^ (uint64_t)ts.tv_nsec;

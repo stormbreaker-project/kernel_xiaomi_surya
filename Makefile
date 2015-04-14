@@ -16,19 +16,18 @@ unload:
 install:
 	mkdir -p /lib/modules/$(shell uname -r)/kernel/drivers/$(TARGET_MODULE)
 	install -m 644  ./$(TARGET_MODULE).ko /lib/modules/$(shell uname -r)/kernel/drivers/$(TARGET_MODULE)
-	install -m 644  ./$(TARGET_MODULE).conf /etc/modules-load.d/
-	install -m 644  11-$(TARGET_MODULE).rules /etc/udev/rules.d/
+	install -m 644  ./11-$(TARGET_MODULE).rules /etc/udev/rules.d/
 	install -m 755  ./$(TARGET_MODULE) /usr/bin/$(TARGET_MODULE)
+	install -m 644  ./$(TARGET_MODULE).conf /etc/modules-load.d/
 	depmod
 	udevadm trigger
 	@echo "Install Success."
 
 uninstall:
-	rm /lib/modules/$(shell uname -r)/kernel/drivers/$(TARGET_MODULE)/$(TARGET_MODULE).ko
-	rm /etc/modules-load.d/$(TARGET_MODULE).conf
-	rm /etc/udev/rules.d/*-$(TARGET_MODULE).rules
-	rmdir --ignore-fail-on-non-empty /lib/modules/$(shell uname -r)/kernel/drivers/$(TARGET_MODULE)/
+	rm -f /lib/modules/$(shell uname -r)/kernel/drivers/$(TARGET_MODULE)/$(TARGET_MODULE).ko
+	rm -f /etc/udev/rules.d/11-$(TARGET_MODULE).rules
+	rm -f /etc/modules-load.d/$(TARGET_MODULE).conf
 	depmod
-	rm /usr/bin/$(TARGET_MODULE)
+	rm -f /usr/bin/$(TARGET_MODULE)
 	@test -c /dev/srandom|| echo "Reboot required to complete uninstall."
 	@echo "Uninstalled."

@@ -1,20 +1,20 @@
 Introduction
 ------------
 
-srandom is a Linux kernel module that can be used to replace the built-in /dev/urandom device files.  It is secure and VERY fast.   My tests show it over 40x faster then /dev/urandom.   It should compile and install on any Linux 3.10+ kernel.   It passes all the randomness tests using the dieharder tests.
+srandom is a Linux kernel module that can be used to replace the built-in /dev/urandom & /dev/random device files.  It is secure and VERY fast.   My tests show it over 40x faster then /dev/urandom.   It should compile and install on any Linux 3.10+ kernel.  It passes all the randomness tests using the dieharder tests.
 
 srandom was created as an improvement to the built-in random number generators.  I wanted a much faster random number generator to wipe hard disks.  Through many hours of testing and trial-and-error, I came up with an algorithm that is many times faster than urandom, but still produces excellent random numbers.  It produces random numbers faster then the speed of hdisk writes.   The built-in generators (/dev/random and /dev/urandom) are technically not flawed.  /dev/random (the true random number generator) is BLOCKED most of the time waiting for more entropy.  If you are running your Linux in a VM, /dev/random is basically unusable.  /dev/urandom is unblocked, but still very slow. 
 
 
 What is the most important part of random numbers?  Unpredictability!
 
-srandom includes all these features to make it's generator produce unpredictable/random numbers.
+srandom includes all these features to make it's generator produce the most unpredictable/random numbers.
   * srandom uses two separate and different 64bit PRNGs.
   * srandom uses two separate seeds and reseeds and different times.
   * srandom uses two different algorithms to XOR the the 64bit PSRNGs together.
-  * srandom will seed the PSRNGs twice on load.
+  * srandom seeds the PSRNGs twice on module load.
   * srandom randomly reseeds.
-  * srandom throws away data. (you cannot predict the future if you don't know the past...)
+  * srandom throws away data. (In this case, you cannot predict the future if you don't know the past...)
 
 The best part of srandom is it's effeciency and very high speed...  I tested many PSRNGs and found two that worked very fast and had a good distribution of numbers.  Two to three 64bit numbers are combined using XOR which is also very fast.  The results is unpredictable and very high speed generation of numbers.
 
@@ -121,7 +121,7 @@ sys     0m35.182s
 
 
 
-The "Blocking" random number generator.  ( I pressed [CTRL-C] after 5minutes and got 35 bytes!  If you really NEED to test this, You might need to leave this running for days, or weeks....)
+The "Blocking" random number generator.  ( I pressed [CTRL-C] after 5 minutes and got 35 bytes!  If you really NEED to test this, You might need to leave this running for days, or weeks....)
 
 ```
 time dd if=/dev/random of=/dev/null count=1024k
@@ -190,7 +190,7 @@ diehard_count_1s_byt|   0|    256000|     100|0.18753110|  PASSED
 How to configure your apps
 --------------------------
 
-  If you installed the kernel module to load on reboot, then you do not need to modify any applications to use the srandom kernel module.   It will be linked to /dev/urandom, so all applications will use it automatically.   However, if you do not want ot link /dev/srandom to /dev/urandom, then you can configure your applications to use whichever device you want.   Here is a few examples....
+  If you installed the kernel module to load on reboot, then you do not need to modify any applications to use the srandom kernel module.   It will be linked to /dev/urandom, so all applications will use it automatically.   However, if you do not want to link /dev/srandom to /dev/urandom, then you can configure your applications to use whichever device you want.   Here is a few examples....
 
   Java:  Use the following command line argument to tell Java to use the new random device
 
@@ -238,3 +238,21 @@ Using /dev/srandom to securely wipe hard disks.
 
     dd if=/dev/srandom of=/dev/sdXX bs=4k
 
+
+License
+-------
+
+Copyright (C) 2015 Jonathan Senkerik
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
