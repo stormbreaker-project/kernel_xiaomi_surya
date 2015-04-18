@@ -10,11 +10,11 @@ What is the most important part of random numbers?  Unpredictability!
 
 srandom includes all these features to make it's generator produce the most unpredictable/random numbers.
   * srandom uses two separate and different 64bit PRNGs.
-  * srandom uses two separate seeds and reseeds and different times.
+  * srandom uses two separate seeds.
   * srandom uses two different algorithms to XOR the the 64bit PSRNGs together.
   * srandom seeds the PSRNGs twice on module load.
-  * srandom randomly reseeds.
-  * srandom throws away data. (In this case, you cannot predict the future if you don't know the past...)
+  * srandom uses 16 x 512byte buffers and outputs them randomly. 
+  * srandom throws away a small amount of data. 
 
 The best part of srandom is it's effeciency and very high speed...  I tested many PSRNGs and found two that worked very fast and had a good distribution of numbers.  Two to three 64bit numbers are combined using XOR which is also very fast.  The results is unpredictable and very high speed generation of numbers.
 
@@ -56,12 +56,10 @@ You can load the kernel module temporary, or you can install the kernel module t
 # cat /proc/srandom
 -----------------------:----------------------
 Device                 : /dev/srandom
-Module version         : 1.10
-Current open count     : 0
-Total open count       : 71
-Total K bytes          : 71
-PRNG1 reseed count     : 2
-PRNG2 reseed count     : 2
+Module version         : 1.20
+Current open count     : 5
+Total open count       : 3665
+Total K bytes          : 55146567
 -----------------------:----------------------
 Author                 : Jonathan Senkerik
 Website                : http://www.jintegrate.co

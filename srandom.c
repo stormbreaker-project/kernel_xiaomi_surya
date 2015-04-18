@@ -1,21 +1,22 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/fs.h>
 #include <linux/slab.h>		/* For kalloc */
 #include <asm/uaccess.h>        /* For copy_to_user */
 #include <linux/miscdevice.h>   /* For misc_register (the /dev/srandom) device */
 #include <linux/time.h>         /* For getnstimeofday */
 #include <linux/proc_fs.h>      /* For /proc filesystem */
 #include <linux/seq_file.h>	/* For seq_print */
-#include <linux/interrupt.h>	/* For Tasklet */
+#include <linux/mutex.h>
 
 #define DRIVER_AUTHOR "Jonathan Senkerik <josenk@jintegrate.co>" 
 #define DRIVER_DESC   "Improved random number generator."
-#define arr_RND_SIZE 65         // Size of Array
+#define arr_RND_SIZE 67         // Size of Array
+#define num_arr_RND  16         // Number of 512b Array (Must be power of 2)
 #define sDEVICE_NAME "srandom"	// Dev name as it appears in /proc/devices
-#define AppVERSION "1.10"
+#define AppVERSION "1.20"
 #define PAID 0
 #define SUCCESS 0
+
 
 /*
 Copyright (C) 2015 Jonathan Senkerik
@@ -40,11 +41,10 @@ static int device_release(struct inode *, struct file *);
 static ssize_t sdevice_read(struct file *, char *, size_t, loff_t *);
 static uint64_t xorshft64(void);
 static uint64_t xorshft128(void);
-static void update_sarray(void);
+static void update_sarray(int);
 static void seed_PRND(void);
 static int proc_read(struct seq_file *m, void *v);
 static int proc_open(struct inode *inode, struct  file *file);
-
 
 
 /* Global variables are declared as static, so are global within the file.  */
@@ -54,7 +54,6 @@ static struct file_operations sfops = {
 	.read = sdevice_read,
 	.release = device_release
 };
-
 
 static struct miscdevice srandom_dev = {
 	MISC_DYNAMIC_MINOR,
@@ -70,40 +69,37 @@ static const struct file_operations proc_fops = {
 	.release = single_release,
 };
 
+static struct mutex UpArr_mutex;
+static struct mutex Open_mutex;
 
 
 // Global variables
-uint64_t x;                    // Used for xorshft64
-uint64_t s[ 2 ];               // Used for xorshft128
-uint64_t *sarr_RND;            // Array of SECURE RND numbers
-int16_t  reSEEDx;              // countdown to reseed x for xorshft64
-int16_t  reSEEDs;              // countdown to reseed s for xorshft128
+uint64_t x;                         // Used for xorshft64
+uint64_t s[ 2 ];                    // Used for xorshft128
+uint64_t (*sarr_RND)[num_arr_RND];  // Array of Array of SECURE RND numbers
 uint64_t tm_seed;
 struct timespec ts;
 
 // Global counters
-int16_t   sdev_open;           // srandom device current open count`.
-int32_t   sdev_openCount;      // srandom device total open count`.
-uint32_t  reSEEDxCount;        // Counter x
-uint32_t  reSEEDsCount;        // Counter s
-uint64_t  PRNGCount;           // Total generated (512byte)
+int16_t   sdev_open;                // srandom device current open count`.
+int32_t   sdev_openCount;           // srandom device total open count`.
+uint64_t  PRNGCount;                // Total generated (512byte)
 
 
 
 /*  This function is called when the module is loaded */
 int mod_init(void)
 {
-  int16_t C;
+  int16_t C,CC;
   int ret;
 
   // Init variables
   sdev_open=0;
   sdev_openCount=0;
   PRNGCount=0;
-  reSEEDxCount=1;
-  reSEEDsCount=1;
-  reSEEDx=2;
-  reSEEDs=2;
+
+  mutex_init(&UpArr_mutex);
+  mutex_init(&Open_mutex);
 
   //Entropy Initialize #1
   getnstimeofday(&ts);
@@ -117,7 +113,6 @@ int mod_init(void)
     printk(KERN_INFO "/dev/srandom driver registion failed..\n");
   } else {
     printk(KERN_INFO "/dev/srandom driver registered..\n");
-    printk(KERN_INFO "'mknod /dev/%s c 10 %i'.\n", sDEVICE_NAME, srandom_dev.minor);
   }
 
   // Create /proc/srandom
@@ -145,7 +140,7 @@ int mod_init(void)
   }
 
 
-  sarr_RND = kmalloc(arr_RND_SIZE * sizeof(uint64_t), __GFP_WAIT | __GFP_IO | __GFP_FS);
+  sarr_RND = kmalloc(num_arr_RND * arr_RND_SIZE * sizeof(uint64_t), __GFP_WAIT | __GFP_IO | __GFP_FS);
 
   //Entropy Initialize #2
   getnstimeofday(&ts);
@@ -153,10 +148,12 @@ int mod_init(void)
   seed_PRND();
 
   //  Init the sarray
-  for (C=0;C<=arr_RND_SIZE;C++){
-     sarr_RND[C] = xorshft128();
+  for (CC=0;CC<num_arr_RND;CC++) {
+    for (C=0;C<=arr_RND_SIZE;C++){
+     sarr_RND[CC][C] = xorshft128();
+    }
+    update_sarray(CC);
   }
-  update_sarray();
 
   return SUCCESS;
 }
@@ -178,11 +175,14 @@ void mod_exit(void)
 }
 
 
-/*  Called when a process tries to open the device file, like  "cat /dev/srandom" */
+/*  Called when a process tries to open the device file, like  "dd if=/dev/srandom" */
 static int device_open(struct inode *inode, struct file *file)
 {
+  if(mutex_lock_interruptible(&Open_mutex)) return -ERESTARTSYS;
   sdev_open++;
   sdev_openCount++;
+  mutex_unlock(&Open_mutex);
+
   #ifdef DEBUG
     printk(KERN_INFO "Called device_open (current open) :%d\n",sdev_open);
     printk(KERN_INFO "Called device_open (total open)   :%d\n",sdev_openCount);
@@ -195,34 +195,13 @@ static int device_open(struct inode *inode, struct file *file)
 /* Called when a process closes the device file.  */
 static int device_release(struct inode *inode, struct file *file)
 {
+  if(mutex_lock_interruptible(&Open_mutex)) return -ERESTARTSYS;
   sdev_open--;
+  mutex_unlock(&Open_mutex);
+
   #ifdef DEBUG
     printk(KERN_INFO "Called device_release :%d\n",sdev_open); 
   #endif
-
-  //  reSEEDx
-  reSEEDx--;
-  if ( reSEEDx <= 0) {
-    reSEEDxCount++;
-    reSEEDx = (int16_t) (xorshft64() & 255);
-
-    // reseed x for xorshft64
-    getnstimeofday(&ts);
-    x=(x<<32) ^ (uint64_t)ts.tv_nsec;
-  }
-
-
-  // reSEEDs
-  reSEEDs--;
-  if ( reSEEDs <= 0) {
-    reSEEDsCount++;
-    reSEEDs = (int16_t) (xorshft64() & 255);
-
-    // seed s[x] for xorshft128
-    seed_PRND();
-  }
-  
-  update_sarray();
 
   return 0;
 }
@@ -230,24 +209,31 @@ static int device_release(struct inode *inode, struct file *file)
 static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t *ppos)
 {
   int ret;
+  int CC;
 
   #ifdef DEBUG
     printk(KERN_INFO "Called sdevice_read\n");
   #endif
 
   //  Send array to device
-  ret = copy_to_user(buf, sarr_RND, count);
+  CC = s[0] & (num_arr_RND -1);
+  ret = copy_to_user(buf, sarr_RND[CC], count);
 
   // Get more RND numbers
-  update_sarray();
+  update_sarray(CC);
+
 
   return count;
 }
 
 //  Update the sarray with new random numbers
-void update_sarray(void){
+void update_sarray(int CC){
   int16_t C;
   int64_t X,Y,Z1,Z2,Z3;
+
+  // This function must run exclusivly
+  if(mutex_lock_interruptible(&UpArr_mutex))
+   { printk(KERN_INFO "Mutex Failed\n"); }
 
   PRNGCount++;
 
@@ -262,10 +248,10 @@ void update_sarray(void){
     for (C=0;C<(arr_RND_SIZE -4) ;C=C+4){
        X=xorshft128();
        Y=xorshft128();
-       sarr_RND[C]   = sarr_RND[C+1] ^ X ^ Y;
-       sarr_RND[C+1] = sarr_RND[C+2] ^ Y ^ Z1;
-       sarr_RND[C+2] = sarr_RND[C+3] ^ X ^ Z2;
-       sarr_RND[C+3] = X ^ Y ^ Z3;
+       sarr_RND[CC][C]   = sarr_RND[CC][C+1] ^ X ^ Y;
+       sarr_RND[CC][C+1] = sarr_RND[CC][C+2] ^ Y ^ Z1;
+       sarr_RND[CC][C+2] = sarr_RND[CC][C+3] ^ X ^ Z2;
+       sarr_RND[CC][C+3] = X ^ Y ^ Z3;
     }
   } else {
     #ifdef DEBUG
@@ -275,12 +261,20 @@ void update_sarray(void){
     for (C=0;C<(arr_RND_SIZE -4) ;C=C+4){
        X=xorshft128();
        Y=xorshft128();
-       sarr_RND[C]   = sarr_RND[C+1] ^ X ^ Z2;
-       sarr_RND[C+1] = sarr_RND[C+2] ^ X ^ Y;
-       sarr_RND[C+2] = sarr_RND[C+3] ^ Y ^ Z3;
-       sarr_RND[C+3] ^= X ^ Y ^ Z1;
+       sarr_RND[CC][C]   = sarr_RND[CC][C+1] ^ X ^ Z2;
+       sarr_RND[CC][C+1] = sarr_RND[CC][C+2] ^ X ^ Y;
+       sarr_RND[CC][C+2] = sarr_RND[CC][C+3] ^ Y ^ Z3;
+       sarr_RND[CC][C+3] = X ^ Y ^ Z1;
+
     }
   }
+
+  mutex_unlock(&UpArr_mutex);
+
+  #ifdef DEBUG
+    printk(KERN_INFO "C:%d, CC:%d, DD:%d\n", C,CC);
+    printk(KERN_INFO "X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n", X,Y,Z1,Z2,Z3);
+  #endif
 }
 
 
@@ -320,8 +314,6 @@ int proc_read(struct seq_file *m, void *v) {
   seq_printf(m, "Current open count     : %d\n",sdev_open);
   seq_printf(m, "Total open count       : %d\n",sdev_openCount);
   seq_printf(m, "Total K bytes          : %llu\n",PRNGCount / 2);
-  seq_printf(m, "PRNG1 reseed count     : %d\n",reSEEDsCount);
-  seq_printf(m, "PRNG2 reseed count     : %d\n",reSEEDxCount);
   if ( PAID==0){
     seq_printf(m, "-----------------------:----------------------\n");
     seq_printf(m, "Please support my work and efforts contributing\n");
