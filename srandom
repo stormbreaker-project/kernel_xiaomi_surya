@@ -78,7 +78,7 @@ case "$1" in
     fi
     if [ -c /dev/srandom ];then
       if is_srandom_OK >/dev/null; then
-        echo "srandom if functioning correctly"
+        echo "srandom is functioning correctly"
       else
         echo "srandom FAILED to generate random numbers"
       fi

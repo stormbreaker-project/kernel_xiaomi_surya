@@ -13,7 +13,7 @@
 #define arr_RND_SIZE 67         // Size of Array
 #define num_arr_RND  16         // Number of 512b Array (Must be power of 2)
 #define sDEVICE_NAME "srandom"	// Dev name as it appears in /proc/devices
-#define AppVERSION "1.20"
+#define AppVERSION "1.21"
 #define PAID 0
 #define SUCCESS 0
 
@@ -208,23 +208,69 @@ static int device_release(struct inode *inode, struct file *file)
 
 static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t *ppos)
 {
-  int ret;
+  char *new_buf;                 // Buffer to hold numbers to send
+  int ret,counter;
   int CC;
+  size_t src_counter;
 
   #ifdef DEBUG
-    printk(KERN_INFO "Called sdevice_read\n");
+    printk(KERN_INFO "Called sdevice_read count:%zu\n",count);
   #endif
 
-  //  Send array to device
-  CC = s[0] & (num_arr_RND -1);
-  ret = copy_to_user(buf, sarr_RND[CC], count);
+  if(count <= 512)
+  {
+    //  Send array to device
+    CC = s[0] & (num_arr_RND -1);
+    ret = copy_to_user(buf, sarr_RND[CC], count);
 
-  // Get more RND numbers
-  update_sarray(CC);
+    // Get more RND numbers
+    update_sarray(CC);
+  }
+  else
+  {
+    //  Allocate memory for new_buf
+    new_buf = kmalloc((count + 512) * sizeof(uint8_t), __GFP_WAIT | __GFP_IO | __GFP_FS);
+  
+    // Init some variables for the loop
+    counter = 0;
+    src_counter = 512;
+    ret = 0;
 
+    //  Loop until we reach count size. (block size)
+    while(counter < (int)count)
+    {
+      //  Select a RND array
+      CC = s[0] & (num_arr_RND -1);
 
+      //  Copy RND numbers to new_buf
+      memcpy(new_buf+counter,sarr_RND[CC],src_counter);
+      update_sarray(CC);
+
+      #ifdef DEBUG2
+        printk(KERN_INFO "Called sdevice_read: RND counter:%d count:%zu src_counter:%zu \n", counter, count, src_counter);
+      #endif
+
+      //  Increment counter
+      counter += 512;
+    }
+
+    #ifdef DEBUG2
+      printk(KERN_INFO "Called sdevice_read: COPT_TO_USER counter:%d count:%zu \n", counter, count);
+    #endif
+
+    //  Send new_buf to device
+    ret = copy_to_user(buf, new_buf, count);
+  
+    //  Free allocated memory
+    kfree(new_buf);
+  }
+
+  //  return how many chars we sent
   return count;
 }
+
+
+
 
 //  Update the sarray with new random numbers
 void update_sarray(int CC){
@@ -272,7 +318,7 @@ void update_sarray(int CC){
   mutex_unlock(&UpArr_mutex);
 
   #ifdef DEBUG
-    printk(KERN_INFO "C:%d, CC:%d, DD:%d\n", C,CC);
+    printk(KERN_INFO "C:%d, CC:%d\n", C,CC);
     printk(KERN_INFO "X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n", X,Y,Z1,Z2,Z3);
   #endif
 }
