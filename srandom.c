@@ -13,7 +13,7 @@
 #define arr_RND_SIZE 67         // Size of Array
 #define num_arr_RND  16         // Number of 512b Array (Must be power of 2)
 #define sDEVICE_NAME "srandom"	// Dev name as it appears in /proc/devices
-#define AppVERSION "1.21"
+#define AppVERSION "1.30"
 #define PAID 0
 #define SUCCESS 0
 
@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
 static ssize_t sdevice_read(struct file *, char *, size_t, loff_t *);
+static ssize_t sdevice_write(struct file *, const char *, size_t, loff_t *);
 static uint64_t xorshft64(void);
 static uint64_t xorshft128(void);
 static void update_sarray(int);
@@ -52,6 +53,7 @@ static struct file_operations sfops = {
 	.owner = THIS_MODULE,
 	.open = device_open,
 	.read = sdevice_read,
+	.write = sdevice_write,
 	.release = device_release
 };
 
@@ -247,16 +249,13 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
       update_sarray(CC);
 
       #ifdef DEBUG2
-        printk(KERN_INFO "Called sdevice_read: RND counter:%d count:%zu src_counter:%zu \n", counter, count, src_counter);
+        printk(KERN_INFO "Called sdevice_read: COPT_TO_USER counter:%d count:%zu \n", counter, count);
       #endif
 
       //  Increment counter
       counter += 512;
     }
 
-    #ifdef DEBUG2
-      printk(KERN_INFO "Called sdevice_read: COPT_TO_USER counter:%d count:%zu \n", counter, count);
-    #endif
 
     //  Send new_buf to device
     ret = copy_to_user(buf, new_buf, count);
@@ -265,10 +264,46 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
     kfree(new_buf);
   }
 
+  #ifdef DEBUG2
+    printk(KERN_INFO "Called sdevice_read: COPT_TO_USER counter:%d count:%zu \n", counter, count);
+  #endif
+
   //  return how many chars we sent
   return count;
 }
 
+
+//  Called when someone tries to write to /dev/srandom device
+static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
+{
+  ssize_t retval;
+  char *newdata;
+
+  #ifdef DEBUG
+    printk(KERN_INFO "Called sdevice_write count:%zu\n",count);
+  #endif
+
+  //  Allocate memory to read from device
+  newdata = kmalloc(count, GFP_KERNEL);
+  if (!newdata) {
+      retval = -ENOMEM;
+  }
+
+  else if(copy_from_user(newdata, buf, count)) {
+      retval = -EFAULT;
+  }
+
+  retval = count;
+
+  //  Free memory
+  kfree(newdata);
+
+  #ifdef DEBUG2
+    printk(KERN_INFO "Called sdevice_write: COPT_FROM_USER count:%zu \n", count);
+  #endif
+
+  return retval;
+}
 
 
 

@@ -1,7 +1,7 @@
 Introduction
 ------------
 
-srandom is a Linux kernel module that can be used to replace the built-in /dev/urandom & /dev/random device files.  It is secure and VERY fast.   My tests show it over 40x faster then /dev/urandom.   It should compile and install on any Linux 3.10+ kernel.  It passes all the randomness tests using the dieharder tests.
+srandom is a Linux kernel module that can be used to replace the built-in /dev/urandom & /dev/random device files.  It is secure and VERY fast.   My tests show it over 150x faster then /dev/urandom.   It should compile and install on any Linux 3.10+ kernel.  It passes all the randomness tests using the dieharder tests.
 
 srandom was created as an improvement to the built-in random number generators.  I wanted a much faster random number generator to wipe hard disks.  Through many hours of testing and trial-and-error, I came up with an algorithm that is many times faster than urandom, but still produces excellent random numbers.  It produces random numbers faster then the speed of hdisk writes.   The built-in generators (/dev/random and /dev/urandom) are technically not flawed.  /dev/random (the true random number generator) is BLOCKED most of the time waiting for more entropy.  If you are running your Linux in a VM, /dev/random is basically unusable.  /dev/urandom is unblocked, but still very slow. 
 
@@ -10,8 +10,8 @@ What is the most important part of random numbers?  Unpredictability!
 
 srandom includes all these features to make it's generator produce the most unpredictable/random numbers.
   * srandom uses two separate and different 64bit PRNGs.
-  * srandom uses two separate seeds.
   * srandom uses two different algorithms to XOR the the 64bit PSRNGs together.
+  * srandom uses two separate seeds.
   * srandom seeds the PSRNGs twice on module load.
   * srandom uses 16 x 512byte buffers and outputs them randomly. 
   * srandom throws away a small amount of data. 
@@ -19,6 +19,10 @@ srandom includes all these features to make it's generator produce the most unpr
 The best part of srandom is it's effeciency and very high speed...  I tested many PSRNGs and found two that worked very fast and had a good distribution of numbers.  Two to three 64bit numbers are combined using XOR which is also very fast.  The results is unpredictable and very high speed generation of numbers.
 
 
+Why do I need this?
+-------------------
+
+You want to use srandom to provide your applications with the fastest and unpredictable source of random numbers.  Why would you want to block your applications while waiting for random numbers?  Run "lsof|grep random", just to see how many applications have the random number device open...  Any security type applications rely heavily on random numbers.  For example, Apache SSL (Secure Socket Level), PGP (Pretty Good Privacy), VPN (Virtual Private Networks).  All types of Encryption, Password seeds, Tokens would rely on a source of random number.  There is many examples at https://www.random.org/testimonials/.
 
 Compile and installation
 ------------------------
@@ -83,21 +87,23 @@ srandom if functioning correctly
 Testing & performance
 ---------------------
 
-A simple dd command to read from the /dev/srandom device will display the performance of the generator.  The results below are typical from my system for example.  Of course, your performance will vary.
+A simple dd command to read from the /dev/srandom device will display the performance of the generator.  The results below are typical from my system.  Of course, your performance will vary.
 
 
 The "Improved" srandom number generator
 
 ```
-time dd if=/dev/srandom of=/dev/null count=1024k
+time dd if=/dev/srandom of=/dev/null count=64k bs=64k
 
-1048576+0 records in
-1048576+0 records out
-536870912 bytes (537 MB) copied, 0.791438 s, 678 MB/s
+65536+0 records in
+65536+0 records out
+4294967296 bytes (4.3 GB) copied, 1.80974 s, 2.4 GB/s
 
-real    0m0.793s
-user    0m0.148s
-sys     0m0.645s
+real    0m1.811s
+user    0m0.012s
+sys     0m1.799s
+
+
 ```
 
 
@@ -106,15 +112,16 @@ sys     0m0.645s
 The "Non-Blocking" urandom number generator
 
 ```
-time dd if=/dev/urandom of=/dev/null count=1024k
+time dd if=/dev/urandom of=/dev/null count=64k bs=64k
 
-1048576+0 records in
-1048576+0 records out
-536870912 bytes (537 MB) copied, 35.4003 s, 15.2 MB/s
+65536+0 records in
+65536+0 records out
+4294967296 bytes (4.3 GB) copied, 277.96 s, 15.5 MB/s
 
-real    0m35.402s
-user    0m0.161s
-sys     0m35.182s
+real    4m37.961s
+user    0m0.028s
+sys     4m37.923s
+
 ```
 
 
@@ -122,7 +129,7 @@ sys     0m35.182s
 The "Blocking" random number generator.  ( I pressed [CTRL-C] after 5 minutes and got 35 bytes!  If you really NEED to test this, You might need to leave this running for days, or weeks....)
 
 ```
-time dd if=/dev/random of=/dev/null count=1024k
+time dd if=/dev/random of=/dev/null count=64k bs=64k
 [CTRL]-C
 0+35 records in
 0+0 records out
@@ -234,7 +241,7 @@ Using /dev/srandom to securely wipe hard disks.
 *** Replace /dev/sdXX with your disk device you want to wipe.
 
 
-    dd if=/dev/srandom of=/dev/sdXX bs=4k
+    dd if=/dev/srandom of=/dev/sdXX bs=64k
 
 
 License

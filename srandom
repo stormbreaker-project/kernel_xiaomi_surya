@@ -27,7 +27,7 @@ is_mod_loaded(){
 }
 
 is_srandom_OK(){
-    if [ `dd if=/dev/srandom count=1 2>/dev/null|hexdump -ve '4/2 "%02X " "\n"'|sort|uniq|wc -l` -eq 64 ];then
+    if [ `dd if=/dev/srandom count=4 bs=2k 2>/dev/null|hexdump -ve '4/2 "%02X " "\n"'|sort|uniq|wc -l` -eq 1024 ];then
       return 0
     else
       return 1
