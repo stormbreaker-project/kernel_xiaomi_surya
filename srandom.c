@@ -457,7 +457,7 @@ int proc_read(struct seq_file *m, void *v) {
   seq_printf(m, "github                 : http://github.com/josenk/srandom\n");
   if ( PAID==0){
     seq_printf(m, "Paypal                 : josenk@jintegrate.co\n");
-    seq_printf(m, "Bitcoin                : 1MTNg7SqcEWs5uwLKwNiAfYqBfnKFJu65p\n");
+    seq_printf(m, "Bitcoin                : 1GEtkAm97DphwJbJTPyywv6NbqJKLMtDzA\n");
     seq_printf(m, "Commercial Invoice     : Avail on request.\n");
   }
   return 0;
