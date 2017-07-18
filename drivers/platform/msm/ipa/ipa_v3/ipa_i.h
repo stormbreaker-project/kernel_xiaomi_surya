@@ -102,6 +102,8 @@
 #define IPA_LOW_16_BIT_MASK (0xFFFF)
 #define IPA4_5_GSI_RING_SIZE_ALIGN (16 * PAGE_SIZE)
 
+#define IPA_TIMEOUT(value) (msecs_to_jiffies(value * 1000))
+
 #define IPADBG(fmt, args...) \
 	do { \
 		pr_debug(DRV_NAME " %s:%d " fmt, __func__, __LINE__, ## args);\
