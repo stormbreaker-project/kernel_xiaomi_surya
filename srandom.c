@@ -1,7 +1,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>             /* For kalloc */
-#include <asm/uaccess.h>            /* For copy_to_user */
+#include <asm/uaccess.h>            /* For raw_copy_to_user */
 #include <linux/miscdevice.h>       /* For misc_register (the /dev/srandom) device */
 #include <linux/time.h>             /* For getnstimeofday */
 #include <linux/proc_fs.h>          /* For /proc filesystem */
@@ -273,7 +273,7 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                 /*
                  *  Send array to device
                  */
-                ret = copy_to_user(buf, sarr_RND[CC], count);
+                ret = raw_copy_to_user(buf, sarr_RND[CC], count);
 
                 /*
                  * Get more RND numbers
@@ -352,7 +352,7 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                 /*
                  * Send new_buf to device
                  */
-                ret = copy_to_user(buf, new_buf, count);
+                ret = raw_copy_to_user(buf, new_buf, count);
   
                 /*
                  * Free allocated memory
@@ -392,7 +392,7 @@ static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t c
                 newdata = kmalloc(count, GFP_KERNEL);
         }
 
-        ret = copy_from_user(newdata, buf, count);
+        ret = raw_copy_from_user(newdata, buf, count);
 
         /*
          * Free memory
