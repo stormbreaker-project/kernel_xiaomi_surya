@@ -1,7 +1,8 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/version.h>
 #include <linux/slab.h>             /* For kalloc */
-#include <asm/uaccess.h>            /* For raw_copy_to_user */
+#include <asm/uaccess.h>            /* For copy_to_user */
 #include <linux/miscdevice.h>       /* For misc_register (the /dev/srandom) device */
 #include <linux/time.h>             /* For getnstimeofday */
 #include <linux/proc_fs.h>          /* For /proc filesystem */
@@ -13,8 +14,16 @@
 #define arr_RND_SIZE 67             /* Size of Array */
 #define num_arr_RND  16             /* Number of 512b Array (Must be power of 2) */
 #define sDEVICE_NAME "srandom"      /* Dev name as it appears in /proc/devices */
-#define AppVERSION "1.33"
+#define AppVERSION "1.34"
 #define PAID 0
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
+    #define COPY_TO_USER raw_copy_to_user
+    #define COPY_FROM_USER raw_copy_from_user
+#else
+    #define COPY_TO_USER copy_to_user
+    #define COPY_FROM_USER copy_from_user
+#endif
 
 
 /*
@@ -273,7 +282,7 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                 /*
                  *  Send array to device
                  */
-                ret = raw_copy_to_user(buf, sarr_RND[CC], count);
+                ret = COPY_TO_USER(buf, sarr_RND[CC], count);
 
                 /*
                  * Get more RND numbers
@@ -352,7 +361,7 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                 /*
                  * Send new_buf to device
                  */
-                ret = raw_copy_to_user(buf, new_buf, count);
+                ret = COPY_TO_USER(buf, new_buf, count);
   
                 /*
                  * Free allocated memory
@@ -392,7 +401,7 @@ static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t c
                 newdata = kmalloc(count, GFP_KERNEL);
         }
 
-        ret = raw_copy_from_user(newdata, buf, count);
+        ret = COPY_FROM_USER(newdata, buf, count);
 
         /*
          * Free memory
