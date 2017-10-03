@@ -33,6 +33,8 @@
 /* Offset to allow for unmatched rcu_irq_{enter,exit}(). */
 #define DYNTICK_IRQ_NONIDLE	((LONG_MAX / 2) + 1)
 
+#define DYNTICK_IRQ_NONIDLE	((INT_MAX / 2) + 1)
+
 
 /*
  * Grace-period counter management.
