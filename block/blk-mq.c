@@ -2994,6 +2994,12 @@ static bool blk_mq_poll(struct request_queue *q, blk_qc_t cookie)
 
 static int __init blk_mq_init(void)
 {
+	/*
+	 * See comment in block/blk.h rq_atomic_flags enum
+	 */
+	BUILD_BUG_ON((REQ_ATOM_STARTED / BITS_PER_BYTE) !=
+			(REQ_ATOM_COMPLETE / BITS_PER_BYTE));
+
 	cpuhp_setup_state_multi(CPUHP_BLK_MQ_DEAD, "block/mq:dead", NULL,
 				blk_mq_hctx_notify_dead);
 	return 0;
