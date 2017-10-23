@@ -1939,7 +1939,7 @@ static int udp_queue_rcv_one_skb(struct sock *sk, struct sk_buff *skb)
 		 */
 
 		/* if we're overly short, let UDP handle it */
-		encap_rcv = ACCESS_ONCE(up->encap_rcv);
+		encap_rcv = READ_ONCE(up->encap_rcv);
 		if (encap_rcv) {
 			int ret;
 
@@ -2430,7 +2430,7 @@ void udp_destroy_sock(struct sock *sk)
 	if (static_key_false(&udp_encap_needed)) {
 		if (up->encap_type) {
 			void (*encap_destroy)(struct sock *sk);
-			encap_destroy = ACCESS_ONCE(up->encap_destroy);
+			encap_destroy = READ_ONCE(up->encap_destroy);
 			if (encap_destroy)
 				encap_destroy(sk);
 		}
