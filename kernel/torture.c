@@ -60,7 +60,6 @@ static bool verbose;
 #define FULLSTOP_RMMOD    2	/* Normal rmmod of torture. */
 static int fullstop = FULLSTOP_RMMOD;
 static DEFINE_MUTEX(fullstop_mutex);
-static int *torture_runnable;
 
 #ifdef CONFIG_HOTPLUG_CPU
 
@@ -573,8 +572,7 @@ static int stutter;
 void stutter_wait(const char *title)
 {
 	cond_resched_rcu_qs();
-	while (READ_ONCE(stutter_pause_test) ||
-	       (torture_runnable && !READ_ONCE(*torture_runnable))) {
+	while (READ_ONCE(stutter_pause_test)) {
 		if (stutter_pause_test)
 			if (READ_ONCE(stutter_pause_test) == 1)
 				schedule_timeout_interruptible(1);
@@ -647,7 +645,7 @@ static void torture_stutter_cleanup(void)
  * The runnable parameter points to a flag that controls whether or not
  * the test is currently runnable.  If there is no such flag, pass in NULL.
  */
-bool torture_init_begin(char *ttype, bool v, int *runnable)
+bool torture_init_begin(char *ttype, bool v)
 {
 	mutex_lock(&fullstop_mutex);
 	if (torture_type != NULL) {
@@ -659,7 +657,6 @@ bool torture_init_begin(char *ttype, bool v, int *runnable)
 	}
 	torture_type = ttype;
 	verbose = v;
-	torture_runnable = runnable;
 	fullstop = FULLSTOP_DONTSTOP;
 	return true;
 }
