@@ -10,4 +10,5 @@
 # GNU General Public License for more details.
 
 # ignore all subdirs except stub
+*
 !/stub/
