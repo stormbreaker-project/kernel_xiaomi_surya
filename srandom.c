@@ -2,7 +2,7 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/slab.h>             /* For kalloc */
-#include <asm/uaccess.h>            /* For copy_to_user */
+#include <linux/uaccess.h>          /* For copy_to_user */
 #include <linux/miscdevice.h>       /* For misc_register (the /dev/srandom) device */
 #include <linux/time.h>             /* For getnstimeofday */
 #include <linux/proc_fs.h>          /* For /proc filesystem */
@@ -14,7 +14,7 @@
 #define arr_RND_SIZE 67             /* Size of Array */
 #define num_arr_RND  16             /* Number of 512b Array (Must be power of 2) */
 #define sDEVICE_NAME "srandom"      /* Dev name as it appears in /proc/devices */
-#define AppVERSION "1.34"
+#define AppVERSION "1.35"
 #define PAID 0
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
