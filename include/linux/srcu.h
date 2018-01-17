@@ -126,7 +126,7 @@ static inline void cleanup_srcu_struct_quiesced(struct srcu_struct *sp)
  * relies on normal RCU, it can be called from the CPU which
  * is in the idle loop from an RCU point of view or offline.
  */
-static inline int srcu_read_lock_held(struct srcu_struct *sp)
+static inline int srcu_read_lock_held(const struct srcu_struct *sp)
 {
 	if (!debug_lockdep_rcu_enabled())
 		return 1;
@@ -135,7 +135,7 @@ static inline int srcu_read_lock_held(struct srcu_struct *sp)
 
 #else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
 
-static inline int srcu_read_lock_held(struct srcu_struct *sp)
+static inline int srcu_read_lock_held(const struct srcu_struct *sp)
 {
 	return 1;
 }
