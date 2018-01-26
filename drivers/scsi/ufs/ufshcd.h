@@ -1051,6 +1051,10 @@ struct ufs_hba {
 	int latency_hist_enabled;
 	struct io_latency_state io_lat_s;
 
+	/* To monitor slow UFS I/O requests. */
+	u64 slowio_us;
+	u64 slowio_cnt;
+
 	bool reinit_g4_rate_A;
 	bool force_g4;
 	/* distinguish between resume and restore */
@@ -1588,5 +1592,7 @@ static inline int ufshcd_vops_crypto_engine_get_req_status(struct ufs_hba *hba)
 		return hba->var->crypto_vops->crypto_get_req_status(hba);
 	return 0;
 }
+#define UFSHCD_MIN_SLOWIO_US		(1000)     /* 1 ms */
+#define UFSHCD_DEFAULT_SLOWIO_US	(10000000) /* 10 seconds */
 
 #endif /* End of Header */
