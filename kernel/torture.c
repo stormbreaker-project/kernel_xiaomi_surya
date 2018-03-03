@@ -571,7 +571,7 @@ static int stutter;
  */
 void stutter_wait(const char *title)
 {
-	cond_resched_rcu_qs();
+	cond_resched_tasks_rcu_qs();
 	while (READ_ONCE(stutter_pause_test)) {
 		if (stutter_pause_test)
 			if (READ_ONCE(stutter_pause_test) == 1)
