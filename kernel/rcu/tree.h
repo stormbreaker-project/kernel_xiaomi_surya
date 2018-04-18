@@ -169,6 +169,21 @@ struct rcu_node {
 	bool exp_need_flush;	/* Need to flush workitem? */
 } ____cacheline_internodealigned_in_smp;
 
+/* Accessors for ->need_future_gp[] array. */
+#define need_future_gp_mask() \
+	(ARRAY_SIZE(((struct rcu_node *)NULL)->need_future_gp) - 1)
+#define need_future_gp_element(rnp, c) \
+	((rnp)->need_future_gp[(c) & need_future_gp_mask()])
+#define need_any_future_gp(rnp)						\
+({									\
+	int __i;							\
+	bool __nonzero = false;						\
+									\
+	for (__i = 0; __i < ARRAY_SIZE((rnp)->need_future_gp); __i++)	\
+		__nonzero = __nonzero || (rnp)->need_future_gp[__i];	\
+	__nonzero;							\
+})
+
 /*
  * Bitmasks in an rcu_node cover the interval [grplo, grphi] of CPU IDs, and
  * are indexed relative to this interval rather than the global CPU ID space.
