@@ -1055,8 +1055,7 @@ static struct mlx5_flow_handle *alloc_handle(int num_rules)
 {
 	struct mlx5_flow_handle *handle;
 
-	handle = kzalloc(sizeof(*handle) + sizeof(handle->rule[0]) *
-			  num_rules, GFP_KERNEL);
+	handle = kzalloc(struct_size(handle, rule, num_rules), GFP_KERNEL);
 	if (!handle)
 		return NULL;
 
