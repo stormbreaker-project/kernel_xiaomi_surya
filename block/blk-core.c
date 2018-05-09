@@ -127,8 +127,7 @@ void blk_rq_init(struct request_queue *q, struct request *rq)
 	RB_CLEAR_NODE(&rq->rb_node);
 	rq->tag = -1;
 	rq->internal_tag = -1;
-	rq->start_time = jiffies;
-	set_start_time_ns(rq);
+	rq->start_time_ns = ktime_get_ns();
 	rq->part = NULL;
 }
 EXPORT_SYMBOL(blk_rq_init);
@@ -2589,7 +2588,7 @@ void blk_account_io_completion(struct request *req, unsigned int bytes)
 	}
 }
 
-void blk_account_io_done(struct request *req)
+void blk_account_io_done(struct request *req, u64 now)
 {
 	/*
 	 * Account IO completion.  flush_rq isn't accounted as a
@@ -2597,11 +2596,12 @@ void blk_account_io_done(struct request *req)
 	 * containing request is enough.
 	 */
 	if (blk_do_io_stat(req) && !(req->rq_flags & RQF_FLUSH_SEQ)) {
-		unsigned long duration = jiffies - req->start_time;
+		unsigned long duration;
 		const int rw = rq_data_dir(req);
 		struct hd_struct *part;
 		int cpu;
 
+		duration = nsecs_to_jiffies(now - req->start_time_ns);
 		cpu = part_stat_lock();
 		part = req->part;
 
@@ -2794,10 +2794,8 @@ static void blk_dequeue_request(struct request *rq)
 	 * and to it is freed is accounted as io that is in progress at
 	 * the driver side.
 	 */
-	if (blk_account_rq(rq)) {
+	if (blk_account_rq(rq))
 		q->in_flight[rq_is_sync(rq)]++;
-		set_io_start_time_ns(rq);
-	}
 }
 
 /**
@@ -2996,12 +2994,13 @@ EXPORT_SYMBOL_GPL(blk_unprep_request);
 void blk_finish_request(struct request *req, blk_status_t error)
 {
 	struct request_queue *q = req->q;
+	u64 now = ktime_get_ns();
 
 	lockdep_assert_held(req->q->queue_lock);
 	WARN_ON_ONCE(q->mq_ops);
 
 	if (req->rq_flags & RQF_STATS)
-		blk_stat_add(req);
+		blk_stat_add(req, now);
 
 	if (req->rq_flags & RQF_QUEUED)
 		blk_queue_end_tag(q, req);
@@ -3016,7 +3015,7 @@ void blk_finish_request(struct request *req, blk_status_t error)
 	if (req->rq_flags & RQF_DONTPREP)
 		blk_unprep_request(req);
 
-	blk_account_io_done(req);
+	blk_account_io_done(req, now);
 
 	if (req->end_io) {
 		wbt_done(req->q->rq_wb, req);

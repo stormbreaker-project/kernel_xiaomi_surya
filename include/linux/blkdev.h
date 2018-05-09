@@ -203,7 +203,8 @@ struct request {
 
 	struct gendisk *rq_disk;
 	struct hd_struct *part;
-	unsigned long start_time;
+	/* Time that I/O was submitted to the kernel. */
+	u64 start_time_ns;
 	/* Time that I/O was submitted to the device. */
 	u64 io_start_time_ns;
 
@@ -249,8 +250,6 @@ struct request {
 	int			lat_hist_enabled;
 #ifdef CONFIG_BLK_CGROUP
 	struct request_list *rl;		/* rl this rq is alloced from */
-	unsigned long long cgroup_start_time_ns;
-	unsigned long long cgroup_io_start_time_ns;    /* when passed to hardware */
 #endif
 };
 
@@ -1765,39 +1764,6 @@ int kblockd_schedule_work_on(int cpu, struct work_struct *work);
 int kblockd_schedule_delayed_work(struct delayed_work *dwork, unsigned long delay);
 int kblockd_schedule_delayed_work_on(int cpu, struct delayed_work *dwork, unsigned long delay);
 int kblockd_mod_delayed_work_on(int cpu, struct delayed_work *dwork, unsigned long delay);
-
-#ifdef CONFIG_BLK_CGROUP
-static inline void set_start_time_ns(struct request *req)
-{
-	req->cgroup_start_time_ns = ktime_get_ns();
-}
-
-static inline void set_io_start_time_ns(struct request *req)
-{
-	req->cgroup_io_start_time_ns = ktime_get_ns();
-}
-
-static inline u64 rq_start_time_ns(struct request *req)
-{
-	return req->cgroup_start_time_ns;
-}
-
-static inline u64 rq_io_start_time_ns(struct request *req)
-{
-	return req->cgroup_io_start_time_ns;
-}
-#else
-static inline void set_start_time_ns(struct request *req) {}
-static inline void set_io_start_time_ns(struct request *req) {}
-static inline u64 rq_start_time_ns(struct request *req)
-{
-	return 0;
-}
-static inline u64 rq_io_start_time_ns(struct request *req)
-{
-	return 0;
-}
-#endif
 
 #define MODULE_ALIAS_BLOCKDEV(major,minor) \
 	MODULE_ALIAS("block-major-" __stringify(major) "-" __stringify(minor))
