@@ -52,7 +52,7 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Paul E. McKenney <paulmck@us.ibm.com>");
 
 static char *torture_type;
-static bool verbose;
+static int verbose;
 
 /* Mediate rmmod and system shutdown.  Concurrent rmmod & shutdown illegal! */
 #define FULLSTOP_DONTSTOP 0	/* Normal operation. */
@@ -97,7 +97,7 @@ bool torture_offline(int cpu, long *n_offl_attempts, long *n_offl_successes,
 	if (!cpu_online(cpu) || !cpu_is_hotpluggable(cpu))
 		return false;
 
-	if (verbose)
+	if (verbose > 1)
 		pr_alert("%s" TORTURE_FLAG
 			 "torture_onoff task: offlining %d\n",
 			 torture_type, cpu);
@@ -110,7 +110,7 @@ bool torture_offline(int cpu, long *n_offl_attempts, long *n_offl_successes,
 				 "torture_onoff task: offline %d failed: errno %d\n",
 				 torture_type, cpu, ret);
 	} else {
-		if (verbose)
+		if (verbose > 1)
 			pr_alert("%s" TORTURE_FLAG
 				 "torture_onoff task: offlined %d\n",
 				 torture_type, cpu);
@@ -146,7 +146,7 @@ bool torture_online(int cpu, long *n_onl_attempts, long *n_onl_successes,
 	if (cpu_online(cpu) || !cpu_is_hotpluggable(cpu))
 		return false;
 
-	if (verbose)
+	if (verbose > 1)
 		pr_alert("%s" TORTURE_FLAG
 			 "torture_onoff task: onlining %d\n",
 			 torture_type, cpu);
@@ -159,7 +159,7 @@ bool torture_online(int cpu, long *n_onl_attempts, long *n_onl_successes,
 				 "torture_onoff task: online %d failed: errno %d\n",
 				 torture_type, cpu, ret);
 	} else {
-		if (verbose)
+		if (verbose > 1)
 			pr_alert("%s" TORTURE_FLAG
 				 "torture_onoff task: onlined %d\n",
 				 torture_type, cpu);
@@ -645,7 +645,7 @@ static void torture_stutter_cleanup(void)
  * The runnable parameter points to a flag that controls whether or not
  * the test is currently runnable.  If there is no such flag, pass in NULL.
  */
-bool torture_init_begin(char *ttype, bool v)
+bool torture_init_begin(char *ttype, int v)
 {
 	mutex_lock(&fullstop_mutex);
 	if (torture_type != NULL) {
