@@ -467,7 +467,6 @@ enum rcutorture_type {
 #if defined(CONFIG_TREE_RCU) || defined(CONFIG_PREEMPT_RCU)
 void rcutorture_get_gp_data(enum rcutorture_type test_type, int *flags,
 			    unsigned long *gp_seq);
-void rcutorture_record_test_transition(void);
 void rcutorture_record_progress(unsigned long vernum);
 void do_trace_rcu_torture_read(const char *rcutorturename,
 			       struct rcu_head *rhp,
@@ -481,7 +480,6 @@ static inline void rcutorture_get_gp_data(enum rcutorture_type test_type,
 	*flags = 0;
 	*gp_seq = 0;
 }
-static inline void rcutorture_record_test_transition(void) { }
 static inline void rcutorture_record_progress(unsigned long vernum) { }
 #ifdef CONFIG_RCU_TRACE
 void do_trace_rcu_torture_read(const char *rcutorturename,
@@ -528,8 +526,6 @@ static inline void rcu_bh_force_quiescent_state(void) { }
 static inline void rcu_sched_force_quiescent_state(void) { }
 static inline void show_rcu_gp_kthreads(void) { }
 #else /* #ifdef CONFIG_TINY_RCU */
-extern unsigned long rcutorture_testseq;
-extern unsigned long rcutorture_vernum;
 unsigned long rcu_get_gp_seq(void);
 unsigned long rcu_bh_get_gp_seq(void);
 unsigned long rcu_sched_get_gp_seq(void);
