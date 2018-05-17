@@ -2669,8 +2669,6 @@ static bool rcu_nohz_full_cpu(struct rcu_state *rsp)
  */
 static void rcu_bind_gp_kthread(void)
 {
-	int __maybe_unused cpu;
-
 	if (!tick_nohz_full_enabled())
 		return;
 	housekeeping_affine(current);
