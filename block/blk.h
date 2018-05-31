@@ -211,6 +211,9 @@ static inline void elv_deactivate_rq(struct request_queue *q, struct request *rq
 		e->type->ops.sq.elevator_deactivate_req_fn(q, rq);
 }
 
+int elevator_init(struct request_queue *, char *);
+void elevator_exit(struct request_queue *, struct elevator_queue *);
+
 struct hd_struct *__disk_get_part(struct gendisk *disk, int partno);
 
 #ifdef CONFIG_FAIL_IO_TIMEOUT
