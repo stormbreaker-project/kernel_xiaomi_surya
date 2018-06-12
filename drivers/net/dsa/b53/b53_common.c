@@ -1846,14 +1846,14 @@ static int b53_switch_init(struct b53_device *dev)
 	dev->enabled_ports |= BIT(dev->cpu_port);
 	dev->num_ports = fls(dev->enabled_ports);
 
-	dev->ports = devm_kzalloc(dev->dev,
-				  sizeof(struct b53_port) * dev->num_ports,
+	dev->ports = devm_kcalloc(dev->dev,
+				  dev->num_ports, sizeof(struct b53_port),
 				  GFP_KERNEL);
 	if (!dev->ports)
 		return -ENOMEM;
 
-	dev->vlans = devm_kzalloc(dev->dev,
-				  sizeof(struct b53_vlan) * dev->num_vlans,
+	dev->vlans = devm_kcalloc(dev->dev,
+				  dev->num_vlans, sizeof(struct b53_vlan),
 				  GFP_KERNEL);
 	if (!dev->vlans)
 		return -ENOMEM;
