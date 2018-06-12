@@ -321,8 +321,8 @@ static int memcg_init_list_lru_node(struct list_lru_node *nlru)
 	struct list_lru_memcg *memcg_lrus;
 	int size = memcg_nr_cache_ids;
 
-	memcg_lrus = kvmalloc(sizeof(*memcg_lrus) +
-			      size * sizeof(void *), GFP_KERNEL);
+	memcg_lrus = kvmalloc_array(size, sizeof(*memcg_lrus) +
+			      sizeof(void *), GFP_KERNEL);
 	if (!memcg_lrus)
 		return -ENOMEM;
 
@@ -364,7 +364,7 @@ static int memcg_update_list_lru_node(struct list_lru_node *nlru,
 
 	old = rcu_dereference_protected(nlru->memcg_lrus,
 					lockdep_is_held(&list_lrus_mutex));
-	new = kvmalloc(sizeof(*new) + new_size * sizeof(void *), GFP_KERNEL);
+	new = kvmalloc_array(new_size, sizeof(*new) + sizeof(void *), GFP_KERNEL);
 	if (!new)
 		return -ENOMEM;
 
