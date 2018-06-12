@@ -526,8 +526,8 @@ int ntfs_read_compressed_block(struct page *page)
 	BUG_ON(ni->type != AT_DATA);
 	BUG_ON(ni->name_len);
 
-	pages = kmalloc(nr_pages * sizeof(struct page *), GFP_NOFS);
-	completed_pages = kmalloc((nr_pages + 1) * sizeof(int), GFP_NOFS);
+	pages = kmalloc_array(nr_pages, sizeof(struct page *), GFP_NOFS);
+	completed_pages = kmalloc_array(nr_pages + 1, sizeof(int), GFP_NOFS);
 
 	/* Allocate memory to store the buffer heads we need. */
 	bhs_size = cb_size / block_size * sizeof(struct buffer_head *);
