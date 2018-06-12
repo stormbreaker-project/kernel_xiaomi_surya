@@ -960,7 +960,7 @@ int wlan_logging_sock_init_svc(void)
 
 	/* Initialize the pktStats data structure here */
 	pkt_stats_size = sizeof(struct pkt_stats_msg);
-	gpkt_stats_buffers = vmalloc(MAX_PKTSTATS_BUFF * pkt_stats_size);
+	gpkt_stats_buffers = vmalloc(array_size(pkt_stats_size, MAX_PKTSTATS_BUFF));
 	if (!gpkt_stats_buffers) {
 		qdf_nofl_err("%s: Could not allocate memory for Pkt stats",
 			     __func__);
