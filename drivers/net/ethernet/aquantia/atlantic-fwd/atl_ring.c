@@ -1619,7 +1619,7 @@ static int atl_alloc_ring(struct atl_desc_ring *ring, size_t buf_size,
 	}
 
 	if (likely(ring->qvec->type != ATL_QUEUE_HWTS)) {
-		ring->bufs = vzalloc(ring->hw.size * buf_size);
+		ring->bufs = vzalloc(array_size(ring->hw.size, buf_size));
 		if (!ring->bufs) {
 			ret = -ENOMEM;
 			goto free;
