@@ -4410,7 +4410,8 @@ int set_tracer_flag(struct trace_array *tr, unsigned int mask, int enabled)
 	if (mask == TRACE_ITER_RECORD_TGID) {
 		if (!tgid_map) {
 			tgid_map_max = pid_max;
-			map = kzalloc((tgid_map_max + 1) * sizeof(*tgid_map),
+			map = kcalloc(tgid_map_max + 1,
+				      sizeof(*tgid_map),
 				      GFP_KERNEL);
 
 			/*

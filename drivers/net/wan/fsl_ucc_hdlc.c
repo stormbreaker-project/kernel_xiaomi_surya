@@ -198,14 +198,16 @@ static int uhdlc_init(struct ucc_hdlc_private *priv)
 		goto free_tx_bd;
 	}
 
-	priv->rx_skbuff = kzalloc(priv->rx_ring_size * sizeof(*priv->rx_skbuff),
+	priv->rx_skbuff = kcalloc(priv->rx_ring_size,
+				  sizeof(*priv->rx_skbuff),
 				  GFP_KERNEL);
 	if (!priv->rx_skbuff) {
 		ret = -ENOMEM;
 		goto free_ucc_pram;
 	}
 
-	priv->tx_skbuff = kzalloc(priv->tx_ring_size * sizeof(*priv->tx_skbuff),
+	priv->tx_skbuff = kcalloc(priv->tx_ring_size,
+				  sizeof(*priv->tx_skbuff),
 				  GFP_KERNEL);
 	if (!priv->tx_skbuff) {
 		ret = -ENOMEM;
