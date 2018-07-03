@@ -327,7 +327,7 @@ static void rcu_qs(void)
 void rcu_note_context_switch(bool preempt)
 {
 	struct task_struct *t = current;
-	struct rcu_data *rdp = this_cpu_ptr(rcu_state_p->rda);
+	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
 	struct rcu_node *rnp;
 
 	barrier(); /* Avoid RCU read-side critical sections leaking down. */
@@ -487,7 +487,7 @@ rcu_preempt_deferred_qs_irqrestore(struct task_struct *t, unsigned long flags)
 	 * t->rcu_read_unlock_special cannot change.
 	 */
 	special = t->rcu_read_unlock_special;
-	rdp = this_cpu_ptr(rcu_state_p->rda);
+	rdp = this_cpu_ptr(&rcu_data);
 	if (!special.s && !rdp->deferred_qs) {
 		local_irq_restore(flags);
 		return;
@@ -910,7 +910,7 @@ dump_blkd_tasks(struct rcu_state *rsp, struct rcu_node *rnp, int ncheck)
 	}
 	pr_cont("\n");
 	for (cpu = rnp->grplo; cpu <= rnp->grphi; cpu++) {
-		rdp = per_cpu_ptr(rsp->rda, cpu);
+		rdp = per_cpu_ptr(&rcu_data, cpu);
 		onl = !!(rdp->grpmask & rcu_rnp_online_cpus(rnp));
 		pr_info("\t%d: %c online: %ld(%d) offline: %ld(%d)\n",
 			cpu, ".o"[onl],
@@ -1436,7 +1436,7 @@ static void __init rcu_spawn_boost_kthreads(void)
 
 static void rcu_prepare_kthreads(int cpu)
 {
-	struct rcu_data *rdp = per_cpu_ptr(rcu_state_p->rda, cpu);
+	struct rcu_data *rdp = per_cpu_ptr(&rcu_data, cpu);
 	struct rcu_node *rnp = rdp->mynode;
 
 	/* Fire up the incoming CPU's kthread and leaf rcu_node kthread. */
@@ -1573,7 +1573,7 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
 	rdtp->last_advance_all = jiffies;
 
 	for_each_rcu_flavor(rsp) {
-		rdp = this_cpu_ptr(rsp->rda);
+		rdp = this_cpu_ptr(&rcu_data);
 		rnp = rdp->mynode;
 
 		/*
@@ -1691,7 +1691,7 @@ static void rcu_prepare_for_idle(void)
 		return;
 	rdtp->last_accelerate = jiffies;
 	for_each_rcu_flavor(rsp) {
-		rdp = this_cpu_ptr(rsp->rda);
+		rdp = this_cpu_ptr(&rcu_data);
 		if (!rcu_segcblist_pend_cbs(&rdp->cblist))
 			continue;
 		rnp = rdp->mynode;
@@ -1777,7 +1777,7 @@ static void print_cpu_stall_info(struct rcu_state *rsp, int cpu)
 {
 	unsigned long delta;
 	char fast_no_hz[72];
-	struct rcu_data *rdp = per_cpu_ptr(rsp->rda, cpu);
+	struct rcu_data *rdp = per_cpu_ptr(&rcu_data, cpu);
 	struct rcu_dynticks *rdtp = rdp->dynticks;
 	char *ticks_title;
 	unsigned long ticks_value;
@@ -1832,7 +1832,7 @@ static void increment_cpu_stall_ticks(void)
 	struct rcu_state *rsp;
 
 	for_each_rcu_flavor(rsp)
-		raw_cpu_inc(rsp->rda->ticks_this_gp);
+		raw_cpu_inc(rcu_data.ticks_this_gp);
 }
 
 #ifdef CONFIG_RCU_NOCB_CPU
@@ -1964,7 +1964,7 @@ static void wake_nocb_leader_defer(struct rcu_data *rdp, int waketype,
  */
 static bool rcu_nocb_cpu_needs_barrier(struct rcu_state *rsp, int cpu)
 {
-	struct rcu_data *rdp = per_cpu_ptr(rsp->rda, cpu);
+	struct rcu_data *rdp = per_cpu_ptr(&rcu_data, cpu);
 	unsigned long ret;
 #ifdef CONFIG_PROVE_RCU
 	struct rcu_head *rhp;
@@ -2425,7 +2425,7 @@ void __init rcu_init_nohz(void)
 
 	for_each_rcu_flavor(rsp) {
 		for_each_cpu(cpu, rcu_nocb_mask)
-			init_nocb_callback_list(per_cpu_ptr(rsp->rda, cpu));
+			init_nocb_callback_list(per_cpu_ptr(&rcu_data, cpu));
 		rcu_organize_nocb_kthreads(rsp);
 	}
 }
@@ -2451,7 +2451,7 @@ static void rcu_spawn_one_nocb_kthread(struct rcu_state *rsp, int cpu)
 	struct rcu_data *rdp;
 	struct rcu_data *rdp_last;
 	struct rcu_data *rdp_old_leader;
-	struct rcu_data *rdp_spawn = per_cpu_ptr(rsp->rda, cpu);
+	struct rcu_data *rdp_spawn = per_cpu_ptr(&rcu_data, cpu);
 	struct task_struct *t;
 
 	/*
@@ -2544,7 +2544,7 @@ static void __init rcu_organize_nocb_kthreads(struct rcu_state *rsp)
 	 * we will spawn the needed set of rcu_nocb_kthread() kthreads.
 	 */
 	for_each_cpu(cpu, rcu_nocb_mask) {
-		rdp = per_cpu_ptr(rsp->rda, cpu);
+		rdp = per_cpu_ptr(&rcu_data, cpu);
 		if (rdp->cpu >= nl) {
 			/* New leader, set up for followers & next leader. */
 			nl = DIV_ROUND_UP(rdp->cpu + 1, ls) * ls;
