@@ -1317,7 +1317,7 @@ static void panic_on_rcu_stall(void)
 		panic("RCU Stall\n");
 }
 
-static void print_other_cpu_stall(struct rcu_state *rsp, unsigned long gp_seq)
+static void print_other_cpu_stall(unsigned long gp_seq)
 {
 	int cpu;
 	unsigned long flags;
@@ -1325,6 +1325,7 @@ static void print_other_cpu_stall(struct rcu_state *rsp, unsigned long gp_seq)
 	unsigned long j;
 	int ndetected = 0;
 	struct rcu_node *rnp = rcu_get_root();
+	struct rcu_state *rsp = &rcu_state;
 	long totqlen = 0;
 
 	/* Kick and suppress, if so configured. */
@@ -1502,7 +1503,7 @@ static void check_cpu_stall(struct rcu_state *rsp, struct rcu_data *rdp)
 		   cmpxchg(&rsp->jiffies_stall, js, jn) == js) {
 
 		/* They had a few time units to dump stack, so complain. */
-		print_other_cpu_stall(rsp, gs2);
+		print_other_cpu_stall(gs2);
 	}
 }
 
