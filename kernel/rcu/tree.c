@@ -1653,14 +1653,13 @@ static bool rcu_future_gp_cleanup(struct rcu_node *rnp)
  * pre-sleep check of the awaken condition.  In this case, a wakeup really
  * is required, and is therefore supplied.
  */
-static void rcu_gp_kthread_wake(struct rcu_state *rsp)
+static void rcu_gp_kthread_wake(void)
 {
-	if ((current == rsp->gp_kthread &&
-	     !in_interrupt() && !in_serving_softirq()) ||
-	    !READ_ONCE(rsp->gp_flags) ||
-	    !rsp->gp_kthread)
+	if (current == rcu_state.gp_kthread ||
+	    !READ_ONCE(rcu_state.gp_flags) ||
+	    !rcu_state.gp_kthread)
 		return;
-	swake_up(&rsp->gp_wq);
+	swake_up(&rcu_state.gp_wq);
 }
 
 /*
@@ -1734,7 +1733,7 @@ static void rcu_accelerate_cbs_unlocked(struct rcu_state *rsp,
 	needwake = rcu_accelerate_cbs(rsp, rnp, rdp);
 	raw_spin_unlock_rcu_node(rnp); /* irqs remain disabled. */
 	if (needwake)
-		rcu_gp_kthread_wake(rsp);
+		rcu_gp_kthread_wake();
 }
 
 /*
@@ -1832,7 +1831,7 @@ static void note_gp_changes(struct rcu_state *rsp, struct rcu_data *rdp)
 	needwake = __note_gp_changes(rsp, rnp, rdp);
 	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
 	if (needwake)
-		rcu_gp_kthread_wake(rsp);
+		rcu_gp_kthread_wake();
 }
 
 static void rcu_gp_slow(struct rcu_state *rsp, int delay)
@@ -2215,7 +2214,7 @@ static void rcu_report_qs_rsp(unsigned long flags)
 	WARN_ON_ONCE(!rcu_gp_in_progress());
 	WRITE_ONCE(rsp->gp_flags, READ_ONCE(rsp->gp_flags) | RCU_GP_FLAG_FQS);
 	raw_spin_unlock_irqrestore_rcu_node(rcu_get_root(), flags);
-	rcu_gp_kthread_wake(rsp);
+	rcu_gp_kthread_wake();
 }
 
 /*
@@ -2376,7 +2375,7 @@ rcu_report_qs_rdp(int cpu, struct rcu_data *rdp)
 		rcu_report_qs_rnp(mask, rnp, rnp->gp_seq, flags);
 		/* ^^^ Released rnp->lock */
 		if (needwake)
-			rcu_gp_kthread_wake(rsp);
+			rcu_gp_kthread_wake();
 	}
 }
 
@@ -2682,7 +2681,7 @@ static void force_quiescent_state(struct rcu_state *rsp)
 	}
 	WRITE_ONCE(rsp->gp_flags, READ_ONCE(rsp->gp_flags) | RCU_GP_FLAG_FQS);
 	raw_spin_unlock_irqrestore_rcu_node(rnp_old, flags);
-	rcu_gp_kthread_wake(rsp);
+	rcu_gp_kthread_wake();
 }
 
 /*
@@ -3684,7 +3683,7 @@ static void rcu_migrate_callbacks(int cpu, struct rcu_state *rsp)
 		     !rcu_segcblist_n_cbs(&my_rdp->cblist));
 	raw_spin_unlock_irqrestore_rcu_node(rnp_root, flags);
 	if (needwake)
-		rcu_gp_kthread_wake(rsp);
+		rcu_gp_kthread_wake();
 	WARN_ONCE(rcu_segcblist_n_cbs(&rdp->cblist) != 0 ||
 		  !rcu_segcblist_empty(&rdp->cblist),
 		  "rcu_cleanup_dead_cpu: Callbacks on offline CPU %d: qlen=%lu, 1stCB=%p\n",
