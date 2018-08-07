@@ -572,7 +572,7 @@ static int stutter;
  * Block until the stutter interval ends.  This must be called periodically
  * by all running kthreads that need to be subject to stuttering.
  */
-void stutter_wait(const char *title)
+bool stutter_wait(const char *title)
 {
 	cond_resched_tasks_rcu_qs();
 	while (READ_ONCE(stutter_pause_test)) {
@@ -586,6 +586,7 @@ void stutter_wait(const char *title)
 			schedule_timeout_interruptible(round_jiffies_relative(HZ));
 		torture_shutdown_absorb(title);
 	}
+	return !!spt;
 }
 EXPORT_SYMBOL_GPL(stutter_wait);
 
