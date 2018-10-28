@@ -121,6 +121,12 @@ typedef __u32 __bitwise req_flags_t;
 #define RQF_SPECIAL_PAYLOAD	((__force req_flags_t)(1 << 18))
 /* increased nr_pending for this request */
 #define RQF_PM_ADDED		((__force req_flags_t)(1 << 19))
+/* The per-zone write lock is held for this request */
+#define RQF_ZONE_WRITE_LOCKED	((__force req_flags_t)(1 << 19))
+/* already slept for hybrid poll */
+#define RQF_MQ_POLL_SLEPT	((__force req_flags_t)(1 << 20))
+/* ->timeout has been called, don't expire again */
+#define RQF_TIMED_OUT		((__force req_flags_t)(1 << 21))
 
 /* flags that prevent us from merging requests: */
 #define RQF_NOMERGE_FLAGS \
