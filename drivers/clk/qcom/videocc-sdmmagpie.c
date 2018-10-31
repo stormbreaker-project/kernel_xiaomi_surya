@@ -419,6 +419,7 @@ static struct platform_driver video_cc_sdmmagpie_driver = {
 	.driver = {
 		.name = "video_cc-sdmmagpie",
 		.of_match_table = video_cc_sdmmagpie_match_table,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
