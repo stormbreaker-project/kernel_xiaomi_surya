@@ -659,6 +659,7 @@ static struct platform_driver gpu_cc_sdmmagpie_driver = {
 	.driver = {
 		.name = "gpu_cc-sdmmagpie",
 		.of_match_table = gpu_cc_sdmmagpie_match_table,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
