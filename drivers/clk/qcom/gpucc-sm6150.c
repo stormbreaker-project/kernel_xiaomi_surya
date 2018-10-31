@@ -632,6 +632,7 @@ static struct platform_driver gpu_cc_sm6150_driver = {
 	.driver		= {
 		.name	= "gpu_cc-sm6150",
 		.of_match_table = gpu_cc_sm6150_match_table,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
