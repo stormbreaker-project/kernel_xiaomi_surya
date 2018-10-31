@@ -3338,6 +3338,7 @@ static struct platform_driver gcc_sdmmagpie_driver = {
 	.driver = {
 		.name = "gcc-sdmmagpie",
 		.of_match_table = gcc_sdmmagpie_match_table,
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 };
 
