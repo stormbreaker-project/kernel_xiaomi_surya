@@ -77,7 +77,7 @@ int unregister_tracepoint_module_notifier(struct notifier_block *nb)
  */
 static inline void tracepoint_synchronize_unregister(void)
 {
-	synchronize_sched();
+	synchronize_rcu();
 }
 
 #ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
