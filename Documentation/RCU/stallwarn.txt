@@ -230,15 +230,58 @@ handlers are no longer able to execute on this CPU.  This can happen if
 the stalled CPU is spinning with interrupts are disabled, or, in -rt
 kernels, if a high-priority process is starving RCU's softirq handler.
 
-For CONFIG_RCU_FAST_NO_HZ kernels, the "last_accelerate:" prints the
-low-order 16 bits (in hex) of the jiffies counter when this CPU last
-invoked rcu_try_advance_all_cbs() from rcu_needs_cpu() or last invoked
-rcu_accelerate_cbs() from rcu_prepare_for_idle().  The "nonlazy_posted:"
-prints the number of non-lazy callbacks posted since the last call to
-rcu_needs_cpu().  Finally, an "L" indicates that there are currently
-no non-lazy callbacks ("." is printed otherwise, as shown above) and
-"D" indicates that dyntick-idle processing is enabled ("." is printed
-otherwise, for example, if disabled via the "nohz=" kernel boot parameter).
+The "fqs=" shows the number of force-quiescent-state idle/offline
+detection passes that the grace-period kthread has made across this
+CPU since the last time that this CPU noted the beginning of a grace
+period.
+
+The "detected by" line indicates which CPU detected the stall (in this
+case, CPU 32), how many jiffies have elapsed since the start of the grace
+period (in this case 2603), the grace-period sequence number (7075), and
+an estimate of the total number of RCU callbacks queued across all CPUs
+(625 in this case).
+
+In kernels with CONFIG_RCU_FAST_NO_HZ, more information is printed
+for each CPU:
+
+	0: (64628 ticks this GP) idle=dd5/3fffffffffffffff/0 softirq=82/543 last_accelerate: a345/d342 Nonlazy posted: ..D
+
+The "last_accelerate:" prints the low-order 16 bits (in hex) of the
+jiffies counter when this CPU last invoked rcu_try_advance_all_cbs()
+from rcu_needs_cpu() or last invoked rcu_accelerate_cbs() from
+rcu_prepare_for_idle().  The "Nonlazy posted:" indicates lazy-callback
+status, so that an "l" indicates that all callbacks were lazy at the start
+of the last idle period and an "L" indicates that there are currently
+no non-lazy callbacks (in both cases, "." is printed otherwise, as
+shown above) and "D" indicates that dyntick-idle processing is enabled
+("." is printed otherwise, for example, if disabled via the "nohz="
+kernel boot parameter).
+
+If the grace period ends just as the stall warning starts printing,
+there will be a spurious stall-warning message, which will include
+the following:
+
+	INFO: Stall ended before state dump start
+
+This is rare, but does happen from time to time in real life.  It is also
+possible for a zero-jiffy stall to be flagged in this case, depending
+on how the stall warning and the grace-period initialization happen to
+interact.  Please note that it is not possible to entirely eliminate this
+sort of false positive without resorting to things like stop_machine(),
+which is overkill for this sort of problem.
+
+If all CPUs and tasks have passed through quiescent states, but the
+grace period has nevertheless failed to end, the stall-warning splat
+will include something like the following:
+
+	All QSes seen, last rcu_preempt kthread activity 23807 (4297905177-4297881370), jiffies_till_next_fqs=3, root ->qsmask 0x0
+
+The "23807" indicates that it has been more than 23 thousand jiffies
+since the grace-period kthread ran.  The "jiffies_till_next_fqs"
+indicates how frequently that kthread should run, giving the number
+of jiffies between force-quiescent-state scans, in this case three,
+which is way less than 23807.  Finally, the root rcu_node structure's
+->qsmask field is printed, which will normally be zero.
 
 If the relevant grace-period kthread has been unable to run prior to
 the stall warning, the following additional line is printed:
