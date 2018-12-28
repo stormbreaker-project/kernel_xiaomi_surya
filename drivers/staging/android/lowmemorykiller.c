@@ -449,7 +449,7 @@ static int get_minfree_scalefactor(gfp_t gfp_mask)
 	unsigned long nr_pages = totalram_pages;
 
 	for_each_zone_zonelist(zone, z, zonelist, gfp_zone(gfp_mask))
-		nr_usable += zone->managed_pages;
+		nr_usable += zone_managed_pages(zone);
 
 	return max_t(int, 1, mult_frac(100, nr_usable, nr_pages));
 }
