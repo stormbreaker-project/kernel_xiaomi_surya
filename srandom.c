@@ -8,14 +8,18 @@
 #include <linux/proc_fs.h>          /* For /proc filesystem */
 #include <linux/seq_file.h>         /* For seq_print */
 #include <linux/mutex.h>
+#include <linux/delay.h>
+#include <linux/kthread.h>
 
-#define DRIVER_AUTHOR "Jonathan Senkerik <josenk@jintegrate.co>" 
+#define DRIVER_AUTHOR "Jonathan Senkerik <josenk@jintegrate.co>"
 #define DRIVER_DESC   "Improved random number generator."
-#define arr_RND_SIZE 67             /* Size of Array */
+#define arr_RND_SIZE 67             /* Size of Array.  Must be >= 64. (actual size used will be 64, anything greater is thrown away). Recommended prime.*/
 #define num_arr_RND  16             /* Number of 512b Array (Must be power of 2) */
 #define sDEVICE_NAME "srandom"      /* Dev name as it appears in /proc/devices */
-#define AppVERSION "1.35"
+#define AppVERSION "1.37.0"
+#define THREAD_SLEEP_VALUE 7        /* Amount of time worker thread should sleep between each operation. Recommended prime */
 #define PAID 0
+// #define DEBUG 0
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
     #define COPY_TO_USER raw_copy_to_user
@@ -41,7 +45,7 @@
  */
 
 /*
- * Prototypes 
+ * Prototypes
  */
 static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
@@ -49,20 +53,24 @@ static ssize_t sdevice_read(struct file *, char *, size_t, loff_t *);
 static ssize_t sdevice_write(struct file *, const char *, size_t, loff_t *);
 static uint64_t xorshft64(void);
 static uint64_t xorshft128(void);
+static int nextbuffer(void);
 static void update_sarray(int);
-static void seed_PRND(void);
+static void seed_PRND_s0(void);
+static void seed_PRND_s1(void);
+static void seed_PRND_x(void);
 static int proc_read(struct seq_file *m, void *v);
 static int proc_open(struct inode *inode, struct  file *file);
+static int work_thread(void *data);
 
 
 /*
  * Global variables are declared as static, so are global within the file.
  */
 static struct file_operations sfops = {
-        .owner = THIS_MODULE,
-        .open = device_open,
-        .read = sdevice_read,
-        .write = sdevice_write,
+        .owner   = THIS_MODULE,
+        .open    = device_open,
+        .read    = sdevice_read,
+        .write   = sdevice_write,
         .release = device_release
 };
 
@@ -73,58 +81,62 @@ static struct miscdevice srandom_dev = {
 };
 
 static const struct file_operations proc_fops = {
-        .owner = THIS_MODULE,
-        .read = seq_read,
-        .open = proc_open,
-        .llseek = seq_lseek,
+        .owner   = THIS_MODULE,
+        .read    = seq_read,
+        .open    = proc_open,
+        .llseek  = seq_lseek,
         .release = single_release,
 };
 
 static struct mutex UpArr_mutex;
 static struct mutex Open_mutex;
 static struct mutex ArrBusy_mutex;
+static struct mutex UpPos_mutex;
+
+static struct task_struct *kthread;
 
 
 /*
  * Global variables
  */
-uint64_t x;                         /* Used for xorshft64 */
-uint64_t s[ 2 ];                    /* Used for xorshft128 */
-uint64_t (*sarr_RND)[num_arr_RND];  /* Array of Array of SECURE RND numbers */
-uint16_t CC_Busy_Flags = 0;         /* Binary Flags for Busy Arrays */
+uint64_t x;                             /* Used for xorshft64 */
+uint64_t s[ 2 ];                        /* Used for xorshft128 */
+uint64_t (*sarr_RND)[num_arr_RND + 1];  /* Array of Array of SECURE RND numbers */
+uint16_t CC_Busy_Flags = 0;             /* Binary Flags for Busy Arrays */
+int      CC_buffer_position = 0;        /* Array reserved to determine which buffer to use */
 uint64_t tm_seed;
 struct   timespec ts;
 
 /*
  * Global counters
  */
-int16_t sdev_open;                  /* srandom device current open count */
-int32_t sdev_openCount;             /* srandom device total open count */
+int16_t  sdev_open;                 /* srandom device current open count */
+int32_t  sdev_openCount;            /* srandom device total open count */
 uint64_t PRNGCount;                 /* Total generated (512byte) */
-
 
 
 /*
  * This function is called when the module is loaded
  */
-int mod_init(void) 
+int mod_init(void)
 {
         int16_t C,CC;
-        int ret;
+        int     ret;
 
-        sdev_open = 0;
+        sdev_open      = 0;
         sdev_openCount = 0;
-        PRNGCount = 0;
+        PRNGCount      = 0;
 
         mutex_init(&UpArr_mutex);
         mutex_init(&Open_mutex);
         mutex_init(&ArrBusy_mutex);
+        mutex_init(&UpPos_mutex);
 
         /*
          * Entropy Initialize #1
          */
         getnstimeofday(&ts);
-        x = (uint64_t)ts.tv_nsec;
+        x    = (uint64_t)ts.tv_nsec;
         s[0] = xorshft64();
         s[1] = xorshft64();
 
@@ -132,20 +144,20 @@ int mod_init(void)
          * Register char device
          */
         ret = misc_register(&srandom_dev);
-        if (ret) 
-                printk(KERN_INFO "/dev/srandom driver registion failed..\n");
-        else 
-                printk(KERN_INFO "/dev/srandom driver registered..\n");
-        
+        if (ret)
+                printk(KERN_INFO "[srandom] mod_init /dev/srandom driver registion failed..\n");
+        else
+                printk(KERN_INFO "[srandom] mod_init /dev/srandom driver registered..\n");
+
         /*
          * Create /proc/srandom
          */
-        if (! proc_create("srandom", 0, NULL, &proc_fops)) 
-                printk(KERN_INFO "/proc/srandom registion failed..\n");
-        else 
-                printk(KERN_INFO "/proc/srandom registion regisered..\n");
+        if (! proc_create("srandom", 0, NULL, &proc_fops))
+                printk(KERN_INFO "[srandom] mod_init /proc/srandom registion failed..\n");
+        else
+                printk(KERN_INFO "[srandom] mod_init /proc/srandom registion regisered..\n");
 
-        printk(KERN_INFO "Module version         : "AppVERSION"\n");
+        printk(KERN_INFO "[srandom] mod_init Module version         : "AppVERSION"\n");
         if (PAID == 0) {
                 printk(KERN_INFO "-----------------------:----------------------\n");
                 printk(KERN_INFO "Please support my work and efforts contributing\n");
@@ -163,49 +175,54 @@ int mod_init(void)
         }
 
 
-        sarr_RND = kmalloc(num_arr_RND * arr_RND_SIZE * sizeof(uint64_t), GFP_KERNEL);
+        sarr_RND = kmalloc((num_arr_RND + 1) * arr_RND_SIZE * sizeof(uint64_t), GFP_KERNEL);
         while (!sarr_RND) {
-                printk(KERN_INFO "[srandom] kmalloc failed to allocate initial memory.  retrying...\n");
-                sarr_RND = kmalloc(num_arr_RND * arr_RND_SIZE * sizeof(uint64_t), GFP_KERNEL);
+                printk(KERN_INFO "[srandom] mod_init kmalloc failed to allocate initial memory.  retrying...\n");
+                sarr_RND = kmalloc((num_arr_RND + 1) * arr_RND_SIZE * sizeof(uint64_t), GFP_KERNEL);
         }
 
         /*
          * Entropy Initialize #2
          */
-        getnstimeofday(&ts);
-        x = (x << 32) ^ (uint64_t)ts.tv_nsec;
-        seed_PRND();
+        seed_PRND_s0();
+        seed_PRND_s1();
+        seed_PRND_x();
 
         /*
          * Init the sarray
          */
-        for (CC = 0;CC < num_arr_RND;CC++) {
+        for (CC = 0;CC <= num_arr_RND ;CC++) {
                 for (C = 0;C <= arr_RND_SIZE;C++) {
                         sarr_RND[CC][C] = xorshft128();
                 }
                 update_sarray(CC);
         }
 
+        kthread = kthread_create(work_thread, NULL, "mykthread");
+        wake_up_process(kthread);
+
         return 0;
 }
 
-/* 
- * This function is called when the module is unloaded 
+/*
+ * This function is called when the module is unloaded
  */
-void mod_exit(void) 
+void mod_exit(void)
 {
+        kthread_stop(kthread);
+
         misc_deregister(&srandom_dev);
 
         remove_proc_entry("srandom", NULL);
 
-        printk(KERN_INFO "srandom deregisered..\n");
+        printk(KERN_INFO "[srandom] mod_exit srandom deregisered..\n");
 }
 
 
 /*
- * This function is alled when a process tries to open the device file. "dd if=/dev/srandom" 
+ * This function is alled when a process tries to open the device file. "dd if=/dev/srandom"
  */
-static int device_open(struct inode *inode, struct file *file) 
+static int device_open(struct inode *inode, struct file *file)
 {
         while (mutex_lock_interruptible(&Open_mutex));
 
@@ -214,18 +231,18 @@ static int device_open(struct inode *inode, struct file *file)
         mutex_unlock(&Open_mutex);
 
         #ifdef DEBUG
-        printk(KERN_INFO "[srandom] Called device_open (current open) :%d\n",sdev_open);
-        printk(KERN_INFO "[srandom] Called device_open (total open)   :%d\n",sdev_openCount);
+        printk(KERN_INFO "[srandom] device_open (current open) :%d\n",sdev_open);
+        printk(KERN_INFO "[srandom] device_open (total open)   :%d\n",sdev_openCount);
         #endif
 
         return 0;
 }
 
 
-/* 
+/*
  * Called when a process closes the device file.
  */
-static int device_release(struct inode *inode, struct file *file) 
+static int device_release(struct inode *inode, struct file *file)
 {
         while (mutex_lock_interruptible(&Open_mutex));
 
@@ -233,16 +250,16 @@ static int device_release(struct inode *inode, struct file *file)
         mutex_unlock(&Open_mutex);
 
         #ifdef DEBUG
-        printk(KERN_INFO "[srandom] Called device_release :%d\n", sdev_open); 
+        printk(KERN_INFO "[srandom] device_release (current open) :%d\n", sdev_open);
         #endif
 
         return 0;
 }
 
-/* 
+/*
  * Called when a process reads from the device.
  */
-static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t *ppos) 
+static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t *ppos)
 {
         char *new_buf;                 /* Buffer to hold numbers to send */
         int ret, counter;
@@ -250,7 +267,7 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
         size_t src_counter;
 
         #ifdef DEBUG
-        printk(KERN_INFO "[srandom] Called sdevice_read count:%zu\n", count);
+        printk(KERN_INFO "[srandom] sdevice_read count:%zu\n", count);
         #endif
 
         /*
@@ -261,17 +278,14 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
 
                 while (mutex_lock_interruptible(&ArrBusy_mutex));
 
-                CC = s[0] & (num_arr_RND -1);
+                //CC = s[0] & (num_arr_RND -1);
+                CC = nextbuffer();
                 while ((CC_Busy_Flags & 1 << CC) == (1 << CC)) {
                         CC += 1;
                         if (CC >= num_arr_RND) {
                                 CC = 0;
                         }
-                
-                #ifdef DEBUG2
-                printk(KERN_INFO "[srandom] CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC); 
-                #endif
-                } 
+                }
 
                 /*
                  * Mark the Arry as busy by setting the flag
@@ -289,6 +303,10 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                  */
                 update_sarray(CC);
 
+                #ifdef DEBUG2
+                printk(KERN_INFO "[srandom] small CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC);
+                #endif
+
                 /*
                  * Clear CC_Busy_Flag
                  */
@@ -304,10 +322,10 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                  */
                 new_buf = kmalloc((count + 512) * sizeof(uint8_t), GFP_KERNEL);
                 while (!new_buf) {
-                        printk(KERN_INFO "[srandom] kmalloc failed to allocate buffer.  retrying...\n");
+                        printk(KERN_INFO "[srandom] buffered kmalloc failed to allocate buffer.  retrying...\n");
                         new_buf = kmalloc((count + 512) * sizeof(uint8_t), GFP_KERNEL);
                 }
-  
+
                 counter = 0;
                 src_counter = 512;
                 ret = 0;
@@ -315,15 +333,16 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                 /*
                  * Select a RND array
                  */
-                while (mutex_lock_interruptible(&ArrBusy_mutex)); 
+                while (mutex_lock_interruptible(&ArrBusy_mutex));
 
-                CC = s[0] & (num_arr_RND -1);
+                //CC = s[0] & (num_arr_RND -1);
+                CC = nextbuffer();
                 while ((CC_Busy_Flags & 1 << CC) == (1 << CC)) {
                         CC = xorshft128() & (num_arr_RND -1);
                         #ifdef DEBUG2
-                        printk(KERN_INFO "[srandom] CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC); 
+                        printk(KERN_INFO "[srandom] buffered CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC);
                         #endif
-                } 
+                }
 
                 /*
                  * Mark the Arry as busy by setting the flag
@@ -343,7 +362,7 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                         update_sarray(CC);
 
                         #ifdef DEBUG2
-                        printk(KERN_INFO "[srandom] Called sdevice_read: COPT_TO_USER counter:%d count:%zu \n",\
+                        printk(KERN_INFO "[srandom] buffered COPT_TO_USER counter:%d count:%zu \n",\
                          counter, count);
                         #endif
 
@@ -362,16 +381,12 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                  * Send new_buf to device
                  */
                 ret = COPY_TO_USER(buf, new_buf, count);
-  
+
                 /*
                  * Free allocated memory
                  */
                 kfree(new_buf);
         }
-
-        #ifdef DEBUG2
-        printk(KERN_INFO "[srandom] Called sdevice_read: COPT_TO_USER counter:%d count:%zu \n", counter, count);
-        #endif
 
         /*
          * return how many chars we sent
@@ -383,14 +398,14 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
 /*
  * Called when someone tries to write to /dev/srandom device
  */
-static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos) 
+static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
 {
 
         char *newdata;
-        int ret;
+        int  ret;
 
         #ifdef DEBUG
-        printk(KERN_INFO "[srandom] Called sdevice_write count:%zu\n", count);
+        printk(KERN_INFO "[srandom] sdevice_write count:%zu\n", count);
         #endif
 
         /*
@@ -409,7 +424,7 @@ static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t c
         kfree(newdata);
 
         #ifdef DEBUG2
-        printk(KERN_INFO "[srandom] Called sdevice_write: COPT_FROM_USER count:%zu \n", count);
+        printk(KERN_INFO "[srandom] sdevice_write COPT_FROM_USER count:%zu \n", count);
         #endif
 
         return count;
@@ -420,7 +435,7 @@ static ssize_t sdevice_write(struct file *file, const char __user *buf, size_t c
 /*
  * Update the sarray with new random numbers
  */
-void update_sarray(int CC) 
+void update_sarray(int CC)
 {
         int16_t C;
         int64_t X, Y, Z1, Z2, Z3;
@@ -437,26 +452,26 @@ void update_sarray(int CC)
         Z3 = xorshft64();
         if ((Z1 & 1) == 0) {
                 #ifdef DEBUG
-                printk(KERN_INFO "[srandom] 0\n");
+                printk(KERN_INFO "[srandom] update_sarray 0\n");
                 #endif
 
                 for (C = 0;C < (arr_RND_SIZE -4) ;C = C + 4) {
                         X=xorshft128();
                         Y=xorshft128();
-                        sarr_RND[CC][C] = sarr_RND[CC][C + 1] ^ X ^ Y;
+                        sarr_RND[CC][C]     = sarr_RND[CC][C + 1] ^ X ^ Y;
                         sarr_RND[CC][C + 1] = sarr_RND[CC][C + 2] ^ Y ^ Z1;
                         sarr_RND[CC][C + 2] = sarr_RND[CC][C + 3] ^ X ^ Z2;
                         sarr_RND[CC][C + 3] = X ^ Y ^ Z3;
                 }
         } else {
                 #ifdef DEBUG
-                printk(KERN_INFO "[srandom] 1\n");
+                printk(KERN_INFO "[srandom] update_sarray 1\n");
                 #endif
 
                 for (C = 0;C < (arr_RND_SIZE -4) ;C = C + 4) {
                         X=xorshft128();
                         Y=xorshft128();
-                        sarr_RND[CC][C] = sarr_RND[CC][C + 1] ^ X ^ Z2;
+                        sarr_RND[CC][C]     = sarr_RND[CC][C + 1] ^ X ^ Z2;
                         sarr_RND[CC][C + 1] = sarr_RND[CC][C + 2] ^ X ^ Y;
                         sarr_RND[CC][C + 2] = sarr_RND[CC][C + 3] ^ Y ^ Z3;
                         sarr_RND[CC][C + 3] = X ^ Y ^ Z1;
@@ -466,39 +481,53 @@ void update_sarray(int CC)
         mutex_unlock(&UpArr_mutex);
 
         #ifdef DEBUG
-        printk(KERN_INFO "[srandom] C:%d, CC:%d\n", C, CC);
-        printk(KERN_INFO "[srandom] X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n", X, Y, Z1, Z2, Z3);
+        printk(KERN_INFO "[srandom] update_sarray CC:%d, X:%llu, Y:%llu, Z1:%llu, Z2:%llu, Z3:%llu,\n", CC, X, Y, Z1, Z2, Z3);
         #endif
+
 }
-
-
 
 
 /*
- * Seed xorshft128
+ *  Seeding the xorshft's
  */
-void seed_PRND(void) 
+ void seed_PRND_s0(void)
+ {
+         getnstimeofday(&ts);
+         s[0] = (s[0] << 31) ^ (uint64_t)ts.tv_nsec;
+         #ifdef DEBUG
+         printk(KERN_INFO "[srandom] seed_PRNG_s0 x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
+         #endif
+ }
+void seed_PRND_s1(void)
 {
-        getnstimeofday(&ts);
-        s[0] = (s[0] << 31) ^ (uint64_t)ts.tv_nsec;
         getnstimeofday(&ts);
         s[1] = (s[1] << 24) ^ (uint64_t)ts.tv_nsec;
         #ifdef DEBUG
-        printk(KERN_INFO "[srandom] x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
+        printk(KERN_INFO "[srandom] seed_PRNG_s1 x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
         #endif
 }
+void seed_PRND_x(void)
+{
+        getnstimeofday(&ts);
+        x = (x << 32) ^ (uint64_t)ts.tv_nsec;
+        #ifdef DEBUG
+        printk(KERN_INFO "[srandom] seed_PRNG_x x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
+        #endif
+}
+
+
 
 /*
  * PRNG functions
  */
-uint64_t xorshft64(void) 
+uint64_t xorshft64(void)
 {
         uint64_t z = (x += 0x9E3779B97F4A7C15ULL);
         z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
         z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
         return z ^ (z >> 31);
 }
-uint64_t xorshft128(void) 
+uint64_t xorshft128(void)
 {
         uint64_t s1 = s[0];
         const uint64_t s0 = s[1];
@@ -508,9 +537,75 @@ uint64_t xorshft128(void)
 }
 
 /*
- * This function is call when reading /proc filesystem
+ *  This function returns the next sarray to use/read.
  */
-int proc_read(struct seq_file *m, void *v) 
+int nextbuffer(void)
+{
+        uint8_t position = (int)((CC_buffer_position * 4) / 64 );
+        uint8_t roll = CC_buffer_position % 16;
+        uint8_t nextbuffer = (sarr_RND[num_arr_RND][position] >> (roll * 4)) & (num_arr_RND -1);
+
+        #ifdef DEBUG3
+        printk(KERN_INFO "[srandom] nextbuffer raw:%lld, position:%d, roll:%d, nextbuffer:%d,  CC_buffer_position:%d\n", sarr_RND[num_arr_RND][position], position, roll, nextbuffer, CC_buffer_position);
+        #endif
+
+        while (mutex_lock_interruptible(&UpPos_mutex));
+        CC_buffer_position ++;
+        mutex_unlock(&UpPos_mutex);
+
+        if (CC_buffer_position >= 1021) {
+                while (mutex_lock_interruptible(&UpPos_mutex));
+                CC_buffer_position = 0;
+                mutex_unlock(&UpPos_mutex);
+
+                update_sarray(num_arr_RND);
+        }
+
+        return nextbuffer;
+}
+
+/*
+ *  The Kernel thread doing background tasks.
+ */
+int work_thread(void *data)
+{
+        int interation;
+
+        interation = 0;
+
+        while (!kthread_should_stop()) {
+                 #ifdef DEBUG
+                 printk(KERN_INFO "[srandom] sleeping thread:%d\n", counter);
+                 #endif
+
+                 if (interation <= num_arr_RND) {
+                   update_sarray(interation);
+                 }
+                 else if (interation == num_arr_RND + 1) {
+                   seed_PRND_s0();
+                 }
+                 else if (interation == num_arr_RND + 2) {
+                   seed_PRND_s1();
+                 }
+                 else if (interation == num_arr_RND + 3) {
+                   seed_PRND_x();
+                 }
+                 else {
+                   interation = -1;
+                 }
+
+                 interation++;
+                 ssleep(THREAD_SLEEP_VALUE);
+        }
+
+        do_exit(0);
+        return 0;
+ }
+
+/*
+ * This function is called when reading /proc filesystem
+ */
+int proc_read(struct seq_file *m, void *v)
 {
         seq_printf(m, "-----------------------:----------------------\n");
         seq_printf(m, "Device                 : /dev/"sDEVICE_NAME"\n");
@@ -536,7 +631,7 @@ int proc_read(struct seq_file *m, void *v)
         return 0;
 }
 
-int proc_open(struct inode *inode, struct  file *file) 
+int proc_open(struct inode *inode, struct  file *file)
 {
         return single_open(file, proc_read, NULL);
 }

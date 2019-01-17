@@ -3,33 +3,34 @@ Introduction
 
 srandom is a Linux kernel module that can be used to replace the built-in /dev/urandom & /dev/random device files.  It is secure and VERY fast.   My tests show it over 150x faster then /dev/urandom.   It should compile and install on any Linux 3.10+ kernel.  It passes all the randomness tests using the dieharder tests.
 
-srandom was created as an improvement to the built-in random number generators.  I wanted a much faster random number generator to wipe hard disks.  Through many hours of testing and trial-and-error, I came up with an algorithm that is many times faster than urandom, but still produces excellent random numbers.  It produces random numbers faster then the speed of hdisk writes.   The built-in generators (/dev/random and /dev/urandom) are technically not flawed.  /dev/random (the true random number generator) is BLOCKED most of the time waiting for more entropy.  If you are running your Linux in a VM, /dev/random is basically unusable.  /dev/urandom is unblocked, but still very slow. 
+srandom was created as an improvement to the built-in random number generators.  I wanted a much faster random number generator to wipe ssd disks.  Through many hours of testing and trial-and-error, I came up with an algorithm that is many times faster than urandom, but still produces excellent random numbers.  You can wipe multiple SSDs at the same time.   The built-in generators (/dev/random and /dev/urandom) are technically not flawed.  /dev/random (the true random number generator) is BLOCKED most of the time waiting for more entropy.  If you are running your Linux in a VM, /dev/random is basically unusable.  /dev/urandom is unblocked, but still very slow.
 
 
 What is the most important part of random numbers?  Unpredictability!
 
 srandom includes all these features to make it's generator produce the most unpredictable/random numbers.
-  * srandom uses two separate and different 64bit PRNGs.
-  * srandom uses two different algorithms to XOR the the 64bit PSRNGs together.
-  * srandom uses two separate seeds.
-  * srandom seeds the PSRNGs twice on module load.
-  * srandom uses 16 x 512byte buffers and outputs them randomly. 
-  * srandom throws away a small amount of data. 
+  * It uses two separate and different 64bit PRNGs.
+  * There are two different algorithms to XOR the the 64bit PSRNGs together.
+  * srandom seeds and re-seeds the three separate seeds using nano timer.
+  * The module seeds the PSRNGs twice on module init.
+  * It uses 16 x 512byte buffers and outputs them randomly.
+  * There is a separate kernel thread that constantly updates the buffers and seeds.
+  * srandom throws away a small amount of data.
 
-The best part of srandom is it's effeciency and very high speed...  I tested many PSRNGs and found two that worked very fast and had a good distribution of numbers.  Two to three 64bit numbers are combined using XOR which is also very fast.  The results is unpredictable and very high speed generation of numbers.
+The best part of srandom is it's efficiency and very high speed...  I tested many PSRNGs and found two that worked very fast and had a good distribution of numbers.  Two or three 64bit numbers are XORed.  The results is unpredictable and very high speed generation of numbers.
 
 
 Why do I need this?
 -------------------
 
-You want to use srandom to provide your applications with the fastest and unpredictable source of random numbers.  Why would you want to block your applications while waiting for random numbers?  Run "lsof|grep random", just to see how many applications have the random number device open...  Any security type applications rely heavily on random numbers.  For example, Apache SSL (Secure Socket Level), PGP (Pretty Good Privacy), VPN (Virtual Private Networks).  All types of Encryption, Password seeds, Tokens would rely on a source of random number.  There is many examples at https://www.random.org/testimonials/.
+The best use-case is disk wiping.  However you could use srandom to provide your applications with the fastest and unpredictable source of random numbers.  Why would you want to block your applications while waiting for random numbers?  Run "lsof|grep random", just to see how many applications have the random number device open...  Any security type applications rely heavily on random numbers.  For example, Apache SSL (Secure Socket Level), PGP (Pretty Good Privacy), VPN (Virtual Private Networks).  All types of Encryption, Password seeds, Tokens would rely on a source of random number.  There is many examples at https://www.random.org/testimonials/.
 
 Compile and installation
 ------------------------
 
 To build & compile the kernel module.  A pre-req is "kernel-devel".  Use yum or apt to install.
 
-    make 
+    make
 
 To load the kernel module into the running kernel (temporary).
 
@@ -39,7 +40,7 @@ To unload the kernel module from the running kernel.
 
     make unload
 
-To install the kernel module on your system (persistant on reboot).
+To install the kernel module on your system (persistent on reboot).
 
     make install ; make load
 
@@ -51,9 +52,9 @@ To uninstall the kernel module from your system.
 Usage
 -----
 
-You can load the kernel module temporary, or you can install the kernel module to be persistant on reboot.
+You can load the kernel module temporary, or you can install the kernel module to be persistent on reboot.
 
-  * If you want to just test the kernel module, you should run "make load".  This will load the kernel module into the running kernel and create a /dev/srandom accessible to root only.   It can be removed with "make unload".   You can monitor the load process in /var/log/messages. 
+  * If you want to just test the kernel module, you should run "make load".  This will load the kernel module into the running kernel and create a /dev/srandom accessible to root only.   It can be removed with "make unload".   You can monitor the load process in /var/log/messages.
   * When you run "make install", the srandom kernel module is moved to /usr/lib/modules/.../kernel/drivers/.  If you run "make load" or reboot, the kernel module will be loaded into the running kernel, but now will replace the /dev/urandom device file.  The old /dev/urandom device is renamed (keeping it's inode number).  This allows any running process that had /dev/urandom to continue running without issues. All new requests for /dev/urandom will use the srandom kernel module.
   * Once the kernel module is loaded, you can access the module information through the /proc filesystem. For example:
 ```
@@ -79,7 +80,7 @@ srandom if functioning correctly
 /dev/urandom is LINKED to /dev/srandom (system is using srandom)
 
 ```
-  * To completely remove the srandom module, use "make uninstall".   Depending if there is processes accessing /dev/srandom, you may not be able to remove the module from the running kernel.   Try "make unload", if the module is busy, then a reboot is requied.
+  * To completely remove the srandom module, use "make uninstall".   Depending if there is processes accessing /dev/srandom, you may not be able to remove the module from the running kernel.   Try "make unload", if the module is busy, then a reboot is required.
 
 
 
@@ -87,7 +88,7 @@ srandom if functioning correctly
 Testing & performance
 ---------------------
 
-A simple dd command to read from the /dev/srandom device will display the performance of the generator.  The results below are typical from my system.  Of course, your performance will vary.
+A simple dd command to read from the /dev/srandom device will show performance of the generator.  The results below are typical from my system.  Of course, your performance will vary.
 
 
 The "Improved" srandom number generator
@@ -126,7 +127,7 @@ sys     4m37.923s
 
 
 
-The "Blocking" random number generator.  ( I pressed [CTRL-C] after 5 minutes and got 35 bytes!  If you really NEED to test this, You might need to leave this running for days, or weeks....)
+The "Blocking" random number generator.  ( I pressed [CTRL-C] after 5 minutes and got 35 bytes!  If you really NEED to test this, You might need to leave this running for days....)
 
 ```
 time dd if=/dev/random of=/dev/null count=64k bs=64k
@@ -141,16 +142,12 @@ sys     0m0.003s
 ```
 
 
-
-
-
-
 Testing randomness
 ------------------
 
 The most important part of the random number device file is that is produces random/unpredictable numbers.  The golden standard of testing randomness is the dieharder test suite (http://www.phy.duke.edu/~rgb/General/dieharder.php).  The dieharder tool with easily detect flawed random number generators.   After you install dieharder, use the following command to put /dev/srandom through the battery of tests.
 
-Just a note about some tests assessments that can randomly show as "WEAK"...  If the test is repeatedly "FAILED" or "WEAK",then that is a problem.  So, please retest a few times to verify if it passes. 
+Just a note about some tests assessments that can randomly show as "WEAK"...  If the test is repeatedly "FAILED" or "WEAK",then that is a problem.  So, please retest a few times to verify if it passes.
 
 
 ```
@@ -232,7 +229,7 @@ How to configure your apps
 
 
 
-Using /dev/srandom to securely wipe hard disks.
+Using /dev/srandom to securely wipe SSD disks.
 -----------------------------------------------
 
 
@@ -247,7 +244,7 @@ Using /dev/srandom to securely wipe hard disks.
 License
 -------
 
-Copyright (C) 2015 Jonathan Senkerik
+Copyright (C) 2019 Jonathan Senkerik
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
