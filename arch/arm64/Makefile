@@ -244,6 +244,12 @@ PHONY += dtbs dtbs_install
 dtbs: prepare scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts
 
+ifeq ($(CONFIG_BUILD_ARM64_EMBEDDED_DTB),y)
+$(obj)/kernel/embedded-dtb.c: dtbs dtbo.img
+	$(Q)$(MAKE) $(build)=$(boot) $(obj)/arch/arm64/boot/../kernel/embedded-dtb.c
+arch/arm64/kernel: $(obj)/kernel/embedded-dtb.c
+endif
+
 dtbs_install:
 	$(Q)$(MAKE) $(dtbinst)=$(boot)/dts
 

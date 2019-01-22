@@ -279,6 +279,10 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 	void *dt_virt = fixmap_remap_fdt(dt_phys);
 	const char *machine_name;
 
+#ifdef CONFIG_BUILD_ARM64_EMBEDDED_DTB
+	select_embedded_dt(dt_virt);
+#endif
+
 	if (!dt_virt || !early_init_dt_scan(dt_virt)) {
 		pr_crit("\n"
 			"Error: invalid device tree blob at physical address %pa (virtual address 0x%p)\n"

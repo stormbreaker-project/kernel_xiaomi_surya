@@ -1430,6 +1430,12 @@ config BUILD_ARM64_APPENDED_DTB_IMAGE_NAMES
 	  Space separated list of names of dtbs to append when
 	  building a concatenated Image.gz-dtb.
 
+config BUILD_ARM64_EMBEDDED_DTB
+	bool "Embed DTB into kernel image"
+	depends on OF
+	help
+	  Embed DTB directly into kernel image and ignore DTB from bootloader.
+
 choice
 	prompt "Kernel compression method"
 	default BUILD_ARM64_KERNEL_COMPRESSION_GZIP
