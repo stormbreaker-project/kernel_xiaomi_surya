@@ -12,7 +12,7 @@ common-objects	:= $(addprefix libufdt/,$(common-objects))
 ufdt_apply_overlay-objs := libufdt/tests/src/ufdt_overlay_test_app.o $(common-objects)
 extract_dtb-objs := libufdt/tests/src/extract_dtb.o $(common-objects)
 
-HOSTCFLAGS_LIBUFDT := -I$(src)/libufdt/include -I$(src)/libufdt/sysdeps/include -std=c99 -Wno-missing-prototypes -Wno-strict-prototypes -Wno-format
+HOSTCFLAGS_LIBUFDT := -I$(src)/libufdt/include -I$(src)/libufdt/sysdeps/include -std=c99 -Wno-missing-prototypes -Wno-strict-prototypes -Wno-format -I$(src)/../dtc-aosp/dtc/libfdt
 HOSTCFLAGS_ufdt_convert.o := $(HOSTCFLAGS_LIBUFDT)
 HOSTCFLAGS_ufdt_node.o := $(HOSTCFLAGS_LIBUFDT)
 HOSTCFLAGS_ufdt_node_pool.o := $(HOSTCFLAGS_LIBUFDT)
