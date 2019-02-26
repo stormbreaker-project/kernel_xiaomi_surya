@@ -977,7 +977,7 @@ void __init trap_init(void)
 {
 	register_kernel_break_hook(&bug_break_hook);
 #ifdef CONFIG_KASAN_SW_TAGS
-	register_break_hook(&kasan_break_hook);
+	register_kernel_break_hook(&kasan_break_hook);
 #endif
 	register_kernel_break_hook(&refcount_break_hook);
 }
