@@ -213,7 +213,8 @@ struct compact_control {
 	unsigned long migrate_pfn;	/* isolate_migratepages search base */
 	unsigned long last_migrated_pfn;/* Not yet flushed page being freed */
 	unsigned long fast_start_pfn;	/* a pfn to start linear scan from */
-	unsigned int fast_search_fail;	/* failures to use free list searches */
+	unsigned short fast_search_fail;/* failures to use free list searches */
+	short search_order;		/* order to start a fast search at */
 	const gfp_t gfp_mask;		/* gfp mask of a direct compactor */
 	int order;			/* order a direct compactor needs */
 	int migratetype;		/* migratetype of direct compactor */
