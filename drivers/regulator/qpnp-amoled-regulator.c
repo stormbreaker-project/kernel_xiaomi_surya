@@ -598,6 +598,7 @@ static struct platform_driver qpnp_amoled_regulator_driver = {
 	.driver		= {
 		.name		= QPNP_AMOLED_REGULATOR_DRIVER_NAME,
 		.of_match_table	= amoled_match_table,
+		.probe_type	= PROBE_FORCE_SYNCHRONOUS,
 	},
 	.probe		= qpnp_amoled_regulator_probe,
 	.remove		= qpnp_amoled_regulator_remove,
