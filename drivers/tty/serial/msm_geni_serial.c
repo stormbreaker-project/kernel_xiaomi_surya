@@ -593,6 +593,11 @@ static int vote_clock_off(struct uart_port *uport)
 	}
 	wait_for_transfers_inflight(uport);
 	port->ioctl_count--;
+	if (port->ioctl_count < 0) {
+		dev_err(uport->dev, "%s: ioctl_count < 0(%d), fixing it to 0\n",
+				__func__, port->ioctl_count);
+		port->ioctl_count = 0;
+	}
 	msm_geni_serial_power_off(uport);
 	usage_count = atomic_read(&uport->dev->power.usage_count);
 	IPC_LOG_MSG(port->ipc_log_pwr, "%s:%s ioctl:%d usage_count:%d\n",
