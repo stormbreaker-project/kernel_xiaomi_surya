@@ -676,7 +676,7 @@ static int osm_cpufreq_cpu_init(struct cpufreq_policy *policy)
 			table[i].frequency = (XO_RATE * lval) / 1000;
 		table[i].driver_data = table[i].frequency;
 
-		if (core_count == SINGLE_CORE_COUNT)
+		if (core_count == SINGLE_CORE_COUNT || table[i].frequency < 576000)
 			table[i].frequency = CPUFREQ_ENTRY_INVALID;
 
 		/* Two of the same frequencies means end of table */
