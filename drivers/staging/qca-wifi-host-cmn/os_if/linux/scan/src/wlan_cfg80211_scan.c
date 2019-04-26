@@ -43,6 +43,7 @@
 #ifdef FEATURE_WLAN_DIAG_SUPPORT
 #include "host_diag_core_event.h"
 #endif
+#define MAX_CHANNEL (NUM_24GHZ_CHANNELS + NUM_5GHZ_CHANNELS)
 
 static const
 struct nla_policy scan_policy[QCA_WLAN_VENDOR_ATTR_SCAN_MAX + 1] = {
@@ -398,8 +399,8 @@ int wlan_cfg80211_sched_scan_start(struct wlan_objmgr_vdev *vdev,
 	struct pno_scan_req_params *req;
 	int i, j, ret = 0;
 	QDF_STATUS status;
-	uint8_t num_chan = 0;
 	uint16_t chan_freq;
+	uint8_t num_chan = 0, channel;
 	struct wlan_objmgr_pdev *pdev = wlan_vdev_get_pdev(vdev);
 	struct wlan_objmgr_psoc *psoc;
 	uint32_t valid_ch[SCAN_PNO_MAX_NETW_CHANNELS_EX] = {0};
@@ -452,12 +453,6 @@ int wlan_cfg80211_sched_scan_start(struct wlan_objmgr_vdev *vdev,
 		int len = 0;
 		bool ap_or_go_present = wlan_cfg80211_is_ap_go_present(psoc);
 
-		buff_len = (request->n_channels * 5) + 1;
-		chl = qdf_mem_malloc(buff_len);
-		if (!chl) {
-			ret = -ENOMEM;
-			goto error;
-		}
 		for (i = 0; i < request->n_channels; i++) {
 			chan_freq = request->channels[i]->center_freq;
 			if ((!enable_dfs_pno_chnl_scan) &&
@@ -478,20 +473,16 @@ int wlan_cfg80211_sched_scan_start(struct wlan_objmgr_vdev *vdev,
 								  &ok);
 				if (QDF_IS_STATUS_ERROR(status)) {
 					osif_err("DNBS check failed");
-					qdf_mem_free(chl);
-					chl = NULL;
 					ret = -EINVAL;
 					goto error;
 				}
 				if (!ok)
 					continue;
 			}
-			len += qdf_scnprintf(chl + len, buff_len - len, " %d", chan_freq);
+			len += snprintf(chl + len, 5, "%d ", channel);
 			valid_ch[num_chan++] = chan_freq;
 		}
 		osif_debug("Channel-List[%d]:%s", num_chan, chl);
-		qdf_mem_free(chl);
-		chl = NULL;
 		/* If all channels are DFS and dropped,
 		 * then ignore the PNO request
 		 */
