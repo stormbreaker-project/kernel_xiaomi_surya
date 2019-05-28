@@ -296,7 +296,7 @@ static int32_t adc_tm5_thr_update(struct adc_tm_sensor *sensor,
 	struct adc_tm_config tm_config;
 	struct adc_tm_chip *chip;
 
-	ret = adc_tm5_get_btm_idx(chip,
+	ret = adc_tm5_get_btm_idx(sensor->chip,
 		sensor->btm_ch, &btm_chan_idx);
 	if (ret < 0) {
 		pr_err("Invalid btm channel idx\n");
