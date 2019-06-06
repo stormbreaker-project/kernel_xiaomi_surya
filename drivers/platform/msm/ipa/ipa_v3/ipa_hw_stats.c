@@ -1618,7 +1618,7 @@ int ipa_reset_all_drop_stats(void)
 int ipa_debugfs_init_stats(struct dentry *parent) { return 0; }
 #else
 #define IPA_MAX_MSG_LEN 4096
-static char dbg_buff[IPA_MAX_MSG_LEN];
+static char *dbg_buff;
 
 static ssize_t ipa_debugfs_reset_quota_stats(struct file *file,
 	const char __user *ubuf, size_t count, loff_t *ppos)
@@ -1628,12 +1628,12 @@ static ssize_t ipa_debugfs_reset_quota_stats(struct file *file,
 	int ret;
 
 	mutex_lock(&ipa3_ctx->lock);
-	if (sizeof(dbg_buff) < count + 1) {
+	if (IPA_MAX_MSG_LEN < count + 1) {
 		ret = -EFAULT;
 		goto bail;
 	}
 
-	missing = copy_from_user(dbg_buff, ubuf, min(sizeof(dbg_buff), count));
+	missing = ipa_safe_copy_from_user(dbg_buff, ubuf, count);
 	if (missing) {
 		ret = -EFAULT;
 		goto bail;
@@ -1727,12 +1727,12 @@ static ssize_t ipa_debugfs_reset_tethering_stats(struct file *file,
 	int ret;
 
 	mutex_lock(&ipa3_ctx->lock);
-	if (sizeof(dbg_buff) < count + 1) {
+	if (IPA_MAX_MSG_LEN < count + 1) {
 		ret = -EFAULT;
 		goto bail;
 	}
 
-	missing = copy_from_user(dbg_buff, ubuf, min(sizeof(dbg_buff), count));
+	missing = ipa_safe_copy_from_user(dbg_buff, ubuf, count);
 	if (missing) {
 		ret = -EFAULT;
 		goto bail;
@@ -1861,12 +1861,12 @@ static ssize_t ipa_debugfs_control_flt_rt_stats(struct file *file,
 	}
 
 	mutex_lock(&ipa3_ctx->lock);
-	if (sizeof(dbg_buff) < count + 1) {
+	if (IPA_MAX_MSG_LEN < count + 1) {
 		ret = -EFAULT;
 		goto bail;
 	}
 
-	missing = copy_from_user(dbg_buff, ubuf, min(sizeof(dbg_buff), count));
+	missing = ipa_safe_copy_from_user(dbg_buff, ubuf, count);
 	if (missing) {
 		ret = -EFAULT;
 		goto bail;
@@ -1962,12 +1962,12 @@ static ssize_t ipa_debugfs_reset_drop_stats(struct file *file,
 	int ret;
 
 	mutex_lock(&ipa3_ctx->lock);
-	if (sizeof(dbg_buff) < count + 1) {
+	if (IPA_MAX_MSG_LEN < count + 1) {
 		ret = -EFAULT;
 		goto bail;
 	}
 
-	missing = copy_from_user(dbg_buff, ubuf, min(sizeof(dbg_buff), count));
+	missing = ipa_safe_copy_from_user(dbg_buff, ubuf, count);
 	if (missing) {
 		ret = -EFAULT;
 		goto bail;
@@ -2166,6 +2166,10 @@ int ipa_debugfs_init_stats(struct dentry *parent)
 		return -EFAULT;
 	}
 
+	dbg_buff = kmalloc(IPA_MAX_MSG_LEN * sizeof(char), GFP_KERNEL);
+	if (!dbg_buff)
+		return -ENOMEM;
+
 	file = debugfs_create_file("quota", read_write_mode, dent, NULL,
 		&ipa3_quota_ops);
 	if (IS_ERR_OR_NULL(file)) {
@@ -2204,6 +2208,12 @@ int ipa_debugfs_init_stats(struct dentry *parent)
 	return 0;
 fail:
 	debugfs_remove_recursive(dent);
+	kfree(dbg_buff);
 	return -EFAULT;
+}
+
+void ipa_debugfs_remove_stats(void)
+{
+	kfree(dbg_buff);
 }
 #endif
