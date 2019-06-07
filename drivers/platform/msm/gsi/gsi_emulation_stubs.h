@@ -14,6 +14,6 @@
 # define _GSI_EMULATION_STUBS_H_
 
 # include <asm/barrier.h>
-# define __iowmb()       wmb() /* used in gsi.h */
+# include <asm/io.h>		/* for gsi.h */
 
 #endif /* #if !defined(_GSI_EMULATION_STUBS_H_) */
