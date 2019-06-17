@@ -871,7 +871,7 @@ int blk_queue_enter(struct request_queue *q, unsigned int op)
 		 */
 		smp_rmb();
 
-		wait_event(q->mq_freeze_wq,
+		wait_event_interruptible(q->mq_freeze_wq,
 			   (!atomic_read(&q->mq_freeze_depth) &&
 			   ((op & REQ_PREEMPT) ||
 			    !blk_queue_preempt_only(q))) ||
