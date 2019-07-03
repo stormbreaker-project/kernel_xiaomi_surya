@@ -105,6 +105,8 @@ static struct service_info service_data[AUDIO_NOTIFIER_MAX_SERVICES]
 	} }
 };
 
+bool audio_notif_drv_registered = false;
+
 /* Master list of all audio notifier clients */
 struct list_head   client_list;
 struct mutex       notifier_mutex;
@@ -541,6 +543,11 @@ int audio_notifier_register(char *client_name, int domain,
 	int ret;
 	struct client_data *client_data;
 
+	if (!audio_notif_drv_registered) {
+		pr_err("%s: driver is not ready. Deferring...\n", __func__);
+		return -EPROBE_DEFER;
+	}
+
 	if (client_name == NULL) {
 		pr_err("%s: client_name is NULL\n", __func__);
 		ret = -EINVAL;
@@ -609,6 +616,7 @@ static int __init audio_notifier_late_init(void)
 	if (!audio_notifer_is_service_enabled(AUDIO_NOTIFIER_PDR_SERVICE))
 		audio_notifer_reg_all_clients();
 
+	audio_notif_drv_registered = true;
 	mutex_unlock(&notifier_mutex);
 	return 0;
 }
