@@ -276,7 +276,6 @@ static void start_fault_timer(struct adreno_device *adreno_dev)
 static void _retire_timestamp(struct kgsl_drawobj *drawobj)
 {
 	struct kgsl_context *context = drawobj->context;
-	struct adreno_context *drawctxt = ADRENO_CONTEXT(context);
 	struct kgsl_device *device = context->device;
 
 	/*
@@ -294,18 +293,6 @@ static void _retire_timestamp(struct kgsl_drawobj *drawobj)
 
 	/* Retire pending GPU events for the object */
 	kgsl_process_event_group(device, &context->events);
-
-	/*
-	 * For A3xx we still get the rptr from the CP_RB_RPTR instead of
-	 * rptr scratch out address. At this point GPU clocks turned off.
-	 * So avoid reading GPU register directly for A3xx.
-	 */
-	if (adreno_is_a3xx(ADRENO_DEVICE(device)))
-		trace_adreno_cmdbatch_retired(drawobj, -1, 0, 0, drawctxt->rb,
-				0, 0);
-	else
-		trace_adreno_cmdbatch_retired(drawobj, -1, 0, 0, drawctxt->rb,
-			adreno_get_rptr(drawctxt->rb), 0);
 	kgsl_drawobj_destroy(drawobj);
 }
 
@@ -2308,7 +2295,6 @@ static void cmdobj_profile_ticks(struct adreno_device *adreno_dev,
 static void retire_cmdobj(struct adreno_device *adreno_dev,
 		struct kgsl_drawobj_cmd *cmdobj)
 {
-	struct adreno_dispatcher *dispatcher = &adreno_dev->dispatcher;
 	struct kgsl_drawobj *drawobj = DRAWOBJ(cmdobj);
 	struct adreno_context *drawctxt = ADRENO_CONTEXT(drawobj->context);
 	uint64_t start = 0, end = 0;
@@ -2320,21 +2306,6 @@ static void retire_cmdobj(struct adreno_device *adreno_dev,
 
 	if (test_bit(CMDOBJ_PROFILE, &cmdobj->priv))
 		cmdobj_profile_ticks(adreno_dev, cmdobj, &start, &end);
-
-	/*
-	 * For A3xx we still get the rptr from the CP_RB_RPTR instead of
-	 * rptr scratch out address. At this point GPU clocks turned off.
-	 * So avoid reading GPU register directly for A3xx.
-	 */
-	if (adreno_is_a3xx(adreno_dev))
-		trace_adreno_cmdbatch_retired(drawobj,
-			(int) dispatcher->inflight, start, end,
-			ADRENO_DRAWOBJ_RB(drawobj), 0, cmdobj->fault_recovery);
-	else
-		trace_adreno_cmdbatch_retired(drawobj,
-			(int) dispatcher->inflight, start, end,
-			ADRENO_DRAWOBJ_RB(drawobj),
-			adreno_get_rptr(drawctxt->rb), cmdobj->fault_recovery);
 
 	kgsl_drawobj_destroy(drawobj);
 }
