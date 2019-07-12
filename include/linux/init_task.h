@@ -154,6 +154,13 @@ extern struct cred init_cred;
 # define INIT_CGROUP_SCHED(tsk)
 #endif
 
+#ifdef CONFIG_SCHED_TUNE
+# define INIT_SCHED_TUNE(tsk)						\
+	.stune_idx = 0,
+#else
+# define INIT_SCHED_TUNE(tsk)
+#endif
+
 #ifdef CONFIG_PERF_EVENTS
 # define INIT_PERF_EVENTS(tsk)						\
 	.perf_event_mutex = 						\
@@ -252,6 +259,7 @@ extern struct cred init_cred;
 	.tasks		= LIST_HEAD_INIT(tsk.tasks),			\
 	INIT_PUSHABLE_TASKS(tsk)					\
 	INIT_CGROUP_SCHED(tsk)						\
+	INIT_SCHED_TUNE(tsk)						\
 	.ptraced	= LIST_HEAD_INIT(tsk.ptraced),			\
 	.ptrace_entry	= LIST_HEAD_INIT(tsk.ptrace_entry),		\
 	.real_parent	= &tsk,						\
