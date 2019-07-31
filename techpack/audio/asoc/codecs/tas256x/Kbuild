@@ -122,8 +122,3 @@ endif
 # Module information used by KBuild framework
 obj-$(CONFIG_SND_SOC_TAS256X) += tas256x_dlkm.o
 tas256x_dlkm-y := $(TAS256X_OBJS)
-
-
-
-# inject some build related information
-DEFINES += -DBUILD_TIMESTAMP=\"$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')\"
