@@ -1314,7 +1314,8 @@ void update_cpu_capabilities(const struct arm64_cpu_capabilities *caps,
  * Run through the enabled capabilities and enable() it on all active
  * CPUs
  */
-void __init enable_cpu_capabilities(const struct arm64_cpu_capabilities *caps)
+void __init enable_cpu_capabilities(const struct arm64_cpu_capabilities *caps,
+				   const char *info)
 {
 	for (; caps->matches; caps++) {
 		unsigned int num = caps->capability;
@@ -1326,6 +1327,9 @@ void __init enable_cpu_capabilities(const struct arm64_cpu_capabilities *caps)
 		static_branch_enable(&cpu_hwcap_keys[num]);
 
 		if (caps->enable) {
+			if (caps->desc)
+				pr_info("%s %s\n", info, caps->desc);
+
 			/*
 			 * Use stop_machine() as it schedules the work allowing
 			 * us to modify PSTATE, instead of on_each_cpu() which
@@ -1435,7 +1439,7 @@ void check_local_cpu_capabilities(void)
 static void __init setup_feature_capabilities(void)
 {
 	update_cpu_capabilities(arm64_features, "detected feature:");
-	enable_cpu_capabilities(arm64_features);
+	enable_cpu_capabilities(arm64_features, "enabling feature:");
 }
 
 DEFINE_STATIC_KEY_FALSE(arm64_const_caps_ready);

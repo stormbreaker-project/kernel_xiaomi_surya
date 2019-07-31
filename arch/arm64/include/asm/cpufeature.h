@@ -233,7 +233,8 @@ void __init setup_cpu_features(void);
 
 void update_cpu_capabilities(const struct arm64_cpu_capabilities *caps,
 			    const char *info);
-void enable_cpu_capabilities(const struct arm64_cpu_capabilities *caps);
+void enable_cpu_capabilities(const struct arm64_cpu_capabilities *caps,
+			    const char *info);
 void check_local_cpu_capabilities(void);
 
 void update_cpu_errata_workarounds(void);

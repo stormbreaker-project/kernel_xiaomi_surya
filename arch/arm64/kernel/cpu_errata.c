@@ -698,5 +698,5 @@ void update_cpu_errata_workarounds(void)
 
 void __init enable_errata_workarounds(void)
 {
-	enable_cpu_capabilities(arm64_errata);
+	enable_cpu_capabilities(arm64_errata, "enabling workaround for");
 }
