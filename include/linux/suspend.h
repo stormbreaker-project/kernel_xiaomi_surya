@@ -190,8 +190,10 @@ struct platform_suspend_ops {
 struct platform_s2idle_ops {
 	int (*begin)(void);
 	int (*prepare)(void);
+	int (*prepare_late)(void);
 	void (*wake)(void);
 	void (*sync)(void);
+	void (*restore_early)(void);
 	void (*restore)(void);
 	void (*end)(void);
 };
