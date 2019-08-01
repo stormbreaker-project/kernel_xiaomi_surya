@@ -555,6 +555,7 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 			   MIDR_CPU_VAR_REV(3, 0)),
 	},
 	{
+		.desc = "ARM erratum 1286807",
 		.capability = ARM64_WORKAROUND_REPEAT_TLBI,
 		MIDR_RANGE(MIDR_KRYO4G,
 			   MIDR_CPU_VAR_REV(12, 14),
@@ -577,54 +578,65 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 #endif
 #ifdef CONFIG_HARDEN_BRANCH_PREDICTOR
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_CORTEX_A57),
 		.enable = enable_smccc_arch_workaround_1,
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_CORTEX_A72),
 		.enable = enable_smccc_arch_workaround_1,
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_CORTEX_A73),
 		.enable = enable_smccc_arch_workaround_1,
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_CORTEX_A75),
 		.enable = enable_smccc_arch_workaround_1,
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_QCOM_FALKOR_V1),
 		.enable = qcom_enable_link_stack_sanitization,
 	},
 	{
+		.desc = "Spectre variant 4",
 		.capability = ARM64_HARDEN_BP_POST_GUEST_EXIT,
 		MIDR_ALL_VERSIONS(MIDR_QCOM_FALKOR_V1),
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_QCOM_FALKOR),
 		.enable = qcom_enable_link_stack_sanitization,
 	},
 	{
+		.desc = "Spectre variant 4",
 		.capability = ARM64_HARDEN_BP_POST_GUEST_EXIT,
 		MIDR_ALL_VERSIONS(MIDR_QCOM_FALKOR),
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_BRCM_VULCAN),
 		.enable = enable_smccc_arch_workaround_1,
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_ALL_VERSIONS(MIDR_CAVIUM_THUNDERX2),
 		.enable = enable_smccc_arch_workaround_1,
 	},
 	{
+		.desc = "Spectre variant 2",
 		.capability = ARM64_HARDEN_BRANCH_PREDICTOR,
 		MIDR_RANGE(MIDR_KRYO4G,
 			   MIDR_CPU_VAR_REV(12, 14),
