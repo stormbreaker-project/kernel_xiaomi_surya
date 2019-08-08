@@ -9975,8 +9975,9 @@ static int ufshcd_config_vreg(struct device *dev,
 
 		ret = regulator_set_voltage(reg, min_uV, vreg->max_uV);
 		if (ret) {
-			dev_err(dev, "%s: %s set voltage failed, err=%d\n",
-					__func__, name, ret);
+			dev_err(dev,
+				"%s: %s set voltage failed, err=%d\n",
+				__func__, name, ret);
 			goto out;
 		}
 	}
