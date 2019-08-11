@@ -16,7 +16,7 @@
 #define arr_RND_SIZE 67             /* Size of Array.  Must be >= 64. (actual size used will be 64, anything greater is thrown away). Recommended prime.*/
 #define num_arr_RND  16             /* Number of 512b Array (Must be power of 2) */
 #define sDEVICE_NAME "srandom"      /* Dev name as it appears in /proc/devices */
-#define AppVERSION "1.37.0"
+#define AppVERSION "1.37.1"
 #define THREAD_SLEEP_VALUE 7        /* Amount of time worker thread should sleep between each operation. Recommended prime */
 #define PAID 0
 // #define DEBUG 0
@@ -278,7 +278,6 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
 
                 while (mutex_lock_interruptible(&ArrBusy_mutex));
 
-                //CC = s[0] & (num_arr_RND -1);
                 CC = nextbuffer();
                 while ((CC_Busy_Flags & 1 << CC) == (1 << CC)) {
                         CC += 1;
@@ -320,72 +319,84 @@ static ssize_t sdevice_read(struct file * file, char * buf, size_t count, loff_t
                 /*
                  * Allocate memory for new_buf
                  */
-                new_buf = kmalloc((count + 512) * sizeof(uint8_t), GFP_KERNEL);
-                while (!new_buf) {
-                        printk(KERN_INFO "[srandom] buffered kmalloc failed to allocate buffer.  retrying...\n");
-                        new_buf = kmalloc((count + 512) * sizeof(uint8_t), GFP_KERNEL);
-                }
+                long count_remaining = count;
+                #ifdef DEBUG4
+                printk(KERN_INFO "[srandom] count_remaining:%ld count:%ld\n", count_remaining, count);
+                #endif
 
-                counter = 0;
-                src_counter = 512;
-                ret = 0;
-
-                /*
-                 * Select a RND array
-                 */
-                while (mutex_lock_interruptible(&ArrBusy_mutex));
-
-                //CC = s[0] & (num_arr_RND -1);
-                CC = nextbuffer();
-                while ((CC_Busy_Flags & 1 << CC) == (1 << CC)) {
-                        CC = xorshft128() & (num_arr_RND -1);
-                        #ifdef DEBUG2
-                        printk(KERN_INFO "[srandom] buffered CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC);
+                while (count_remaining > 0) {
+                        #ifdef DEBUG4
+                        printk(KERN_INFO "[srandom] count_remaining:%ld count:%ld\n", count_remaining, count);
                         #endif
-                }
 
-                /*
-                 * Mark the Arry as busy by setting the flag
-                 */
-                CC_Busy_Flags += (1 << CC);
-                mutex_unlock(&ArrBusy_mutex);
+                        new_buf = kmalloc((count_remaining + 512) * sizeof(uint8_t), GFP_KERNEL);
+                        while (!new_buf) {
+                                printk(KERN_INFO "[srandom] buffered kmalloc failed to allocate buffer.  retrying...\n");
+                                new_buf = kmalloc((count_remaining + 512) * sizeof(uint8_t), GFP_KERNEL);
+                        }
 
-                /*
-                 * Loop until we reach count size.
-                 */
-                while (counter < (int)count) {
+                        counter = 0;
+                        src_counter = 512;
+                        ret = 0;
 
                         /*
-                         * Copy RND numbers to new_buf
+                         * Select a RND array
                          */
-                        memcpy(new_buf + counter, sarr_RND[CC], src_counter);
-                        update_sarray(CC);
+                        while (mutex_lock_interruptible(&ArrBusy_mutex));
 
-                        #ifdef DEBUG2
-                        printk(KERN_INFO "[srandom] buffered COPT_TO_USER counter:%d count:%zu \n",\
-                         counter, count);
-                        #endif
+                        CC = nextbuffer();
+                        while ((CC_Busy_Flags & 1 << CC) == (1 << CC)) {
+                                CC = xorshft128() & (num_arr_RND -1);
+                                #ifdef DEBUG2
+                                printk(KERN_INFO "[srandom] buffered CC_Busy_Flags:%d CC:%d\n", CC_Busy_Flags, CC);
+                                #endif
+                        }
 
-                        counter += 512;
+                        /*
+                         * Mark the Arry as busy by setting the flag
+                         */
+                        CC_Busy_Flags += (1 << CC);
+                        mutex_unlock(&ArrBusy_mutex);
+
+                        /*
+                         * Loop until we reach count_remaining size.
+                         */
+                        while (counter < (int)count_remaining) {
+
+                                /*
+                                 * Copy RND numbers to new_buf
+                                 */
+                                memcpy(new_buf + counter, sarr_RND[CC], src_counter);
+                                update_sarray(CC);
+
+                                #ifdef DEBUG2
+                                printk(KERN_INFO "[srandom] buffered COPT_TO_USER counter:%d count_remaining:%zu \n",\
+                                 counter, count_remaining);
+                                #endif
+
+                                counter += 512;
+                        }
+
+                        /*
+                         * Clear CC_Busy_Flag
+                         */
+                        while (mutex_lock_interruptible(&ArrBusy_mutex)) ;
+
+                        CC_Busy_Flags -= (1 << CC);
+                        mutex_unlock(&ArrBusy_mutex);
+
+                        /*
+                         * Send new_buf to device
+                         */
+                        ret = COPY_TO_USER(buf, new_buf, count_remaining);
+
+                        /*
+                         * Free allocated memory
+                         */
+                        kfree(new_buf);
+
+                        count_remaining = count_remaining - 1048576;
                 }
-
-                /*
-                 * Clear CC_Busy_Flag
-                 */
-                while (mutex_lock_interruptible(&ArrBusy_mutex)) ;
-
-                CC_Busy_Flags -= (1 << CC);
-                mutex_unlock(&ArrBusy_mutex);
-
-                /*
-                 * Send new_buf to device
-                 */
-                ret = COPY_TO_USER(buf, new_buf, count);
-
-                /*
-                 * Free allocated memory
-                 */
-                kfree(new_buf);
         }
 
         /*
@@ -574,9 +585,6 @@ int work_thread(void *data)
         interation = 0;
 
         while (!kthread_should_stop()) {
-                 #ifdef DEBUG
-                 printk(KERN_INFO "[srandom] sleeping thread:%d\n", counter);
-                 #endif
 
                  if (interation <= num_arr_RND) {
                    update_sarray(interation);
