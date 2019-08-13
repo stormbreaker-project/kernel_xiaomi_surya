@@ -1808,10 +1808,11 @@ static void inv_args_pre(struct smq_invoke_ctx *ctx)
 					DMA_BIDIRECTIONAL);
 				dma_buf_end_cpu_access(map->buf,
 					DMA_BIDIRECTIONAL);
-			} else
+			} else {
 				dmac_flush_range(
 					uint64_to_ptr(rpra[i].buf.pv), (char *)
 					uint64_to_ptr(rpra[i].buf.pv + 1));
+			}
 		}
 
 		end = (uintptr_t)uint64_to_ptr(rpra[i].buf.pv +
@@ -1822,9 +1823,10 @@ static void inv_args_pre(struct smq_invoke_ctx *ctx)
 					DMA_BIDIRECTIONAL);
 				dma_buf_end_cpu_access(map->buf,
 					DMA_BIDIRECTIONAL);
-			} else
+			} else {
 				dmac_flush_range((char *)end,
 					(char *)end + 1);
+			}
 		}
 	}
 }
@@ -2000,11 +2002,13 @@ static int fastrpc_internal_invoke(struct fastrpc_file *fl, uint32_t mode,
 			goto bail;
 	}
 
-	if (!fl->sctx->smmu.coherent) {
-		PERF(fl->profile, GET_COUNTER(perf_counter, PERF_INVARGS),
-		inv_args_pre(ctx);
-		PERF_END);
-	}
+	PERF(fl->profile, GET_COUNTER(perf_counter, PERF_INVARGS),
+	inv_args_pre(ctx);
+	PERF_END);
+
+	PERF(fl->profile, GET_COUNTER(perf_counter, PERF_INVARGS),
+	inv_args(ctx);
+	PERF_END);
 
 	PERF(fl->profile, GET_COUNTER(perf_counter, PERF_LINK),
 	VERIFY(err, 0 == fastrpc_invoke_send(ctx, kernel, invoke->handle));
@@ -2023,8 +2027,7 @@ static int fastrpc_internal_invoke(struct fastrpc_file *fl, uint32_t mode,
 	}
 
 	PERF(fl->profile, GET_COUNTER(perf_counter, PERF_INVARGS),
-	if (!fl->sctx->smmu.coherent)
-		inv_args(ctx);
+	inv_args(ctx);
 	PERF_END);
 
 	VERIFY(err, 0 == (err = ctx->retval));
