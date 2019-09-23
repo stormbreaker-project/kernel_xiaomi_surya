@@ -8256,6 +8256,7 @@ static int find_energy_efficient_cpu(struct sched_domain *sd,
 	bool about_to_idle = (cpu_rq(cpu)->nr_running < 2);
 
 	fbt_env.fastpath = 0;
+	fbt_env.need_idle = 0;
 
 	if (trace_sched_task_util_enabled())
 		start_t = sched_clock();
