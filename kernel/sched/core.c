@@ -3284,6 +3284,21 @@ struct preempt_store {
 };
 
 DEFINE_PER_CPU(struct preempt_store, the_ps);
+
+/*
+ * This is only called from __schedule() upon context switch.
+ *
+ * schedule() calls __schedule() with preemption disabled.
+ * if we had entered idle and exiting idle now, reset the preemption
+ * tracking otherwise we may think preemption is disabled the whole time
+ * when the non idle task re-enables the preemption in schedule().
+ */
+static inline void preempt_latency_reset(void)
+{
+	if (is_idle_task(this_rq()->curr))
+		this_cpu_ptr(&the_ps)->ts = 0;
+}
+
 /*
  * If the value passed in is equal to the current preempt count
  * then we just disabled preemption. Start timing the latency.
@@ -3339,7 +3354,7 @@ static inline void preempt_latency_stop(int val)
 	if (preempt_count() == val) {
 		struct preempt_store *ps = &per_cpu(the_ps,
 				raw_smp_processor_id());
-		u64 delta = sched_clock() - ps->ts;
+		u64 delta = ps->ts ? (sched_clock() - ps->ts) : 0;
 
 		/*
 		 * Trace preempt disable stack if preemption
@@ -3378,6 +3393,7 @@ NOKPROBE_SYMBOL(preempt_count_sub);
 #else
 static inline void preempt_latency_start(int val) { }
 static inline void preempt_latency_stop(int val) { }
+static inline void preempt_latency_reset(void) { }
 #endif
 
 static inline unsigned long get_preempt_disable_ip(struct task_struct *p)
@@ -3598,6 +3614,7 @@ static void __sched notrace __schedule(bool preempt)
 		if (!prev->on_rq)
 			prev->last_sleep_ts = wallclock;
 
+		preempt_latency_reset();
 		update_task_ravg(prev, rq, PUT_PREV_TASK, wallclock, 0);
 		update_task_ravg(next, rq, PICK_NEXT_TASK, wallclock, 0);
 		rq->nr_switches++;
