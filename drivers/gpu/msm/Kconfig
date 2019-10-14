@@ -24,3 +24,13 @@ config QCOM_ADRENO_DEFAULT_GOVERNOR
 config QCOM_KGSL_IOMMU
 	bool
 	default y if QCOM_KGSL && (MSM_IOMMU || ARM_SMMU)
+
+config QCOM_KGSL_IOCOHERENCY_DEFAULT
+	bool "Enable I/O coherency on cached GPU memory by default"
+	depends on QCOM_KGSL
+	default y
+	help
+	 Say 'Y' here to enable I/O cache coherency by default on targets that
+	 support hardware I/O coherency. If enabled all cached GPU memory
+	 will use I/O coherency regardless of the user flags. If not enabled
+	 the user can still selectively enable I/O coherency with a flag.
