@@ -177,7 +177,7 @@ unsigned int sched_get_cpu_util(int cpu)
 	capacity = capacity_orig_of(cpu);
 
 #ifdef CONFIG_SCHED_WALT
-	if (!walt_disabled && sysctl_sched_use_walt_cpu_util) {
+	if (unlikely(!walt_disabled && sysctl_sched_use_walt_cpu_util)) {
 		util = rq->prev_runnable_sum + rq->grp_time.prev_runnable_sum;
 		util = div64_u64(util,
 				 sched_ravg_window >> SCHED_CAPACITY_SHIFT);
