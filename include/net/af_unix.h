@@ -41,7 +41,11 @@ struct unix_skb_parms {
 	u32			consumed;
 } __randomize_layout;
 
-#define UNIXCB(skb) 	(*(struct unix_skb_parms *)&((skb)->cb))
+struct scm_stat {
+	u32 nr_fds;
+};
+
+#define UNIXCB(skb)	(*(struct unix_skb_parms *)&((skb)->cb))
 
 #define unix_state_lock(s)	spin_lock(&unix_sk(s)->lock)
 #define unix_state_unlock(s)	spin_unlock(&unix_sk(s)->lock)
@@ -64,7 +68,8 @@ struct unix_sock {
 #define UNIX_GC_CANDIDATE	0
 #define UNIX_GC_MAYBE_CYCLE	1
 	struct socket_wq	peer_wq;
-	wait_queue_entry_t		peer_wake;
+	wait_queue_entry_t	peer_wake;
+	struct scm_stat		scm_stat;
 };
 
 static inline struct unix_sock *unix_sk(const struct sock *sk)
