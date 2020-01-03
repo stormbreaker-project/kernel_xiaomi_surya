@@ -836,9 +836,10 @@ static inline void ufshcd_cond_add_cmd_trace(struct ufs_hba *hba,
 			idn = hba->dev_cmd.query.request.upiu_req.idn;
 		}
 	}
-
+#ifdef CONFIG_SCSI_UFSHCD_CMD_LOGGING
 	__ufshcd_cmd_log(hba, (char *) str, cmd_type, tag, cmd_id, idn,
 			 lrbp->lun, lba, transfer_len);
+#endif
 }
 #else
 static inline void ufshcd_cond_add_cmd_trace(struct ufs_hba *hba,
