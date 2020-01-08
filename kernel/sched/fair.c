@@ -7003,15 +7003,6 @@ skip_spare:
 	return idlest;
 }
 
-/* CPU only has SCHED_IDLE tasks enqueued */
-static int sched_idle_cpu(int cpu)
-{
-	struct rq *rq = cpu_rq(cpu);
-
-	return unlikely(rq->nr_running == rq->cfs.idle_h_nr_running &&
-			rq->nr_running);
-}
-
 /*
  * find_idlest_group_cpu - find the idlest cpu among the cpus in group.
  */
