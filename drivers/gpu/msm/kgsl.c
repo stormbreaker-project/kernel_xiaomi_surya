@@ -28,6 +28,7 @@
 #include <linux/major.h>
 #include <linux/io.h>
 #include <linux/mman.h>
+#include <linux/mm_types.h>
 #include <linux/sort.h>
 #include <linux/security.h>
 #include <linux/compat.h>
@@ -4589,10 +4590,6 @@ static unsigned long set_svm_area(struct file *file,
 	struct kgsl_process_private *private = dev_priv->process_priv;
 	unsigned long ret;
 
-	/* Make sure there isn't a vma conflict in the chosen range */
-	if (find_vma_intersection(current->mm, addr, addr + len - 1))
-		return -ENOMEM;
-
 	/*
 	 * Do additoinal constraints checking on the address. Passing MAP_FIXED
 	 * ensures that the address we want gets checked
@@ -4617,6 +4614,7 @@ static unsigned long get_svm_unmapped_area(struct file *file,
 	unsigned long align = get_align(entry);
 	unsigned long ret, iova;
 	u64 start = 0, end = 0;
+	struct vm_area_struct *vma;
 
 	if (flags & MAP_FIXED) {
 		/* Even fixed addresses need to obey alignment */
@@ -4645,9 +4643,14 @@ static unsigned long get_svm_unmapped_area(struct file *file,
 		len, align);
 
 	while (!IS_ERR_VALUE(iova)) {
-		ret = set_svm_area(file, entry, iova, len, flags);
-		if (!IS_ERR_VALUE(ret))
-			return ret;
+		vma = find_vma_intersection(current->mm, iova, iova + len - 1);
+		if (vma) {
+			iova = vma->vm_start;
+		} else {
+			ret = set_svm_area(file, entry, iova, len, flags);
+			if (!IS_ERR_VALUE(ret))
+				return ret;
+		}
 
 		iova = kgsl_mmu_find_svm_region(private->pagetable,
 			start, iova - 1, len, align);
