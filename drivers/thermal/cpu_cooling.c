@@ -302,7 +302,7 @@ static int cpufreq_thermal_notifier(struct notifier_block *nb,
 	unsigned long clipped_freq = ULONG_MAX, floor_freq = 0;
 	struct cpufreq_cooling_device *cpufreq_cdev;
 
-	if (event != CPUFREQ_THERMAL)
+	if (event != CPUFREQ_THERMAL || event != CPUFREQ_INCOMPATIBLE)
 		return NOTIFY_DONE;
 
 	mutex_lock(&cooling_list_lock);
