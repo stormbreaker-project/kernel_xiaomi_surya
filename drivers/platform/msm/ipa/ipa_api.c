@@ -3871,7 +3871,7 @@ int ipa_qdss_disconn_pipes(void)
 EXPORT_SYMBOL(ipa_qdss_disconn_pipes);
 
 static const struct dev_pm_ops ipa_pm_ops = {
-	.suspend_noirq = ipa_ap_suspend,
+	.suspend = ipa_ap_suspend,
 	.resume_noirq = ipa_ap_resume,
 };
 
