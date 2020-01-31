@@ -2706,8 +2706,6 @@ int gsi_write_wdi3_channel_scratch2_reg(unsigned long chan_hdl,
 
 	return GSI_STATUS_SUCCESS;
 }
-EXPORT_SYMBOL(gsi_write_wdi3_channel_scratch2_reg);
-
 
 int gsi_read_channel_scratch(unsigned long chan_hdl,
 		union __packed gsi_channel_scratch *val)
@@ -2772,8 +2770,6 @@ int gsi_read_wdi3_channel_scratch2_reg(unsigned long chan_hdl,
 
 	return GSI_STATUS_SUCCESS;
 }
-EXPORT_SYMBOL(gsi_read_wdi3_channel_scratch2_reg);
-
 
 int gsi_update_mhi_channel_scratch(unsigned long chan_hdl,
 		struct __packed gsi_mhi_channel_scratch mscr)
