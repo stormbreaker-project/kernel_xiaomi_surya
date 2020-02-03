@@ -70,11 +70,6 @@ struct sugov_cpu {
 	struct sugov_policy *sg_policy;
 	unsigned int cpu;
 
-	bool iowait_boost_pending;
-	unsigned int iowait_boost;
-	unsigned int iowait_boost_max;
-	u64 last_update;
-
 	struct sched_walt_cpu_load walt_load;
 
 	/* The fields below are only needed when sharing a policy. */
@@ -323,60 +318,6 @@ static void sugov_get_util(unsigned long *util, unsigned long *max, int cpu,
 	}
 }
 
-static void sugov_set_iowait_boost(struct sugov_cpu *sg_cpu, u64 time,
-				   unsigned int flags)
-{
-	if (flags & SCHED_CPUFREQ_IOWAIT) {
-		if (sg_cpu->iowait_boost_pending)
-			return;
-
-		sg_cpu->iowait_boost_pending = true;
-
-		if (sg_cpu->iowait_boost) {
-			sg_cpu->iowait_boost <<= 1;
-			if (sg_cpu->iowait_boost > sg_cpu->iowait_boost_max)
-				sg_cpu->iowait_boost = sg_cpu->iowait_boost_max;
-		} else {
-			sg_cpu->iowait_boost = sg_cpu->sg_policy->policy->min;
-		}
-	} else if (sg_cpu->iowait_boost) {
-		s64 delta_ns = time - sg_cpu->last_update;
-
-		/* Clear iowait_boost if the CPU apprears to have been idle. */
-		if (delta_ns > TICK_NSEC) {
-			sg_cpu->iowait_boost = 0;
-			sg_cpu->iowait_boost_pending = false;
-		}
-	}
-}
-
-static void sugov_iowait_boost(struct sugov_cpu *sg_cpu, unsigned long *util,
-			       unsigned long *max)
-{
-	unsigned int boost_util, boost_max;
-
-	if (!sg_cpu->iowait_boost)
-		return;
-
-	if (sg_cpu->iowait_boost_pending) {
-		sg_cpu->iowait_boost_pending = false;
-	} else {
-		sg_cpu->iowait_boost >>= 1;
-		if (sg_cpu->iowait_boost < sg_cpu->sg_policy->policy->min) {
-			sg_cpu->iowait_boost = 0;
-			return;
-		}
-	}
-
-	boost_util = sg_cpu->iowait_boost;
-	boost_max = sg_cpu->iowait_boost_max;
-
-	if (*util * boost_max < *max * boost_util) {
-		*util = boost_util;
-		*max = boost_max;
-	}
-}
-
 #ifdef CONFIG_NO_HZ_COMMON
 static bool sugov_cpu_is_busy(struct sugov_cpu *sg_cpu)
 {
@@ -453,8 +394,6 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 		return;
 
 	flags &= ~SCHED_CPUFREQ_RT_DL;
-	sugov_set_iowait_boost(sg_cpu, time, flags);
-	sg_cpu->last_update = time;
 
 	if (!sugov_should_update_freq(sg_policy, time))
 		return;
@@ -493,7 +432,6 @@ static void sugov_update_single(struct update_util_data *hook, u64 time,
 				sg_cpu->walt_load.pl,
 				sg_cpu->walt_load.rtgb_active, flags);
 
-		sugov_iowait_boost(sg_cpu, &util, &max);
 		sugov_walt_adjust(sg_cpu, &util, &max);
 		next_f = get_next_freq(sg_policy, util, max);
 		/*
@@ -520,21 +458,7 @@ static unsigned int sugov_next_freq_shared(struct sugov_cpu *sg_cpu, u64 time)
 	for_each_cpu(j, policy->cpus) {
 		struct sugov_cpu *j_sg_cpu = &per_cpu(sugov_cpu, j);
 		unsigned long j_util, j_max;
-		s64 delta_ns;
 
-		/*
-		 * If the CPU utilization was last updated before the previous
-		 * frequency update and the time elapsed between the last update
-		 * of the CPU utilization and the last frequency update is long
-		 * enough, don't take the CPU into account as it probably is
-		 * idle now (and clear iowait_boost for it).
-		 */
-		delta_ns = time - j_sg_cpu->last_update;
-		if (delta_ns > stale_ns) {
-			j_sg_cpu->iowait_boost = 0;
-			j_sg_cpu->iowait_boost_pending = false;
-			continue;
-		}
 		if (j_sg_cpu->flags & SCHED_CPUFREQ_DL) {
 			/* clear cache when it's bypassed */
 			sg_policy->cached_raw_freq = 0;
@@ -555,7 +479,6 @@ static unsigned int sugov_next_freq_shared(struct sugov_cpu *sg_cpu, u64 time)
 			max = j_max;
 		}
 
-		sugov_iowait_boost(j_sg_cpu, &util, &max);
 		sugov_walt_adjust(j_sg_cpu, &util, &max);
 	}
 
@@ -593,9 +516,6 @@ static void sugov_update_shared(struct update_util_data *hook, u64 time,
 	sg_cpu->util = util;
 	sg_cpu->max = max;
 	sg_cpu->flags = flags;
-
-	sugov_set_iowait_boost(sg_cpu, time, flags);
-	sg_cpu->last_update = time;
 
 	sugov_calc_avg_cap(sg_policy, sg_cpu->walt_load.ws,
 			   sg_policy->policy->cur);
@@ -1144,7 +1064,6 @@ static int sugov_start(struct cpufreq_policy *policy)
 		sg_cpu->cpu = cpu;
 		sg_cpu->sg_policy = sg_policy;
 		sg_cpu->flags = SCHED_CPUFREQ_DL;
-		sg_cpu->iowait_boost_max = policy->cpuinfo.max_freq;
 	}
 
 	for_each_cpu(cpu, policy->cpus) {
