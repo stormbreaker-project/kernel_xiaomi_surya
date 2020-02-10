@@ -45,8 +45,8 @@ struct blk_queue_stats;
 struct blk_stat_callback;
 struct keyslot_manager;
 
-#define BLKDEV_MIN_RQ	4
-#define BLKDEV_MAX_RQ	128	/* Default maximum */
+#define BLKDEV_MIN_RQ	1
+#define BLKDEV_MAX_RQ	32	/* Default maximum */
 
 /* Must be consisitent with blk_mq_poll_stats_bkt() */
 #define BLK_MQ_POLL_STATS_BKTS 16
@@ -663,7 +663,7 @@ struct request_queue {
 				 (1 << QUEUE_FLAG_STACKABLE)	|	\
 				 (1 << QUEUE_FLAG_WC)		|	\
 				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
-				 (1 << QUEUE_FLAG_SAME_FORCE))	|	\
+				 (1 << QUEUE_FLAG_SAME_FORCE))
 
 #define QUEUE_FLAG_MQ_DEFAULT	((1 << QUEUE_FLAG_STACKABLE)	|	\
 				 (1 << QUEUE_FLAG_SAME_COMP)	|	\
