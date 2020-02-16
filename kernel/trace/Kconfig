@@ -133,7 +133,6 @@ config TRACING
 
 config GENERIC_TRACER
 	bool "Generic Tracer"
-	select TRACING
 
 if TRACING
 
