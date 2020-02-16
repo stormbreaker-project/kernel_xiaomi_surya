@@ -133,7 +133,6 @@ config TRACING
 
 config GENERIC_TRACER
 	bool "Generic Tracer"
-	select TRACING
 
 #
 # Minimum requirements an architecture has to meet for us to
