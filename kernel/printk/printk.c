@@ -813,6 +813,7 @@ static ssize_t devkmsg_write(struct kiocb *iocb, struct iov_iter *from)
 			line = endp;
 			if (strstr(line, "healthd") ||
 				strstr(line, "cacert") ||
+				strcmp(line, "CP: Couldn't") ||
 				strncmp(line, "logd: Skipping", sizeof("logd: Skipping")))
 				goto free;
 		}
