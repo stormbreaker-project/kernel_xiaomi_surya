@@ -1687,7 +1687,7 @@ static ssize_t
 thermal_boost_show(struct device *dev,
 				      struct device_attribute *attr, char *buf)
 {
-	return snprintf(buf, PAGE_SIZE, boost_buf);
+	return snprintf(buf, 128, boost_buf);
 }
 
 static ssize_t
@@ -1695,7 +1695,7 @@ thermal_boost_store(struct device *dev,
 				      struct device_attribute *attr, const char *buf, size_t len)
 {
 	int ret;
-	ret = snprintf(boost_buf, PAGE_SIZE, buf);
+	ret = snprintf(boost_buf, 128, buf);
 	return len;
 }
 
