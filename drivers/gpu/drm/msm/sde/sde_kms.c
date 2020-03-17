@@ -81,8 +81,6 @@ static const char * const iommu_ports[] = {
 #define SDE_KMS_MODESET_LOCK_TIMEOUT_US 500
 #define SDE_KMS_MODESET_LOCK_MAX_TRIALS 20
 
-#define SDE_KMS_PM_QOS_CPU_DMA_LATENCY 300
-
 /**
  * sdecustom - enable certain driver customizations for sde clients
  *	Enabling this modifies the standard DRM behavior slightly and assumes
