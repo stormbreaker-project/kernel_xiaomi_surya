@@ -207,6 +207,7 @@ enum {
 	PERF_CDP_SETTING,
 	PERF_CPU_MASK,
 	PERF_CPU_DMA_LATENCY,
+	PERF_CPU_IRQ_LATENCY,
 	PERF_QOS_LUT_MACROTILE_QSEED,
 	PERF_SAFE_LUT_MACROTILE_QSEED,
 	PERF_NUM_MNOC_PORTS,
@@ -525,6 +526,8 @@ static struct sde_prop_type sde_perf_prop[] = {
 			PROP_TYPE_U32_ARRAY},
 	{PERF_CPU_MASK, "qcom,sde-qos-cpu-mask", false, PROP_TYPE_U32},
 	{PERF_CPU_DMA_LATENCY, "qcom,sde-qos-cpu-dma-latency", false,
+			PROP_TYPE_U32},
+	{PERF_CPU_IRQ_LATENCY, "qcom,sde-qos-cpu-irq-latency", false,
 			PROP_TYPE_U32},
 	{PERF_QOS_LUT_MACROTILE_QSEED, "qcom,sde-qos-lut-macrotile-qseed",
 			false, PROP_TYPE_U32_ARRAY},
@@ -3636,6 +3639,10 @@ static int sde_perf_parse_dt(struct device_node *np, struct sde_mdss_cfg *cfg)
 			prop_exists[PERF_CPU_DMA_LATENCY] ?
 			PROP_VALUE_ACCESS(prop_value, PERF_CPU_DMA_LATENCY, 0) :
 			DEFAULT_CPU_DMA_LATENCY;
+	cfg->perf.cpu_irq_latency =
+			prop_exists[PERF_CPU_IRQ_LATENCY] ?
+			PROP_VALUE_ACCESS(prop_value, PERF_CPU_IRQ_LATENCY, 0) :
+			PM_QOS_DEFAULT_VALUE;
 
 freeprop:
 	kfree(prop_value);
