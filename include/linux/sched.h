@@ -1719,6 +1719,8 @@ TASK_PFA_SET(SPEC_IB_FORCE_DISABLE, spec_ib_force_disable)
 TASK_PFA_TEST(LMK_WAITING, lmk_waiting)
 TASK_PFA_SET(LMK_WAITING, lmk_waiting)
 
+void mmdrop(struct mm_struct *mm)
+
 static inline void
 current_restore_flags(unsigned long orig_flags, unsigned long flags)
 {
