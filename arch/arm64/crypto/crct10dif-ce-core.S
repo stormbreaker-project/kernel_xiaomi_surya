@@ -72,7 +72,7 @@
 #include <asm/assembler.h>
 
 	.text
-	.cpu		generic+crypto
+	.arch		armv8-a+crypto
 
 	arg1_low32	.req	w0
 	arg2		.req	x1
