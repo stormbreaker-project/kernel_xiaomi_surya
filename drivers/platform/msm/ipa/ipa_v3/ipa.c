@@ -9130,6 +9130,7 @@ int ipa3_pci_drv_probe(
 	struct ipa_api_controller *api_ctrl,
 	const struct of_device_id *pdrv_match)
 {
+#ifdef CONFIG_PCI
 	int result;
 	struct ipa3_plat_drv_res *ipa_drv_res;
 	u32 bar0_offset;
@@ -9283,6 +9284,9 @@ int ipa3_pci_drv_probe(
 	}
 
 	return result;
+#else
+	return -EOPNOTSUPP;
+#endif
 }
 
 /*
