@@ -264,6 +264,7 @@ struct sde_kms {
 	cpumask_t irq_cpu_mask;
 	struct pm_qos_request pm_qos_irq_req;
 	struct irq_affinity_notify affinity_notify;
+	bool pm_qos_irq_req_en;
 };
 
 struct vsync_info {
@@ -670,4 +671,13 @@ int sde_kms_handle_recovery(struct drm_encoder *encoder);
 void sde_kms_release_splash_resource(struct sde_kms *sde_kms,
 		struct drm_crtc *crtc);
 
+/*
+ * sde_kms_update_pm_qos_irq_request - Update Qos vote for CPU receiving
+ *					display IRQ
+ * @sde_kms : pointer to sde_kms structure
+ * @enable : indicates request to be enabled or disabled
+ * @skip_lock : indicates if lock needs to be acquired
+ */
+void sde_kms_update_pm_qos_irq_request(struct sde_kms *sde_kms,
+	 bool enable, bool skip_lock);
 #endif /* __sde_kms_H__ */
