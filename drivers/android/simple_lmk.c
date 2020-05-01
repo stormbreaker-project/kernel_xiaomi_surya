@@ -187,7 +187,7 @@ static void scan_and_kill(unsigned long pages_needed)
 
 	/* Pretty unlikely but it can happen */
 	if (unlikely(!nr_victims)) {
-		pr_err("No processes available to kill!\n");
+		printk_once("No processes available to kill!\n");
 		return;
 	}
 
