@@ -51,6 +51,8 @@
 #include "ufs-debugfs.h"
 #include "ufs-qcom.h"
 
+void updata_mv_ufs(u16 w_manufacturer_id, u8 *inquiry, u64 qTotalTawDeviceCapacity);
+
 #ifdef CONFIG_DEBUG_FS
 
 static int ufshcd_tag_req_type(struct request *rq)
@@ -4849,6 +4851,11 @@ int ufshcd_get_hynix_hr(struct scsi_device *sdev, u8 *buf, u32 size)
 	return ret;
 }
 
+int ufshcd_read_geometry_desc(struct ufs_hba *hba, u8 *buf, u32 size)
+{
+    return ufshcd_read_desc(hba, QUERY_DESC_IDN_GEOMETRY, 0, buf, size);
+}
+
 int ufshcd_read_health_desc(struct ufs_hba *hba, u8 *buf, u32 size)
 {
 	return ufshcd_read_desc(hba, QUERY_DESC_IDN_HEALTH, 0, buf, size);
@@ -9042,6 +9049,7 @@ static int ufshcd_probe_hba(struct ufs_hba *hba)
 	struct ufs_dev_desc card = {0};
 	int ret;
 	ktime_t start = ktime_get();
+	u8 desc_buf[QUERY_DESC_GEOMETRY_DEF_SIZE + 8] = {};
 
 reinit:
 	ret = ufshcd_link_startup(hba);
@@ -9115,6 +9123,7 @@ reinit:
 	ufshcd_tune_unipro_params(hba);
 	ufs_init_serial(hba);
 
+	ufshcd_read_geometry_desc(hba, desc_buf, hba->desc_size.geom_desc);
 	ufshcd_apply_pm_quirks(hba);
 	if (card.wspecversion < 0x300) {
 		ret = ufshcd_set_vccq_rail_unused(hba,
@@ -9201,6 +9210,8 @@ reinit:
 #endif
 		pm_runtime_put_sync(hba->dev);
 	}
+
+	updata_mv_ufs(hba->dev_info.w_manufacturer_id, hba->sdev_ufs_device->inquiry, *((u64 *)(desc_buf + 4)));
 
 	/*
 	 * Enable auto hibern8 if supported, after full host and
