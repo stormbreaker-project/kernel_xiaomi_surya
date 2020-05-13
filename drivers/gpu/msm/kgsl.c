@@ -2605,7 +2605,8 @@ static long _gpuobj_map_useraddr(struct kgsl_device *device,
 		| KGSL_MEMFLAGS_USE_CPU_MAP
 		| KGSL_MEMTYPE_MASK
 		| KGSL_MEMFLAGS_FORCE_32BIT
-		| KGSL_MEMFLAGS_IOCOHERENT;
+		| KGSL_MEMFLAGS_IOCOHERENT
+		| KGSL_MEMFLAGS_GUARD_PAGE;
 
 	/* Specifying SECURE is an explicit error */
 	if (param->flags & KGSL_MEMFLAGS_SECURE)
@@ -3013,7 +3014,8 @@ long kgsl_ioctl_map_user_mem(struct kgsl_device_private *dev_priv,
 				| KGSL_MEMALIGN_MASK
 				| KGSL_MEMFLAGS_USE_CPU_MAP
 				| KGSL_MEMFLAGS_SECURE
-				| KGSL_MEMFLAGS_IOCOHERENT);
+				| KGSL_MEMFLAGS_IOCOHERENT
+				| KGSL_MEMFLAGS_GUARD_PAGE);
 
 	if (kgsl_is_compat_task())
 		flags |= KGSL_MEMFLAGS_FORCE_32BIT;
@@ -3401,7 +3403,8 @@ struct kgsl_mem_entry *gpumem_alloc_entry(
 		| KGSL_MEMFLAGS_USE_CPU_MAP
 		| KGSL_MEMFLAGS_SECURE
 		| KGSL_MEMFLAGS_FORCE_32BIT
-		| KGSL_MEMFLAGS_IOCOHERENT;
+		| KGSL_MEMFLAGS_IOCOHERENT
+		| KGSL_MEMFLAGS_GUARD_PAGE;
 
 	/* Return not supported error if secure memory isn't enabled */
 	if (!kgsl_mmu_is_secured(mmu) &&
