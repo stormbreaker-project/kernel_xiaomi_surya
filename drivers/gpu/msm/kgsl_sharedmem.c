@@ -855,7 +855,7 @@ void kgsl_memdesc_init(struct kgsl_device *device,
 	} else if (IS_ENABLED(CONFIG_QCOM_KGSL_IOCOHERENCY_DEFAULT))
 		flags |= KGSL_MEMFLAGS_IOCOHERENT;
 
-	if (MMU_FEATURE(mmu, KGSL_MMU_NEED_GUARD_PAGE))
+	if (MMU_FEATURE(mmu, KGSL_MMU_NEED_GUARD_PAGE) || (flags & KGSL_MEMFLAGS_GUARD_PAGE))
 		memdesc->priv |= KGSL_MEMDESC_GUARD_PAGE;
 
 	if (flags & KGSL_MEMFLAGS_SECURE)
