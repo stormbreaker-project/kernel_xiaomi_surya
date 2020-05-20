@@ -21,7 +21,6 @@
 #include <soc/qcom/scm.h>
 #include <soc/qcom/secure_buffer.h>
 #include <linux/ratelimit.h>
-#include <linux/bitfield.h>
 
 #include "kgsl.h"
 #include "kgsl_sharedmem.h"
@@ -837,7 +836,6 @@ void kgsl_memdesc_init(struct kgsl_device *device,
 {
 	struct kgsl_mmu *mmu = &device->mmu;
 	unsigned int align;
-	u32 cachemode;
 
 	memset(memdesc, 0, sizeof(*memdesc));
 	/* Turn off SVM if the system doesn't support it */
@@ -863,9 +861,7 @@ void kgsl_memdesc_init(struct kgsl_device *device,
 	 * have stale data. This happens primarily due to the limitations
 	 * of dma caching APIs available on arm64
 	 */
-	cachemode = FIELD_GET(KGSL_CACHEMODE_MASK, flags);
-	if ((cachemode == KGSL_CACHEMODE_WRITECOMBINE ||
-		cachemode == KGSL_CACHEMODE_UNCACHED))
+	if (!kgsl_cachemode_is_cached(flags))
 		flags &= ~((u64) KGSL_MEMFLAGS_IOCOHERENT);
 
 	if (MMU_FEATURE(mmu, KGSL_MMU_NEED_GUARD_PAGE) || (flags & KGSL_MEMFLAGS_GUARD_PAGE))

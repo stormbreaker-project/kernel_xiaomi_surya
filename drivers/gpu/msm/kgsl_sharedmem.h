@@ -13,6 +13,7 @@
 #ifndef __KGSL_SHAREDMEM_H
 #define __KGSL_SHAREDMEM_H
 
+#include <linux/bitfield.h>
 #include <linux/dma-mapping.h>
 
 #include "kgsl_mmu.h"
@@ -377,6 +378,21 @@ static inline void kgsl_free_sgt(struct sg_table *sgt)
 		sg_free_table(sgt);
 		kfree(sgt);
 	}
+}
+
+/**
+ * kgsl_cachemode_is_cached - Return true if the passed flags indicate a cached
+ * buffer
+ * @flags: A bitmask of KGSL_MEMDESC_ flags
+ *
+ * Return: true if the flags indicate a cached buffer
+ */
+static inline bool kgsl_cachemode_is_cached(u64 flags)
+{
+	u64 mode = FIELD_GET(KGSL_CACHEMODE_MASK, flags);
+
+	return (mode != KGSL_CACHEMODE_UNCACHED &&
+		mode != KGSL_CACHEMODE_WRITECOMBINE);
 }
 
 #include "kgsl_pool.h"

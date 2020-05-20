@@ -2474,22 +2474,13 @@ static void _setup_cache_mode(struct kgsl_mem_entry *entry,
 	uint64_t mode;
 	pgprot_t pgprot = vma->vm_page_prot;
 
-	if (pgprot_val(pgprot) == pgprot_val(pgprot_noncached(pgprot)))
-		mode = KGSL_CACHEMODE_UNCACHED;
-	else if (pgprot_val(pgprot) == pgprot_val(pgprot_writecombine(pgprot)))
+	if ((pgprot_val(pgprot) == pgprot_val(pgprot_noncached(pgprot))) ||
+	    (pgprot_val(pgprot) == pgprot_val(pgprot_writecombine(pgprot))))
 		mode = KGSL_CACHEMODE_WRITECOMBINE;
 	else
 		mode = KGSL_CACHEMODE_WRITEBACK;
 
 	entry->memdesc.flags |= (mode << KGSL_CACHEMODE_SHIFT);
-}
-
-static bool is_cached(u64 flags)
-{
-	u32 mode = (flags & KGSL_CACHEMODE_MASK) >> KGSL_CACHEMODE_SHIFT;
-
-	return (mode != KGSL_CACHEMODE_UNCACHED &&
-		mode != KGSL_CACHEMODE_WRITECOMBINE);
 }
 
 static int kgsl_setup_dma_buf(struct kgsl_device *device,
@@ -3124,7 +3115,7 @@ static int _kgsl_gpumem_sync_cache(struct kgsl_mem_entry *entry,
 		length = entry->memdesc.size;
 	}
 
-	if (is_cached(entry->memdesc.flags)) {
+	if (kgsl_cachemode_is_cached(entry->memdesc.flags)) {
 	trace_kgsl_mem_sync_cache(entry, offset, length, op);
 		ret = kgsl_cache_range_op(&entry->memdesc, offset,
 					length, cacheop);
@@ -3437,7 +3428,7 @@ struct kgsl_mem_entry *gpumem_alloc_entry(
 		return ERR_PTR(-ENOMEM);
 
 	if (IS_ENABLED(CONFIG_QCOM_KGSL_IOCOHERENCY_DEFAULT) &&
-		is_cached(flags))
+		kgsl_cachemode_is_cached(flags))
 		flags |= KGSL_MEMFLAGS_IOCOHERENT;
 
 	ret = kgsl_allocate_user(dev_priv->device, &entry->memdesc,
@@ -3667,7 +3658,7 @@ long kgsl_ioctl_sparse_phys_alloc(struct kgsl_device_private *dev_priv,
 			KGSL_MEMALIGN_MASK);
 
 	if (IS_ENABLED(CONFIG_QCOM_KGSL_IOCOHERENCY_DEFAULT) &&
-		is_cached(flags))
+		kgsl_cachemode_is_cached(flags))
 		flags |= KGSL_MEMFLAGS_IOCOHERENT;
 
 	ret = kgsl_allocate_user(dev_priv->device, &entry->memdesc,
@@ -4785,9 +4776,6 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 	cache = kgsl_memdesc_get_cachemode(&entry->memdesc);
 
 	switch (cache) {
-	case KGSL_CACHEMODE_UNCACHED:
-		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-		break;
 	case KGSL_CACHEMODE_WRITETHROUGH:
 		vma->vm_page_prot = pgprot_writethroughcache(vma->vm_page_prot);
 		if (pgprot_val(vma->vm_page_prot) ==
@@ -4797,6 +4785,7 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 	case KGSL_CACHEMODE_WRITEBACK:
 		vma->vm_page_prot = pgprot_writebackcache(vma->vm_page_prot);
 		break;
+	case KGSL_CACHEMODE_UNCACHED:
 	case KGSL_CACHEMODE_WRITECOMBINE:
 	default:
 		vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
