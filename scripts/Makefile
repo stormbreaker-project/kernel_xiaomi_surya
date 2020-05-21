@@ -40,7 +40,8 @@ build_unifdef: $(obj)/unifdef
 subdir-$(CONFIG_MODVERSIONS) += genksyms
 subdir-y                     += mod
 subdir-$(CONFIG_SECURITY_SELINUX) += selinux
-subdir-$(CONFIG_DTC)         += dtc
+subdir-$(CONFIG_DTC)         += dtc-aosp
+subdir-$(CONFIG_BUILD_ARM64_EMBEDDED_DTB) += ufdt
 subdir-$(CONFIG_GDB_SCRIPTS) += gdb
 
 # Let clean descend into subdirs
