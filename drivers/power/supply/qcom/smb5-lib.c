@@ -8650,8 +8650,7 @@ static void bms_update_work(struct work_struct *work)
 
 	smblib_suspend_on_debug_battery(chg);
 
-	if (chg->batt_psy)
-		power_supply_changed(chg->batt_psy);
+	power_supply_changed(chg->batt_psy);
 }
 
 static void pl_update_work(struct work_struct *work)
