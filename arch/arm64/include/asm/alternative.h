@@ -73,11 +73,11 @@ static inline void apply_alternatives_module(void *start, size_t length) { }
 	".pushsection .altinstructions,\"a\"\n"				\
 	ALTINSTR_ENTRY(feature)						\
 	".popsection\n"							\
-	".pushsection .altinstr_replacement, \"a\"\n"			\
+	".subsection 1\n"						\
 	"663:\n\t"							\
 	newinstr "\n"							\
 	"664:\n\t"							\
-	".popsection\n\t"						\
+	".previous\n\t"							\
 	".org	. - (664b-663b) + (662b-661b)\n\t"			\
 	".org	. - (662b-661b) + (664b-663b)\n"			\
 	".endif\n"
@@ -117,7 +117,7 @@ static inline void apply_alternatives_module(void *start, size_t length) { }
 662:	.pushsection .altinstructions, "a"
 	altinstruction_entry 661b, 663f, \cap, 662b-661b, 664f-663f
 	.popsection
-	.pushsection .altinstr_replacement, "ax"
+	.subsection 1
 663:	\insn2
 664:	.org	. - (664b-663b) + (662b-661b)
 	.org	. - (662b-661b) + (664b-663b)
@@ -160,7 +160,7 @@ static inline void apply_alternatives_module(void *start, size_t length) { }
 	.pushsection .altinstructions, "a"
 	altinstruction_entry 663f, 661f, \cap, 664f-663f, 662f-661f
 	.popsection
-	.pushsection .altinstr_replacement, "ax"
+	.subsection 1
 	.align 2	/* So GAS knows label 661 is suitably aligned */
 661:
 .endm
@@ -179,9 +179,9 @@ static inline void apply_alternatives_module(void *start, size_t length) { }
 .macro alternative_else
 662:
 	.if .Lasm_alt_mode==0
-	.pushsection .altinstr_replacement, "ax"
+	.subsection 1
 	.else
-	.popsection
+	.previous
 	.endif
 663:
 .endm
@@ -194,7 +194,7 @@ static inline void apply_alternatives_module(void *start, size_t length) { }
 	.org	. - (664b-663b) + (662b-661b)
 	.org	. - (662b-661b) + (664b-663b)
 	.if .Lasm_alt_mode==0
-	.popsection
+	.previous
 	.endif
 .endm
 
