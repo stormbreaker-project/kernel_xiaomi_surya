@@ -777,39 +777,29 @@ int snd_compr_stop_error(struct snd_compr_stream *stream,
 }
 EXPORT_SYMBOL_GPL(snd_compr_stop_error);
 
-/* this fn is called without lock being held and we change stream states here
- * so while using the stream state auquire the lock but relase before invoking
- * DSP as the call will possibly take a while
- */
 static int snd_compr_drain(struct snd_compr_stream *stream)
 {
 	int retval;
 
-	mutex_lock(&stream->device->lock);
 	switch (stream->runtime->state) {
 	case SNDRV_PCM_STATE_OPEN:
 	case SNDRV_PCM_STATE_SETUP:
 	case SNDRV_PCM_STATE_PREPARED:
 	case SNDRV_PCM_STATE_PAUSED:
-		retval = -EPERM;
-		goto ret;
+		return -EPERM;
 	case SNDRV_PCM_STATE_XRUN:
-		retval = -EPIPE;
-		goto ret;
+		return -EPIPE;
 	default:
 		break;
 	}
 	mutex_unlock(&stream->device->lock);
 	retval = stream->ops->trigger(stream, SND_COMPR_TRIGGER_DRAIN);
-	mutex_lock(&stream->device->lock);
 	if (!retval) {
 		stream->runtime->state = SNDRV_PCM_STATE_DRAINING;
 		wake_up(&stream->runtime->sleep);
-		goto ret;
+		return retval;
 	}
 
-ret:
-	mutex_unlock(&stream->device->lock);
 	return retval;
 }
 
@@ -849,11 +839,9 @@ static int snd_compr_partial_drain(struct snd_compr_stream *stream)
 	case SNDRV_PCM_STATE_SETUP:
 	case SNDRV_PCM_STATE_PREPARED:
 	case SNDRV_PCM_STATE_PAUSED:
-		retval = -EPERM;
-		goto ret;
+		return -EPERM;
 	case SNDRV_PCM_STATE_XRUN:
-		retval = -EPIPE;
-		goto ret;
+		return -EPIPE;
 	default:
 		break;
 	}
@@ -873,8 +861,6 @@ static int snd_compr_partial_drain(struct snd_compr_stream *stream)
 	stream->next_track = false;
 	return retval;
 
-ret:
-	mutex_unlock(&stream->device->lock);
 	return retval;
 }
 
