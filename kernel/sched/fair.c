@@ -11364,6 +11364,21 @@ update_next_balance(struct sched_domain *sd, unsigned long *next_balance)
 		*next_balance = next;
 }
 
+static bool silver_has_big_tasks(void)
+{
+	int cpu;
+
+	for_each_possible_cpu(cpu) {
+		if (!is_min_capacity_cpu(cpu))
+			break;
+
+		if (walt_big_tasks(cpu))
+			return true;
+	}
+
+	return false;
+}
+
 /*
  * idle_balance is called by schedule() if this_cpu is about to become
  * idle. Attempts to pull tasks from other CPUs.
@@ -11377,6 +11392,9 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 	u64 curr_cost = 0;
 	u64 avg_idle = this_rq->avg_idle;
 	bool prefer_spread = prefer_spread_on_idle(this_cpu);
+	bool force_lb = (!is_min_capacity_cpu(this_cpu) &&
+				silver_has_big_tasks() &&
+				(atomic_read(&this_rq->nr_iowait) == 0));
 
 	if (cpu_isolated(this_cpu))
 		return 0;
@@ -11393,7 +11411,7 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 	if (!cpu_active(this_cpu))
 		return 0;
 
-	if (prefer_spread)
+	if (force_lb || prefer_spread)
 		avg_idle = ULLONG_MAX;
 
 	/*
@@ -11430,7 +11448,7 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 			continue;
 		}
 
-		if (prefer_spread &&
+		if (prefer_spread && !force_lb &&
 			(sd->flags & SD_ASYM_CPUCAPACITY) &&
 			!(cpumask_test_cpu(this_cpu, &asym_cap_sibling_cpus)))
 			avg_idle = this_rq->avg_idle;
