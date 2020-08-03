@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import fnmatch
 from array import array
 from collections import namedtuple
 import struct
@@ -853,7 +854,10 @@ def create_dtbo_image_from_config(fout, argv):
     params = {}
     dt_entries = []
     for dt_arg in dt_args:
-        filepath = args.dtbdir + os.sep + dt_arg['filename']
+        filepath = None
+        for root, dirnames, filenames in os.walk(args.dtbdir):
+            for filename in fnmatch.filter(filenames, dt_arg['filename']):
+                filepath = os.path.join(root, filename)
         params['dt_file'] = open(filepath, 'rb')
         params['dt_offset'] = 0
         params['dt_size'] = os.fstat(params['dt_file'].fileno()).st_size
