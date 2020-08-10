@@ -5820,6 +5820,7 @@ static struct snd_soc_ops sm6150_tdm_be_ops = {
 
 static int msm_fe_qos_prepare(struct snd_pcm_substream *substream)
 {
+	return 0;
 	cpumask_t mask;
 
 	if (pm_qos_request_active(&substream->latency_pm_qos_req))
@@ -5835,7 +5836,6 @@ static int msm_fe_qos_prepare(struct snd_pcm_substream *substream)
 	pm_qos_add_request(&substream->latency_pm_qos_req,
 			  PM_QOS_CPU_DMA_LATENCY,
 			  MSM_LL_QOS_VALUE);
-	return 0;
 }
 
 static struct snd_soc_ops msm_fe_qos_ops = {
