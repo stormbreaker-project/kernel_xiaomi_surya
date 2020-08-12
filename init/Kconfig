@@ -1288,6 +1288,12 @@ config CC_OPTIMIZE_FOR_SIZE
 
 endchoice
 
+config USERLAND_WORKER
+	bool "Run userspace functions from the kernel"
+	help
+	  Enabling this option will give you access to userspace
+	  functions, being able to call them from the kernel space.
+
 config SYSCTL
 	bool
 
