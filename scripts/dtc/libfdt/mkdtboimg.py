@@ -510,7 +510,7 @@ class Dtbo(object):
         offset = self.dt_entries[idx].dt_offset
         self.__file.seek(offset, 0)
         fout.seek(0)
-        compression_format = self.dt_entries[idx].compression_info(self.version)
+        compression_format = self.dt_entries[idx].compression_info()
         if decompress and compression_format:
             if (compression_format == CompressionFormat.ZLIB_COMPRESSION or
                 compression_format == CompressionFormat.GZIP_COMPRESSION):
