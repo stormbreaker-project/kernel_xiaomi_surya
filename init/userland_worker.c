@@ -109,6 +109,28 @@ static void userland_worker(struct work_struct *work)
 	else
 		pr_err("Couldn't set props! %d", ret);
 
+	strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], "dalvik.vm.dex2oat-cpu-set");
+	strcpy(argv[2], "0,1,2,3,4,5,6");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("Props set succesfully!");
+	else
+		pr_err("Couldn't set props! %d", ret);
+
+	strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], "dalvik.vm.dex2oat-threads");
+	strcpy(argv[2], "6");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("Props set succesfully!");
+	else
+		pr_err("Couldn't set props! %d", ret);
+
 	free_memory(argv, INITIAL_SIZE);
 
 	if (is_enforcing)
