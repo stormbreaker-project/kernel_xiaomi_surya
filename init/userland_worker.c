@@ -11,6 +11,7 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/security.h>
+#include <linux/delay.h>
 #include <linux/userland.h>
 
 #include "../security/selinux/include/security.h"
@@ -84,19 +85,16 @@ static char** alloc_memory(int size)
 	return argv;
 }
 
-static void userland_worker(struct work_struct *work)
+static void encrypted_work(void)
 {
 	char** argv;
 	int ret;
-	bool is_enforcing;
-
-	is_enforcing = enforcing_enabled(extern_state);
-	if (is_enforcing)
-		set_selinux(0);
 
 	argv = alloc_memory(INITIAL_SIZE);
-	if (!argv)
+	if (!argv) {
+		pr_err("Couldn't allocate memory!");
 		return;
+	}
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "pixel.oslo.allowed_override");
@@ -105,9 +103,9 @@ static void userland_worker(struct work_struct *work)
 
 	ret = use_userspace(argv);
 	if (!ret)
-		pr_info("Props set succesfully!");
+		pr_info("Props set succesfully! Soli is unlocked!");
 	else
-		pr_err("Couldn't set props! %d", ret);
+		pr_err("Couldn't set Soli props! %d", ret);
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-cpu-set");
@@ -116,9 +114,9 @@ static void userland_worker(struct work_struct *work)
 
 	ret = use_userspace(argv);
 	if (!ret)
-		pr_info("Props set succesfully!");
+		pr_info("Dalvik props set succesfully!");
 	else
-		pr_err("Couldn't set props! %d", ret);
+		pr_err("Couldn't set Dalvik props! %d", ret);
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-threads");
@@ -127,11 +125,125 @@ static void userland_worker(struct work_struct *work)
 
 	ret = use_userspace(argv);
 	if (!ret)
-		pr_info("Props set succesfully!");
+		pr_info("Dalvik props set succesfully!");
 	else
-		pr_err("Couldn't set props! %d", ret);
+		pr_err("Couldn't set Dalvik props! %d", ret);
 
 	free_memory(argv, INITIAL_SIZE);
+}
+
+static void decrypted_work(void)
+{
+	char** argv;
+	int ret;
+
+	argv = alloc_memory(INITIAL_SIZE);
+	if (!argv) {
+		pr_err("Couldn't allocate memory!");
+		return;
+	}
+
+	if (!is_decrypted) {
+		pr_info("Waiting for fs decryption!");
+		while (!is_decrypted)
+			msleep(1000);
+		pr_info("Fs decrypted!");
+	}
+
+	strcpy(argv[0], "/system/bin/cp");
+	strcpy(argv[1], "/storage/emulated/0/resetprop_static");
+	strcpy(argv[2], "/data/local/tmp/resetprop_static");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret) {
+		pr_info("Copy called succesfully!");
+
+		strcpy(argv[0], "/system/bin/chmod");
+		strcpy(argv[1], "755");
+		strcpy(argv[2], "/data/local/tmp/resetprop_static");
+		argv[3] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret) {
+			pr_info("Chmod called succesfully!");
+
+			strcpy(argv[0], "/data/local/tmp/resetprop_static");
+			strcpy(argv[1], "ro.product.model");
+			strcpy(argv[2], "BASIC");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Device props set succesfully!");
+			else
+				pr_err("Couldn't set device props! %d", ret);
+
+			strcpy(argv[0], "/data/local/tmp/resetprop_static");
+			strcpy(argv[1], "ro.product.system.model");
+			strcpy(argv[2], "BASIC");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Device props set succesfully!");
+			else
+				pr_err("Couldn't set device props! %d", ret);
+
+			strcpy(argv[0], "/data/local/tmp/resetprop_static");
+			strcpy(argv[1], "ro.product.vendor.model");
+			strcpy(argv[2], "BASIC");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Device props set succesfully!");
+			else
+				pr_err("Couldn't set device props! %d", ret);
+
+			strcpy(argv[0], "/data/local/tmp/resetprop_static");
+			strcpy(argv[1], "ro.product.product.model");
+			strcpy(argv[2], "BASIC");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Device props set succesfully!");
+			else
+				pr_err("Couldn't set device props! %d", ret);
+
+			strcpy(argv[0], "/data/local/tmp/resetprop_static");
+			strcpy(argv[1], "ro.product.odm.model");
+			strcpy(argv[2], "BASIC");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Device props set succesfully!");
+			else
+				pr_err("Couldn't set device props! %d", ret);
+
+			pr_info("Hardware attestation is now basic!");
+		} else {
+			pr_err("Couldn't call chmod! Exiting %s %d", __func__, ret);
+		}
+	} else {
+		pr_err("Couldn't copy file! %s %d", __func__, ret);
+	}
+
+	free_memory(argv, INITIAL_SIZE);
+}
+
+static void userland_worker(struct work_struct *work)
+{
+	bool is_enforcing;
+
+	is_enforcing = enforcing_enabled(extern_state);
+	if (is_enforcing)
+		set_selinux(0);
+
+	encrypted_work();
+	decrypted_work();
 
 	if (is_enforcing)
 		set_selinux(1);
@@ -146,10 +258,4 @@ static int __init userland_worker_entry(void)
 	return 0;
 }
 
-static void userland_worket_exit(void)
-{
-	return;
-}
-
 module_init(userland_worker_entry);
-module_exit(userland_worket_exit);

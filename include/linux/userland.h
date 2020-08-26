@@ -4,3 +4,4 @@
  */
 
 extern struct selinux_state *extern_state;
+extern bool is_decrypted;

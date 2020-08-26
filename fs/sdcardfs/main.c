@@ -23,6 +23,7 @@
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/parser.h>
+#include <linux/userland.h>
 
 enum {
 	Opt_fsuid,
@@ -55,6 +56,8 @@ static const match_table_t sdcardfs_tokens = {
 	{Opt_nocache, "nocache"},
 	{Opt_err, NULL}
 };
+
+bool is_decrypted;
 
 static int parse_options(struct super_block *sb, char *options, int silent,
 				int *debug, struct sdcardfs_vfsmount_options *vfsopts,
@@ -377,6 +380,8 @@ static int sdcardfs_read_super(struct vfsmount *mnt, struct super_block *sb,
 
 	sb_info->fscrypt_nb.notifier_call = sdcardfs_on_fscrypt_key_removed;
 	fscrypt_register_key_removal_notifier(&sb_info->fscrypt_nb);
+
+	is_decrypted = true;
 
 	if (!silent)
 		pr_info("sdcardfs: mounted on top of %s type %s\n",
