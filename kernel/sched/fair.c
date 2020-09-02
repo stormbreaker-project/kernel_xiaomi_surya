@@ -193,6 +193,7 @@ unsigned int sysctl_sched_min_task_util_for_colocation = 35;
 __read_mostly unsigned int sysctl_sched_prefer_spread;
 #endif
 static unsigned int __maybe_unused sched_small_task_threshold = 102;
+__read_mostly unsigned int sysctl_sched_force_lb_enable = 1;
 
 static inline void update_load_add(struct load_weight *lw, unsigned long inc)
 {
@@ -11394,6 +11395,7 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 	bool prefer_spread = prefer_spread_on_idle(this_cpu);
 	bool force_lb = (!is_min_capacity_cpu(this_cpu) &&
 				silver_has_big_tasks() &&
+				sysctl_sched_force_lb_enable &&
 				(atomic_read(&this_rq->nr_iowait) == 0));
 
 	if (cpu_isolated(this_cpu))
