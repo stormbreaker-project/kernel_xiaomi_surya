@@ -606,6 +606,19 @@ config FORCE_FAST_CHARGE
 	help
 	  This allows users to override default charge rate for USB
 
+config BATTERY_SAVER
+	bool "Battery saver mode for kernelspace"
+	help
+	  This driver creates a sysfs toggle that can be enabled when
+	  battery saver mode is activated in userspace, and provides
+	  functions to check the status of battery saver and to activate
+	  it from anywhere in the kernel.
+
+	  The former can be used to disable features that may otherwise
+	  drain battery faster, such as schedtune, CPU and DDR boosting.
+
+	  If in doubt, say N.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
