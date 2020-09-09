@@ -165,68 +165,10 @@ static void decrypted_work(void)
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
-		if (!ret) {
+		if (!ret)
 			pr_info("Chmod called succesfully!");
-
-			strcpy(argv[0], "/data/local/tmp/resetprop_static");
-			strcpy(argv[1], "ro.product.model");
-			strcpy(argv[2], "BASIC");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Device props set succesfully!");
-			else
-				pr_err("Couldn't set device props! %d", ret);
-
-			strcpy(argv[0], "/data/local/tmp/resetprop_static");
-			strcpy(argv[1], "ro.product.system.model");
-			strcpy(argv[2], "BASIC");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Device props set succesfully!");
-			else
-				pr_err("Couldn't set device props! %d", ret);
-
-			strcpy(argv[0], "/data/local/tmp/resetprop_static");
-			strcpy(argv[1], "ro.product.vendor.model");
-			strcpy(argv[2], "BASIC");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Device props set succesfully!");
-			else
-				pr_err("Couldn't set device props! %d", ret);
-
-			strcpy(argv[0], "/data/local/tmp/resetprop_static");
-			strcpy(argv[1], "ro.product.product.model");
-			strcpy(argv[2], "BASIC");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Device props set succesfully!");
-			else
-				pr_err("Couldn't set device props! %d", ret);
-
-			strcpy(argv[0], "/data/local/tmp/resetprop_static");
-			strcpy(argv[1], "ro.product.odm.model");
-			strcpy(argv[2], "BASIC");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Device props set succesfully!");
-			else
-				pr_err("Couldn't set device props! %d", ret);
-
-			pr_info("Hardware attestation is now basic!");
-		} else {
+		else
 			pr_err("Couldn't call chmod! Exiting %s %d", __func__, ret);
-		}
 	} else {
 		pr_err("Couldn't copy file! %s %d", __func__, ret);
 	}
