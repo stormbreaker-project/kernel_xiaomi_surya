@@ -11,6 +11,7 @@
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/security.h>
+#include <linux/namei.h>
 #include <linux/delay.h>
 #include <linux/userland.h>
 
@@ -22,10 +23,11 @@
 #define MAX_CHAR 128
 #define DELAY 500
 
-static const char* path_to_files[] = { "/sdcard/Artemis/adblocker.txt" };
+static const char* path_to_files[] = { "/sdcard/Artemis/adblocker.txt", "/sdcard/Artemis/flash_boot.txt" };
 
 struct values {
 	bool adblocker;
+	bool flash_boot;
 };
 
 static struct delayed_work userland_work;
@@ -105,10 +107,10 @@ static struct values *alloc_and_populate(void)
 {
 	struct file* __file = NULL;
 	struct values* tweaks;
-	unsigned char buf[MAX_CHAR];
-	int size, ret, i;
-	long number_value;
-	loff_t pos = 0;
+	struct path path;
+	char buf[MAX_CHAR];
+	int number_value, retries, size, ret, i;
+	loff_t pos;
 
 	tweaks = kmalloc(sizeof(struct values), GFP_KERNEL);
 	if (!tweaks) {
@@ -117,11 +119,25 @@ static struct values *alloc_and_populate(void)
 	}
 
 	tweaks->adblocker = 0;
+	tweaks->flash_boot = 0;
 
 	size = LEN(path_to_files);
 	for (i = 0; i < size; i++) {
 		if (path_to_files[i] == NULL)
 			continue;
+
+		retries = 0;
+
+                do {
+                        ret = kern_path(path_to_files[i], LOOKUP_FOLLOW, &path);
+                        if (ret)
+                                msleep(DELAY);
+                } while (ret && (retries++ < 10));
+
+		if (ret) {
+			pr_err("Couldn't find file %s", path_to_files[i]);
+			continue;
+		}
 
 		__file = file_open(path_to_files[i], O_RDONLY | O_LARGEFILE, 0);
 		if (__file == NULL || IS_ERR_OR_NULL(__file->f_path.dentry)) {
@@ -129,7 +145,8 @@ static struct values *alloc_and_populate(void)
 			continue;
 		}
 
-		memset(buf, 0, MAX_CHAR);
+		memset(buf, 0, sizeof(buf));
+		pos = 0;
 
 		mdelay(10);
 		ret = kernel_read(__file, buf, MAX_CHAR, &pos);
@@ -143,16 +160,44 @@ static struct values *alloc_and_populate(void)
 
 		pr_info("Parsed file %s with value %s", path_to_files[i], buf);
 
-		if (kstrtol(buf, 10, &number_value))
+		if (kstrtoint(buf, 10, &number_value))
 			continue;
 
 		if (strstr(path_to_files[i], "adblocker")) {
 			tweaks->adblocker = !!number_value;
 			pr_info("Adblocker value: %d", tweaks->adblocker);
+		} else if (strstr(path_to_files[i], "flash_boot")) {
+			tweaks->flash_boot = !!number_value;
+			pr_info("flash_boot value: %d", tweaks->flash_boot);
 		}
 	}
 
 	return tweaks;
+}
+
+static void call_sh(const char* command)
+{
+	char** argv;
+	int ret;
+
+	argv = alloc_memory(INITIAL_SIZE);
+	if (!argv) {
+		pr_err("Couldn't allocate memory!");
+		return;
+	}
+
+	strcpy(argv[0], "/system/bin/sh");
+	strcpy(argv[1], "-c");
+	strcpy(argv[2], command);
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("Sh called successfully!");
+	else
+		pr_err("Couldn't call sh! %d", ret);
+
+	free_memory(argv, INITIAL_SIZE);
 }
 
 static void create_dirs(void)
@@ -190,32 +235,37 @@ static void create_dirs(void)
 		if (!ret) {
 			pr_info("Adblocker file created!");
 
-			free_memory(argv, INITIAL_SIZE - 1);
-
-			argv = alloc_memory(INITIAL_SIZE);
-			if (!argv) {
-				pr_err("Couldn't allocate memory!");
-				return;
-			}
-
-			strcpy(argv[0], "/system/bin/sh");
-			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/system/bin/printf 0 > /sdcard/Artemis/adblocker.txt");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Printf called succesfully! Adblocker file created!");
-			else
-				pr_err("Couldn't printf to file! %d", ret);
-
-			free_memory(argv, INITIAL_SIZE);
+			call_sh("/system/bin/printf 0 > /sdcard/Artemis/adblocker.txt");
 		} else {
 			pr_err("Couldn't create adblocker file!");
 		}
 	} else {
 		pr_info("Adblocker file exists!");
 	}
+
+	strcpy(argv[0], "/system/bin/ls");
+	strcpy(argv[1], "/sdcard/Artemis/flash_boot.txt");
+	argv[2] = NULL;
+
+	ret = use_userspace(argv);
+	if (ret) {
+		strcpy(argv[0], "/system/bin/touch");
+		strcpy(argv[1], "/sdcard/Artemis/flash_boot.txt");
+		argv[2] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret) {
+			pr_info("flash_boot file created!");
+
+			call_sh("/system/bin/printf 0 > /sdcard/Artemis/flash_boot.txt");
+		} else {
+			pr_err("Couldn't create flash_boot file!");
+		}
+	} else {
+		pr_info("flash_boot file exists!");
+	}
+
+	free_memory(argv, INITIAL_SIZE - 1);
 
 	// Wait for RCU grace period to end for the files to sync
 	rcu_barrier();
@@ -372,6 +422,69 @@ static void decrypted_work(void)
 		else
 			pr_err("Couldn't call iptables! %d", ret);
 	}
+
+	if (tweaks && tweaks->flash_boot) {
+		strcpy(argv[0], "/system/bin/sh");
+		strcpy(argv[1], "-c");
+		strcpy(argv[2], "/system/bin/rm /sdcard/Artemis/flash_boot.txt");
+		argv[3] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret)
+			pr_info("Flash_boot file deleted!");
+		else
+			pr_err("Couldn't delete Flash_boot file! %d", ret);
+
+		strcpy(argv[0], "/system/bin/test");
+		strcpy(argv[1], "-f");
+		strcpy(argv[2], "/sdcard/Artemis/boot.img");
+		argv[3] = NULL;
+
+	        ret = use_userspace(argv);
+		if (!ret) {
+			int flash_a, flash_b;
+
+			strcpy(argv[0], "/system/bin/dd");
+			strcpy(argv[1], "if=/sdcard/Artemis/boot.img");
+			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_b");
+			argv[3] = NULL;
+
+			flash_b = use_userspace(argv);
+			if (!flash_b)
+				pr_info("Boot image _b flashed!");
+			else
+				pr_err("DD failed! %d", flash_b);
+
+			strcpy(argv[0], "/system/bin/dd");
+			strcpy(argv[1], "if=/sdcard/Artemis/boot.img");
+			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_a");
+			argv[3] = NULL;
+
+			flash_a = use_userspace(argv);
+			if (!flash_a)
+				pr_info("Boot image _a flashed!");
+			else
+				pr_err("DD failed! %d", flash_a);
+
+			if (!flash_a || !flash_b) {
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/reboot");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Reboot call succesfully! Going down!");
+				else
+					pr_err("Couldn't reboot! %d", ret);
+			}
+		} else {
+			pr_err("No boot.img found!");
+		}
+
+		call_sh("/system/bin/printf 0 > /sdcard/Artemis/flash_boot.txt");
+	}
+
 
 	strcpy(argv[0], "/system/bin/cp");
 	strcpy(argv[1], "/storage/emulated/0/resetprop_static");
