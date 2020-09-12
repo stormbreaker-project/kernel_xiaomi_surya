@@ -12,6 +12,7 @@
 #include <linux/string.h>
 #include <linux/security.h>
 #include <linux/namei.h>
+#include <linux/proc_fs.h>
 #include <linux/delay.h>
 #include <linux/userland.h>
 
@@ -23,14 +24,18 @@
 #define MAX_CHAR 128
 #define DELAY 500
 
-static const char* path_to_files[] = { "/sdcard/Artemis/adblocker.txt", "/sdcard/Artemis/flash_boot.txt" };
+static const char* path_to_files[] = { "/sdcard/Artemis/configs/dns.txt", "/sdcard/Artemis/configs/flash_boot.txt" };
 
 struct values {
-	bool adblocker;
+	int dns;
 	bool flash_boot;
 };
 
 static struct delayed_work userland_work;
+
+static const struct file_operations proc_file_fops = {
+	.owner = THIS_MODULE,
+};
 
 static void free_memory(char** argv, int size)
 {
@@ -118,7 +123,7 @@ static struct values *alloc_and_populate(void)
 		return NULL;
 	}
 
-	tweaks->adblocker = 0;
+	tweaks->dns = 0;
 	tweaks->flash_boot = 0;
 
 	size = LEN(path_to_files);
@@ -163,9 +168,9 @@ static struct values *alloc_and_populate(void)
 		if (kstrtoint(buf, 10, &number_value))
 			continue;
 
-		if (strstr(path_to_files[i], "adblocker")) {
-			tweaks->adblocker = !!number_value;
-			pr_info("Adblocker value: %d", tweaks->adblocker);
+		if (strstr(path_to_files[i], "dns")) {
+			tweaks->dns = number_value;
+			pr_info("DNS value: %d", tweaks->dns);
 		} else if (strstr(path_to_files[i], "flash_boot")) {
 			tweaks->flash_boot = !!number_value;
 			pr_info("flash_boot value: %d", tweaks->flash_boot);
@@ -221,43 +226,53 @@ static void create_dirs(void)
 	else
 		pr_info("Artemis folder already created");
 
+	strcpy(argv[0], "/system/bin/mkdir");
+	strcpy(argv[1], "/sdcard/Artemis/configs");
+	argv[2] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("Configs folder doesn't exist! Creating.");
+	else
+		pr_info("Configs folder already created");
+
 	strcpy(argv[0], "/system/bin/ls");
-	strcpy(argv[1], "/sdcard/Artemis/adblocker.txt");
+	strcpy(argv[1], "/sdcard/Artemis/configs/dns.txt");
 	argv[2] = NULL;
 
 	ret = use_userspace(argv);
 	if (ret) {
 		strcpy(argv[0], "/system/bin/touch");
-		strcpy(argv[1], "/sdcard/Artemis/adblocker.txt");
+		strcpy(argv[1], "/sdcard/Artemis/configs/dns.txt");
 		argv[2] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret) {
-			pr_info("Adblocker file created!");
+			pr_info("DNS file created!");
 
-			call_sh("/system/bin/printf 0 > /sdcard/Artemis/adblocker.txt");
+			call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/dns.txt");
 		} else {
-			pr_err("Couldn't create adblocker file!");
+			pr_err("Couldn't create dns file!");
 		}
 	} else {
-		pr_info("Adblocker file exists!");
+		pr_info("Dns file exists!");
 	}
 
 	strcpy(argv[0], "/system/bin/ls");
-	strcpy(argv[1], "/sdcard/Artemis/flash_boot.txt");
+	strcpy(argv[1], "/sdcard/Artemis/configs/flash_boot.txt");
 	argv[2] = NULL;
 
 	ret = use_userspace(argv);
 	if (ret) {
 		strcpy(argv[0], "/system/bin/touch");
-		strcpy(argv[1], "/sdcard/Artemis/flash_boot.txt");
+		strcpy(argv[1], "/sdcard/Artemis/configs/flash_boot.txt");
 		argv[2] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret) {
 			pr_info("flash_boot file created!");
 
-			call_sh("/system/bin/printf 0 > /sdcard/Artemis/flash_boot.txt");
+			call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/flash_boot.txt");
 		} else {
 			pr_err("Couldn't create flash_boot file!");
 		}
@@ -355,78 +370,154 @@ static void decrypted_work(void)
 	create_dirs();
 	tweaks = alloc_and_populate();
 
-	if (tweaks && tweaks->adblocker) {
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
-		argv[3] = NULL;
+	if (tweaks && tweaks->dns) {
+		switch (tweaks->dns)
+		{
+			case 1:
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
+				argv[3] = NULL;
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Iptables called succesfully!");
-		else
-			pr_err("Couldn't call iptables! %d", ret);
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
-		argv[3] = NULL;
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
+				argv[3] = NULL;
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Iptables called succesfully!");
-		else
-			pr_err("Couldn't call iptables! %d", ret);
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
-		argv[3] = NULL;
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
+				argv[3] = NULL;
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Iptables called succesfully!");
-		else
-			pr_err("Couldn't call iptables! %d", ret);
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
-		argv[3] = NULL;
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
+				argv[3] = NULL;
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Iptables called succesfully!");
-		else
-			pr_err("Couldn't call iptables! %d", ret);
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
-		argv[3] = NULL;
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
+				argv[3] = NULL;
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Iptables called succesfully!");
-		else
-			pr_err("Couldn't call iptables! %d", ret);
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
-		argv[3] = NULL;
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
+				argv[3] = NULL;
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Iptables called succesfully!");
-		else
-			pr_err("Couldn't call iptables! %d", ret);
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				break;
+			case 2:
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1 || true");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1 || true");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				strcpy(argv[0], "/system/bin/sh");
+				strcpy(argv[1], "-c");
+				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1");
+				argv[3] = NULL;
+
+				ret = use_userspace(argv);
+				if (!ret)
+					pr_info("Iptables called succesfully!");
+				else
+					pr_err("Couldn't call iptables! %d", ret);
+
+				break;
+			default:
+				break;
+		}
 	}
 
 	if (tweaks && tweaks->flash_boot) {
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /sdcard/Artemis/flash_boot.txt");
+		strcpy(argv[2], "/system/bin/rm /sdcard/Artemis/configs/flash_boot.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
@@ -482,7 +573,7 @@ static void decrypted_work(void)
 			pr_err("No boot.img found!");
 		}
 
-		call_sh("/system/bin/printf 0 > /sdcard/Artemis/flash_boot.txt");
+		call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/flash_boot.txt");
 	}
 
 
@@ -514,6 +605,7 @@ static void decrypted_work(void)
 
 static void userland_worker(struct work_struct *work)
 {
+	struct proc_dir_entry *userland_dir;
 	bool is_enforcing;
 
 	is_enforcing = enforcing_enabled(extern_state);
@@ -522,6 +614,12 @@ static void userland_worker(struct work_struct *work)
 
 	encrypted_work();
 	decrypted_work();
+
+	userland_dir = proc_mkdir_data("userland", 0777, NULL, NULL);
+	if (userland_dir == NULL)
+		pr_err("Couldn't create proc dir!");
+	else
+		pr_info("Proc dir created successfully!");
 
 	if (is_enforcing)
 		set_selinux(1);
