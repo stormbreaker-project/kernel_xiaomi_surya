@@ -323,6 +323,17 @@ static void encrypted_work(void)
 		pr_err("Couldn't set Soli props! %d", ret);
 
 	strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], "persist.vendor.radio.multisim_swtich_support");
+	strcpy(argv[2], "true");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("Props set succesfully! Multisim is unlocked!");
+	else
+		pr_err("Couldn't set multisim props! %d", ret);
+
+	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "dalvik.vm.dex2oat-cpu-set");
 	strcpy(argv[2], "0,1,2,3,4,5,6");
 	argv[3] = NULL;
