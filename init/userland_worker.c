@@ -252,7 +252,7 @@ static void create_dirs(void)
 
 			call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/dns.txt");
 		} else {
-			pr_err("Couldn't create dns file!");
+			pr_err("Couldn't create dns file! %d", ret);
 		}
 	} else {
 		pr_info("Dns file exists!");
@@ -274,7 +274,7 @@ static void create_dirs(void)
 
 			call_sh("/system/bin/printf 0 > /sdcard/Artemis/configs/flash_boot.txt");
 		} else {
-			pr_err("Couldn't create flash_boot file!");
+			pr_err("Couldn't create flash_boot file! %d", ret);
 		}
 	} else {
 		pr_info("flash_boot file exists!");
@@ -617,9 +617,10 @@ static void decrypted_work(void)
 static void userland_worker(struct work_struct *work)
 {
 	struct proc_dir_entry *userland_dir;
-	bool is_enforcing;
+	bool is_enforcing = false;
 
-	is_enforcing = enforcing_enabled(extern_state);
+	if (extern_state)
+		is_enforcing = enforcing_enabled(extern_state);
 	if (is_enforcing)
 		set_selinux(0);
 
