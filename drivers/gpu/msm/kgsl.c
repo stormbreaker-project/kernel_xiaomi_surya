@@ -4900,6 +4900,7 @@ static void _unregister_device(struct kgsl_device *device)
 static int _register_device(struct kgsl_device *device)
 {
 	static u64 dma_mask = DMA_BIT_MASK(64);
+	static struct device_dma_parameters dma_parms;
 	int minor, ret;
 	dev_t dev;
 
@@ -4936,6 +4937,10 @@ static int _register_device(struct kgsl_device *device)
 	}
 
 	device->dev->dma_mask = &dma_mask;
+	device->dev->dma_parms = &dma_parms;
+
+	dma_set_max_seg_size(device->dev, DMA_BIT_MASK(32));
+
 	arch_setup_dma_ops(device->dev, 0, 0, NULL, false);
 
 	dev_set_drvdata(&device->pdev->dev, device);
