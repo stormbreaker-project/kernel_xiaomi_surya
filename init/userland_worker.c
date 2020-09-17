@@ -24,11 +24,12 @@
 #define MAX_CHAR 128
 #define DELAY 500
 
-static const char* path_to_files[] = { "/data/user/0/com.kaname.artemiscompanion/files/configs/dns.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt" };
+static const char* path_to_files[] = { "/data/user/0/com.kaname.artemiscompanion/files/configs/dns.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt" };
 
 struct values {
 	int dns;
 	bool flash_boot;
+	int backup;
 };
 
 static struct delayed_work userland_work;
@@ -125,6 +126,7 @@ static struct values *alloc_and_populate(void)
 
 	tweaks->dns = 0;
 	tweaks->flash_boot = 0;
+	tweaks->backup = 0;
 
 	size = LEN(path_to_files);
 	for (i = 0; i < size; i++) {
@@ -173,7 +175,10 @@ static struct values *alloc_and_populate(void)
 			pr_info("DNS value: %d", tweaks->dns);
 		} else if (strstr(path_to_files[i], "flash_boot")) {
 			tweaks->flash_boot = !!number_value;
-			pr_info("flash_boot value: %d", tweaks->flash_boot);
+			pr_info("Flash_boot value: %d", tweaks->flash_boot);
+		} else if (strstr(path_to_files[i], "backup")) {
+			tweaks->backup = number_value;
+			pr_info("Backup value: %d", tweaks->backup);
 		}
 	}
 
@@ -327,14 +332,120 @@ static void decrypted_work(void)
 				argv[3] = NULL;
 
 				ret = use_userspace(argv);
-				if (!ret)
+				if (!ret) {
 					pr_info("Reboot call succesfully! Going down!");
-				else
+					return;
+				} else {
 					pr_err("Couldn't reboot! %d", ret);
+				}
 			}
 		} else {
 			pr_err("No boot.img found!");
 		}
+	}
+
+	if (tweaks && tweaks->backup) {
+		strcpy(argv[0], "/system/bin/sh");
+		strcpy(argv[1], "-c");
+		strcpy(argv[2], "/system/bin/mkdir /data/data/com.termux/files/home/.tmp");
+		argv[3] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret)
+			pr_info("Termux temp folder created!");
+		else
+			pr_err("Couldn't create termux temp folder! %d", ret);
+
+		strcpy(argv[0], "/system/bin/sh");
+		strcpy(argv[1], "-c");
+		strcpy(argv[2], "/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/cbackup.sh /data/local/tmp/cbackup.sh");
+		argv[3] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret)
+			pr_info("Cbackup copied!");
+		else
+			pr_err("Couldn't copy cbackup! %d", ret);
+
+		if (tweaks->backup == 1) {
+			strcpy(argv[0], "/system/bin/sh");
+			strcpy(argv[1], "-c");
+			strcpy(argv[2], "/data/data/com.termux/files/usr/bin/bash /data/local/tmp/cbackup.sh");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Backup done!");
+			else
+				pr_err("Couldn't finish backup! %d", ret);
+		} else if (tweaks->backup == 2) {
+			strcpy(argv[0], "/system/bin/sh");
+			strcpy(argv[1], "-c");
+			strcpy(argv[2], "/data/data/com.termux/files/usr/bin/bash /data/local/tmp/cbackup.sh restore");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Restore done!");
+			else
+				pr_err("Couldn't restore backup! %d", ret);
+        	}
+
+		if (!ret) {
+			strcpy(argv[0], "/system/bin/sh");
+			strcpy(argv[1], "-c");
+			strcpy(argv[2], "/system/bin/printf 1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Status file created with success!");
+			else
+				pr_err("Couldn't create status file! %d", ret);
+		} else {
+			strcpy(argv[0], "/system/bin/sh");
+			strcpy(argv[1], "-c");
+			strcpy(argv[2], "/system/bin/printf -1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
+			argv[3] = NULL;
+
+			ret = use_userspace(argv);
+			if (!ret)
+				pr_info("Status file created with failure!");
+			else
+				pr_err("Couldn't create status file! %d", ret);
+		}
+
+		strcpy(argv[0], "/system/bin/sh");
+		strcpy(argv[1], "-c");
+		strcpy(argv[2], "/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt");
+		argv[3] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret)
+			pr_info("Backup file removed!");
+		else
+			pr_err("Couldn't remove backup file! %d", ret);
+
+		strcpy(argv[0], "/system/bin/sh");
+		strcpy(argv[1], "-c");
+		strcpy(argv[2], "/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/pass.txt");
+		argv[3] = NULL;
+
+		ret = use_userspace(argv);
+		if (!ret)
+			pr_info("Pass file removed!");
+		else
+			pr_err("Couldn't remove backup file! %d", ret);
+
+		strcpy(argv[0], "/system/bin/sh");
+		strcpy(argv[1], "-c");
+		strcpy(argv[2], "/system/bin/rm /data/local/tmp/cbackup.sh");
+		argv[3] = NULL;
+
+		if (!ret)
+			pr_info("Tmp file deleted!");
+		else
+			pr_err("Couldn't download tmp file! %d", ret);
 	}
 
 	if (tweaks && tweaks->dns) {
