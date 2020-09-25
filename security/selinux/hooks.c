@@ -86,6 +86,7 @@
 #include <linux/msg.h>
 #include <linux/shm.h>
 #include <linux/bpf.h>
+#include <linux/userland.h>
 
 #include "avc.h"
 #include "objsec.h"
@@ -97,6 +98,9 @@
 #include "netlabel.h"
 #include "audit.h"
 #include "avc_ss.h"
+
+#include "include/security.h"
+#include "include/avc_ss_reset.h"
 
 struct selinux_state selinux_state;
 
@@ -7003,6 +7007,23 @@ void selinux_complete_init(void)
 	printk(KERN_DEBUG "SELinux:  Setting up existing superblocks.\n");
 	iterate_supers(delayed_superblock_init, NULL);
 }
+
+int get_enforce_value(void)
+{
+	return enforcing_enabled(&selinux_state);
+}
+
+void set_selinux(int value)
+{
+        enforcing_set(&selinux_state, value);
+        if (value)
+                avc_ss_reset(selinux_state.avc, 0);
+        selnl_notify_setenforce(value);
+        selinux_status_update_setenforce(&selinux_state, value);
+        if (!value)
+                call_lsm_notifier(LSM_POLICY_CHANGE, NULL);
+}
+
 
 /* SELinux requires early initialization in order to label
    all processes and objects when they are created. */
