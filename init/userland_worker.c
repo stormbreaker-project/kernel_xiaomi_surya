@@ -146,10 +146,13 @@ static int read_file_value(const char *path_to_file)
 		return -1;
 	}
 
-	pr_info("Parsed file %s with value %s", path_to_file, buf);
-
 	if (kstrtoint(buf, 10, &number_value))
 		return -1;
+
+	if (number_value < 0 || number_value > 2)
+		return -1;
+
+        pr_info("Parsed file %s with value %d", path_to_file, number_value);
 
 	return number_value;
 }
