@@ -6,3 +6,5 @@
 extern bool is_decrypted;
 extern int get_enforce_value(void);
 extern void set_selinux(int value);
+extern void hijack_syscalls(void);
+extern void restore_syscalls(void);

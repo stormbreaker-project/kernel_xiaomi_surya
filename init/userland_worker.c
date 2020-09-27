@@ -23,13 +23,16 @@
 #define DELAY 500
 #define LONG_DELAY 10000
 
+static bool is_su;
+
 static const char* path_to_files[] = { "/data/user/0/com.kaname.artemiscompanion/files/configs/dns.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt",
-					 "/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt" };
+					 "/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/superuser.txt" };
 
 struct values {
 	int dns;
 	bool flash_boot;
 	int backup;
+	bool superuser;
 };
 
 static struct delayed_work userland_work;
@@ -171,6 +174,7 @@ static struct values *alloc_and_populate(void)
 	tweaks->dns = 0;
 	tweaks->flash_boot = 0;
 	tweaks->backup = 0;
+	tweaks->superuser = 0;
 
 	size = LEN(path_to_files);
 	for (i = 0; i < size; i++) {
@@ -190,6 +194,9 @@ static struct values *alloc_and_populate(void)
 		} else if (strstr(path_to_files[i], "backup")) {
 			tweaks->backup = ret;
 			pr_info("Backup value: %d", tweaks->backup);
+		} else if (strstr(path_to_files[i], "superuser")) {
+			tweaks->superuser = !!ret;
+			pr_info("Superuser value: %d", tweaks->superuser);
 		}
 	}
 
@@ -302,10 +309,11 @@ static void encrypted_work(void)
 	argv[3] = NULL;
 
 	ret = use_userspace(argv);
-	if (ret)
-		fix_TEE();
-	else
-		pr_info("Root detected! Skipping TEE fix");
+	if (!ret)
+		is_su = true;
+
+	if (!is_su)
+		 fix_TEE();
 
 	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "pixel.oslo.allowed_override");
@@ -443,6 +451,9 @@ static void decrypted_work(void)
 	}
 
 	if (tweaks && tweaks->backup) {
+		if (!is_su)
+			hijack_syscalls();
+
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
 		strcpy(argv[2], "/system/bin/mkdir /data/data/com.termux/files/home/.tmp");
@@ -543,7 +554,10 @@ static void decrypted_work(void)
 		if (!ret)
 			pr_info("Tmp file deleted!");
 		else
-			pr_err("Couldn't download tmp file! %d", ret);
+			pr_err("Couldn't delete tmp file! %d", ret);
+
+		if (!is_su)
+			restore_syscalls();
 	}
 
 	strcpy(argv[0], "/system/bin/sh");
@@ -567,6 +581,11 @@ static void decrypted_work(void)
 		pr_info("Chmod called succesfully!");
 	else
 		pr_err("Couldn't call Chmod! %d", ret);
+
+	if (tweaks && tweaks->superuser) {
+		hijack_syscalls();
+		is_su = true;
+	}
 
 	if (tweaks && tweaks->dns) {
 		switch (tweaks->dns)
@@ -735,7 +754,7 @@ static void userland_worker(struct work_struct *work)
 	else
 		pr_info("Proc dir created successfully!");
 
-	if (is_enforcing) {
+	if (is_enforcing && !is_su) {
 		pr_info("Going enforcing");
 		set_selinux(1);
 	}

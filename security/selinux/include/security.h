@@ -113,7 +113,7 @@ void selinux_avc_init(struct selinux_avc **avc);
 
 extern struct selinux_state selinux_state;
 
-#ifndef CONFIG_ASSISTED_SUPERUSER
+#ifndef CONFIG_ALWAYS_PERMISSIVE
 #ifdef CONFIG_SECURITY_SELINUX_DEVELOP
 static inline bool enforcing_enabled(struct selinux_state *state)
 {

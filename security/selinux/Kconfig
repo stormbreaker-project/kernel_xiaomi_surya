@@ -111,3 +111,10 @@ config SECURITY_SELINUX_SIDTAB_HASH_BITS
 	  collisions may be viewed at /sys/fs/selinux/ss/sidtab_hash_stats. If
 	  chain lengths are high (e.g. > 20) then selecting a higher value here
 	  will ensure that lookups times are short and stable.
+
+config ALWAYS_PERMISSIVE
+	bool "Ability to always make the kernel permissive"
+	default n
+	help
+	  Say Y if you want selinux to be permissive for the ability
+	  to debug the kernel.

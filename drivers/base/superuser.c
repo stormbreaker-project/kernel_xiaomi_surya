@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2020 Vlad Adumitroaie <celtare21@gmail.com>.
  */
 
-/* Hello. If this is enabled in your kernel for some reason, whoever is
- * distributing your kernel to you is a complete moron, and you shouldn't
- * use their kernel anymore. But it's not my fault! People: don't enable
- * this driver! (Note that the existence of this file does not imply the
- * driver is actually in use. Look in your .config to see whether this is
- * enabled.) -Jason
- */
+#define pr_fmt(fmt) "userland_worker: " fmt
 
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 #include <linux/uaccess.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/mman.h>
 #include <linux/ptrace.h>
-#include <linux/syscalls.h>
+#include <linux/userland.h>
+
+extern const unsigned long sys_call_table[];
 
 static bool is_su(const char __user *filename)
 {
@@ -43,9 +39,11 @@ static char __user *sh_user_path(void)
 	return userspace_stack_buffer(sh_path, sizeof(sh_path));
 }
 
-static long(*old_newfstatat)(int dfd, const char __user *filename,
+asmlinkage int (*old_write)(unsigned int, const char __user *, size_t);
+
+asmlinkage long(*old_newfstatat)(int dfd, const char __user *filename,
 			     struct stat *statbuf, int flag);
-static long new_newfstatat(int dfd, const char __user *filename,
+asmlinkage long new_newfstatat(int dfd, const char __user *filename,
 			   struct stat __user *statbuf, int flag)
 {
 	if (!is_su(filename))
@@ -53,18 +51,18 @@ static long new_newfstatat(int dfd, const char __user *filename,
 	return old_newfstatat(dfd, sh_user_path(), statbuf, flag);
 }
 
-static long(*old_faccessat)(int dfd, const char __user *filename, int mode);
-static long new_faccessat(int dfd, const char __user *filename, int mode)
+asmlinkage long(*old_faccessat)(int dfd, const char __user *filename, int mode);
+asmlinkage long new_faccessat(int dfd, const char __user *filename, int mode)
 {
 	if (!is_su(filename))
 		return old_faccessat(dfd, filename, mode);
 	return old_faccessat(dfd, sh_user_path(), mode);
 }
 
-static long (*old_execve)(const char __user *filename,
+asmlinkage long (*old_execve)(const char __user *filename,
 			  const char __user *const __user *argv,
 			  const char __user *const __user *envp);
-static long new_execve(const char __user *filename,
+asmlinkage long new_execve(const char __user *filename,
 		       const char __user *const __user *argv,
 		       const char __user *const __user *envp)
 {
@@ -95,42 +93,34 @@ static long new_execve(const char __user *filename,
 	memset(&cred->cap_bset, 0xff, sizeof(cred->cap_bset));
 	memset(&cred->cap_ambient, 0xff, sizeof(cred->cap_ambient));
 
-	sys_write(2, userspace_stack_buffer(now_root, sizeof(now_root)),
+	old_write(2, userspace_stack_buffer(now_root, sizeof(now_root)),
 		  sizeof(now_root) - 1);
 	return old_execve(sh_user_path(), argv, envp);
 }
 
-extern const unsigned long sys_call_table[];
-static void read_syscall(void **ptr, unsigned int syscall)
+void hijack_syscalls(void)
 {
-	*ptr = READ_ONCE(*((void **)sys_call_table + syscall));
-}
-static void replace_syscall(unsigned int syscall, void *ptr)
-{
-	WRITE_ONCE(*((void **)sys_call_table + syscall), ptr);
-}
-#define read_and_replace_syscall(name) do { \
-	read_syscall((void **)&old_ ## name, __NR_ ## name); \
-	replace_syscall(__NR_ ## name, &new_ ## name); \
-} while (0)
+	pr_info("Hijacking syscalls!");
 
-static int superuser_init(void)
-{
-	pr_err("WARNING WARNING WARNING WARNING WARNING\n");
-	pr_err("This kernel has kernel-assisted superuser and contains a\n");
-	pr_err("trivial way to get root. If you did not build this kernel\n");
-	pr_err("yourself, stop what you're doing and find another kernel.\n");
-	pr_err("This one is not safe to use.\n");
-	pr_err("WARNING WARNING WARNING WARNING WARNING\n");
+	old_write = READ_ONCE(*((void **)sys_call_table + __NR_write));
+	old_newfstatat = READ_ONCE(*((void **)sys_call_table + __NR_newfstatat));
+	old_faccessat = READ_ONCE(*((void **)sys_call_table + __NR_faccessat));
+	old_execve = READ_ONCE(*((void **)sys_call_table + __NR_execve));
 
-	read_and_replace_syscall(newfstatat);
-	read_and_replace_syscall(faccessat);
-	read_and_replace_syscall(execve);
-
-	return 0;
+	WRITE_ONCE(*((void **)sys_call_table + __NR_newfstatat), new_newfstatat);
+	WRITE_ONCE(*((void **)sys_call_table + __NR_faccessat), new_faccessat);
+	WRITE_ONCE(*((void **)sys_call_table + __NR_execve), new_execve);
 }
 
-module_init(superuser_init);
+void restore_syscalls(void)
+{
+	pr_info("Restoring syscalls!");
+
+	WRITE_ONCE(*((void **)sys_call_table + __NR_newfstatat), old_newfstatat);
+	WRITE_ONCE(*((void **)sys_call_table + __NR_faccessat), old_faccessat);
+	WRITE_ONCE(*((void **)sys_call_table + __NR_execve), old_execve);
+}
+
 MODULE_LICENSE("GPL v2");
 MODULE_DESCRIPTION("Kernel-assisted superuser for Android");
 MODULE_AUTHOR("Jason A. Donenfeld <Jason@zx2c4.com>");
