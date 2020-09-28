@@ -391,14 +391,14 @@ static void decrypted_work(void)
 	if (tweaks && tweaks->flash_boot) {
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
+		strcpy(argv[2], "/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret)
-			pr_info("Flash_boot file deleted!");
+			pr_info("Flash_boot config unset!");
 		else
-			pr_err("Couldn't delete Flash_boot file! %d", ret);
+			pr_err("Couldn't unset Flash_boot file! %d", ret);
 
 		strcpy(argv[0], "/system/bin/test");
 		strcpy(argv[1], "-f");
@@ -526,14 +526,14 @@ static void decrypted_work(void)
 
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt");
+		strcpy(argv[2], "/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt");
 		argv[3] = NULL;
 
 		ret = use_userspace(argv);
 		if (!ret)
-			pr_info("Backup file removed!");
+			pr_info("Backup config unset!");
 		else
-			pr_err("Couldn't remove backup file! %d", ret);
+			pr_err("Couldn't unset backup config! %d", ret);
 
 		strcpy(argv[0], "/system/bin/sh");
 		strcpy(argv[1], "-c");
@@ -552,9 +552,9 @@ static void decrypted_work(void)
 		argv[3] = NULL;
 
 		if (!ret)
-			pr_info("Tmp file deleted!");
+			pr_info("Backup scrip deleted!");
 		else
-			pr_err("Couldn't delete tmp file! %d", ret);
+			pr_err("Couldn't delete backup script! %d", ret);
 
 		if (!is_su)
 			restore_syscalls();
