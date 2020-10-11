@@ -71,6 +71,7 @@
 #include <linux/khugepaged.h>
 #include <linux/psi.h>
 #include <linux/devfreq_boost.h>
+#include <linux/khugepaged.h>
 
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
