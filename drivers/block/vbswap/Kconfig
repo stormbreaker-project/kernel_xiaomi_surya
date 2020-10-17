@@ -2,3 +2,12 @@ config VBSWAP
 	tristate "Fake block device for swap based on vnswap"
 	depends on BLOCK && ZSWAP
 	default n
+
+config VBSWAP_HELPER
+	bool "Initialize and configure VBSWAP disk from kernel"
+	depends on VBSWAP
+	default n
+	help	  
+	  This options enables a userland worker to initialize and
+	  configure VBSWAP disk parameters in kernel, circumventing
+	  the need for ramdisk modification.
