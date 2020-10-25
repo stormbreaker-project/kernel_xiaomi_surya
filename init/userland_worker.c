@@ -316,6 +316,17 @@ static void encrypted_work(void)
 		 fix_TEE();
 
 	strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], "debug.hwui.renderer");
+	strcpy(argv[2], "skiavk");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("Props set succesfully! Using SkiaVK now!");
+	else
+		pr_err("Couldn't set SkiaVK!");
+
+	strcpy(argv[0], "/system/bin/setprop");
 	strcpy(argv[1], "pixel.oslo.allowed_override");
 	strcpy(argv[2], "1");
 	argv[3] = NULL;
