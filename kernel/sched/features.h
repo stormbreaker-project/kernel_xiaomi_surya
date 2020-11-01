@@ -142,4 +142,4 @@ SCHED_FEAT(SCHEDTUNE_BOOST_HOLD_ALL, false)
  * generally leads to usage of higher frequencies.
  * If disabled, boosts will only bias tasks to higher-capacity CPUs.
  */
-SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, true)
+SCHED_FEAT(SCHEDTUNE_BOOST_UTIL, false)
