@@ -17,11 +17,13 @@
 #include <linux/userland.h>
 
 #define LEN(arr) ((int) (sizeof (arr) / sizeof (arr)[0]))
-#define INITIAL_SIZE 4
+#define STANDARD_SIZE 4
 #define MAX_CHAR 128
 #define SHORT_DELAY 10
 #define DELAY 500
 #define LONG_DELAY 10000
+
+static char** argv;
 
 static bool is_su;
 
@@ -203,209 +205,121 @@ static struct values *alloc_and_populate(void)
 	return tweaks;
 }
 
+static inline int linux_write(const char* prop, const char* value, bool resetprop)
+{
+	int ret;
+
+	resetprop ? strcpy(argv[0], "/data/local/tmp/resetprop_static") :
+			strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], prop);
+	strcpy(argv[2], value);
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("%s set succesfully!", prop);
+	else
+		pr_err("Couldn't set %s! %d", prop, ret);
+
+	return ret;
+}
+
+static inline int linux_sh(const char* command)
+{
+	int ret;
+
+	strcpy(argv[0], "/system/bin/sh");
+	strcpy(argv[1], "-c");
+	strcpy(argv[2], command);
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("%s called succesfully!", command);
+	else
+		pr_err("Couldn't call %s! %d", command, ret);
+
+	return ret;
+}
+
+static inline int linux_test(const char* path)
+{
+	strcpy(argv[0], "/system/bin/test");
+	strcpy(argv[1], "-f");
+	strcpy(argv[2], path);
+	argv[3] = NULL;
+
+	return use_userspace(argv);
+}
+
+static inline int linux_dd(const char* source, const char* destination)
+{
+	strcpy(argv[0], "/system/bin/dd");
+	strcpy(argv[1], source);
+	strcpy(argv[2], destination);
+	argv[3] = NULL;
+
+	return use_userspace(argv);
+}
+
+static inline int linux_chmod(const char* path, const char* perms)
+{
+	strcpy(argv[0], "/system/bin/chmod");
+	strcpy(argv[1], perms);
+	strcpy(argv[2], path);
+	argv[3] = NULL;
+
+	return use_userspace(argv);
+}
+
 static void fix_TEE(void)
 {
-	char** argv;
 	int ret, retries = 0;
-
-	argv = alloc_memory(INITIAL_SIZE);
-	if (!argv) {
-		pr_err("Couldn't allocate memory!");
-		return;
-	}
 
 	msleep(SHORT_DELAY * 2);
 
 	pr_info("Fixing TEE");
 
-	strcpy(argv[0], "/data/local/tmp/resetprop_static");
-	strcpy(argv[1], "ro.product.model");
-	strcpy(argv[2], "Pixel 4a");
-	argv[3] = NULL;
-
 	do {
-		ret = use_userspace(argv);
+		ret = linux_write("ro.product.model", "Pixel 4a", true);
 		if (ret)
 			msleep(DELAY);
 	} while (ret && retries++ < 10);
 
-	if (!ret)
-		pr_info("Device props set succesfully!");
-	else
-		pr_err("Couldn't set device props! %d", ret);
+	linux_write("ro.product.system.model", "Pixel 4a", true);
 
-	strcpy(argv[0], "/data/local/tmp/resetprop_static");
-	strcpy(argv[1], "ro.product.system.model");
-	strcpy(argv[2], "Pixel 4a");
-	argv[3] = NULL;
+	linux_write("ro.product.vendor.model", "Pixel 4a", true);
 
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Device props set succesfully!");
-	else
-		pr_err("Couldn't set device props! %d", ret);
+	linux_write("ro.product.product.model", "Pixel 4a", true);
 
-	strcpy(argv[0], "/data/local/tmp/resetprop_static");
-	strcpy(argv[1], "ro.product.vendor.model");
-	strcpy(argv[2], "Pixel 4a");
-	argv[3] = NULL;
+	linux_write("ro.product.odm.model", "Pixel 4a", true);
 
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Device props set succesfully!");
-	else
-		pr_err("Couldn't set device props! %d", ret);
-
-	strcpy(argv[0], "/data/local/tmp/resetprop_static");
-	strcpy(argv[1], "ro.product.product.model");
-	strcpy(argv[2], "Pixel 4a");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Device props set succesfully!");
-	else
-		pr_err("Couldn't set device props! %d", ret);
-
-	strcpy(argv[0], "/data/local/tmp/resetprop_static");
-	strcpy(argv[1], "ro.product.odm.model");
-	strcpy(argv[2], "Pixel 4a");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Device props set succesfully!");
-	else
-		pr_err("Couldn't set device props! %d", ret);
-
-	strcpy(argv[0], "/data/local/tmp/resetprop_static");
-	strcpy(argv[1], "ro.product.system_ext.model");
-	strcpy(argv[2], "Pixel 4a");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Device props set succesfully!");
-	else
-		pr_err("Couldn't set device props! %d", ret);
-
-	free_memory(argv, INITIAL_SIZE);
+	linux_write("ro.product.system_ext.model", "Pixel 4a", true);
 }
 
 static void encrypted_work(void)
 {
-	char** argv;
-	int ret;
-
-	argv = alloc_memory(INITIAL_SIZE);
-	if (!argv) {
-		pr_err("Couldn't allocate memory!");
-		return;
-	}
-
-	strcpy(argv[0], "/system/bin/sh");
-	strcpy(argv[1], "-c");
-	strcpy(argv[2], "/system/bin/su");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
+	if (!linux_sh("/system/bin/su"))
 		is_su = true;
 
 	if (!is_su)
 		 fix_TEE();
 
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "debug.hwui.renderer");
-	strcpy(argv[2], "skiavk");
-	argv[3] = NULL;
+	linux_write("debug.hwui.renderer", "skiavk", false);
 
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Props set succesfully! Using SkiaVK now!");
-	else
-		pr_err("Couldn't set SkiaVK!");
+	linux_write("pixel.oslo.allowed_override", "1", false);
 
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "pixel.oslo.allowed_override");
-	strcpy(argv[2], "1");
-	argv[3] = NULL;
+	linux_write("persist.vendor.radio.multisim_swtich_support", "true", false);
 
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Props set succesfully! Soli is unlocked!");
-	else
-		pr_err("Couldn't set Soli props! %d", ret);
+	linux_write("dalvik.vm.dex2oat-cpu-set", "0,1,2,3,4,5,6", false);
 
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "persist.vendor.radio.multisim_swtich_support");
-	strcpy(argv[2], "true");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Props set succesfully! Multisim is unlocked!");
-	else
-		pr_err("Couldn't set multisim props! %d", ret);
-
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "dalvik.vm.dex2oat-cpu-set");
-	strcpy(argv[2], "0,1,2,3,4,5,6");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Dalvik props set succesfully!");
-	else
-		pr_err("Couldn't set Dalvik props! %d", ret);
-
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "dalvik.vm.dex2oat-threads");
-	strcpy(argv[2], "6");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Dalvik props set succesfully!");
-	else
-		pr_err("Couldn't set Dalvik props! %d", ret);
-
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "/proc/sys/kernel/sched_lib_name");
-	strcpy(argv[2], "UnityMain,libunity.so");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("sched_lib_name set succesfully!");
-	else
-		pr_err("Couldn't set sched_lib_name! %d", ret);
-
-	strcpy(argv[0], "/system/bin/setprop");
-	strcpy(argv[1], "/proc/sys/kernel/sched_lib_mask_force");
-	strcpy(argv[2], "255");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("sched_lib_mask_force set succesfully!");
-	else
-		pr_err("Couldn't set sched_lib_mask_force! %d", ret);
-
-	free_memory(argv, INITIAL_SIZE);
+	linux_write("dalvik.vm.dex2oat-threads", "6", false);
 }
 
 static void decrypted_work(void)
 {
 	struct values* tweaks;
-	char** argv;
 	int ret;
-
-	argv = alloc_memory(INITIAL_SIZE);
-	if (!argv) {
-		pr_err("Couldn't allocate memory!");
-		return;
-	}
 
 	if (!is_decrypted) {
 		pr_info("Waiting for fs decryption!");
@@ -420,357 +334,113 @@ static void decrypted_work(void)
 	msleep(DELAY / 5);
 
 	tweaks = alloc_and_populate();
+	if (!tweaks)
+		goto skip;
 
-	if (tweaks && tweaks->flash_boot) {
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
-		argv[3] = NULL;
+	if (tweaks->flash_boot) {
+		linux_sh("/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Flash_boot config unset!");
-		else
-			pr_err("Couldn't unset Flash_boot file! %d", ret);
-
-		strcpy(argv[0], "/system/bin/test");
-		strcpy(argv[1], "-f");
-		strcpy(argv[2], "/data/user/0/com.kaname.artemiscompanion/files/boot.img");
-		argv[3] = NULL;
-
-	        ret = use_userspace(argv);
+		ret = linux_test("/data/user/0/com.kaname.artemiscompanion/files/boot.img");
 		if (!ret) {
 			int flash_a, flash_b;
 
-			strcpy(argv[0], "/system/bin/dd");
-			strcpy(argv[1], "if=/data/user/0/com.kaname.artemiscompanion/files/boot.img");
-			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_b");
-			argv[3] = NULL;
-
-			flash_b = use_userspace(argv);
-			if (!flash_b)
-				pr_info("Boot image _b flashed!");
-			else
-				pr_err("DD failed! %d", flash_b);
-
-			strcpy(argv[0], "/system/bin/dd");
-			strcpy(argv[1], "if=/data/user/0/com.kaname.artemiscompanion/files/boot.img");
-			strcpy(argv[2], "of=/dev/block/bootdevice/by-name/boot_a");
-			argv[3] = NULL;
-
-			flash_a = use_userspace(argv);
-			if (!flash_a)
-				pr_info("Boot image _a flashed!");
-			else
-				pr_err("DD failed! %d", flash_a);
+			flash_a = linux_dd("if=/data/user/0/com.kaname.artemiscompanion/files/boot.img", "of=/dev/block/bootdevice/by-name/boot_a");
+			flash_b = linux_dd("if=/data/user/0/com.kaname.artemiscompanion/files/boot.img", "of=/dev/block/bootdevice/by-name/boot_b");
 
 			if (!flash_a || !flash_b) {
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/reboot");
-				argv[3] = NULL;
+				ret = linux_sh("/system/bin/reboot");
 
-				ret = use_userspace(argv);
-				if (!ret) {
-					pr_info("Reboot call succesfully! Going down!");
+				if (!ret)
 					return;
-				} else {
-					pr_err("Couldn't reboot! %d", ret);
-				}
 			}
-		} else {
-			pr_err("No boot.img found!");
 		}
 	}
 
-	if (tweaks && tweaks->backup) {
+	if (tweaks->backup) {
 		if (!is_su)
 			hijack_syscalls();
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/mkdir /data/data/com.termux/files/home/.tmp");
-		argv[3] = NULL;
+		linux_sh("/system/bin/mkdir /data/data/com.termux/files/home/.tmp");
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Termux temp folder created!");
-		else
-			pr_err("Couldn't create termux temp folder! %d", ret);
+		linux_sh("/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/cbackup.sh /data/local/tmp/cbackup.sh");
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/cbackup.sh /data/local/tmp/cbackup.sh");
-		argv[3] = NULL;
-
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Cbackup copied!");
-		else
-			pr_err("Couldn't copy cbackup! %d", ret);
-
-		if (tweaks->backup == 1) {
-			strcpy(argv[0], "/system/bin/sh");
-			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/data/data/com.termux/files/usr/bin/bash /data/local/tmp/cbackup.sh");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Backup done!");
-			else
-				pr_err("Couldn't finish backup! %d", ret);
-		} else if (tweaks->backup == 2) {
-			strcpy(argv[0], "/system/bin/sh");
-			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/data/data/com.termux/files/usr/bin/bash /data/local/tmp/cbackup.sh restore");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Restore done!");
-			else
-				pr_err("Couldn't restore backup! %d", ret);
-        	}
-
-		if (!ret) {
-			strcpy(argv[0], "/system/bin/sh");
-			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/system/bin/printf 1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Status file created with success!");
-			else
-				pr_err("Couldn't create status file! %d", ret);
-		} else {
-			strcpy(argv[0], "/system/bin/sh");
-			strcpy(argv[1], "-c");
-			strcpy(argv[2], "/system/bin/printf -1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
-			argv[3] = NULL;
-
-			ret = use_userspace(argv);
-			if (!ret)
-				pr_info("Status file created with failure!");
-			else
-				pr_err("Couldn't create status file! %d", ret);
+		switch (tweaks->backup)
+		{
+			case 1:
+				ret = linux_sh("/data/data/com.termux/files/usr/bin/bash /data/local/tmp/cbackup.sh");
+				break;
+			case 2:
+				ret = linux_sh("/data/data/com.termux/files/usr/bin/bash /data/local/tmp/cbackup.sh restore");
+				break;
+			default:
+				ret = -1;
+				break;
 		}
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt");
-		argv[3] = NULL;
+		ret ? linux_sh("/system/bin/printf -1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt") :
+				linux_sh("/system/bin/printf 1 > /data/user/0/com.kaname.artemiscompanion/files/configs/status.txt");
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Backup config unset!");
-		else
-			pr_err("Couldn't unset backup config! %d", ret);
+		linux_sh("/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt");
 
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/pass.txt");
-		argv[3] = NULL;
+		linux_sh("/system/bin/rm /data/user/0/com.kaname.artemiscompanion/files/configs/pass.txt");
 
-		ret = use_userspace(argv);
-		if (!ret)
-			pr_info("Pass file removed!");
-		else
-			pr_err("Couldn't remove backup file! %d", ret);
-
-		strcpy(argv[0], "/system/bin/sh");
-		strcpy(argv[1], "-c");
-		strcpy(argv[2], "/system/bin/rm /data/local/tmp/cbackup.sh");
-		argv[3] = NULL;
-
-		if (!ret)
-			pr_info("Backup scrip deleted!");
-		else
-			pr_err("Couldn't delete backup script! %d", ret);
+		linux_sh("/system/bin/rm /data/local/tmp/cbackup.sh");
 
 		if (!is_su)
 			restore_syscalls();
 	}
 
-	strcpy(argv[0], "/system/bin/sh");
-	strcpy(argv[1], "-c");
-	strcpy(argv[2], "/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/resetprop /data/local/tmp/resetprop_static");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Resetprop copied succesfully!");
-	else
-		pr_err("Couldn't copy Resetprop! %d", ret);
-
-	strcpy(argv[0], "/system/bin/chmod");
-	strcpy(argv[1], "755");
-	strcpy(argv[2], "/data/local/tmp/resetprop_static");
-	argv[3] = NULL;
-
-	ret = use_userspace(argv);
-	if (!ret)
-		pr_info("Chmod called succesfully!");
-	else
-		pr_err("Couldn't call Chmod! %d", ret);
-
-	if (tweaks && tweaks->superuser) {
+	if (tweaks->superuser) {
 		hijack_syscalls();
 		is_su = true;
 	}
 
-	if (tweaks && tweaks->dns) {
-		switch (tweaks->dns)
-		{
-			case 1:
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
-				argv[3] = NULL;
+	switch (tweaks->dns)
+	{
+		case 1:
+			linux_sh("/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
+			linux_sh("/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
+			linux_sh("/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
+			linux_sh("/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
+			linux_sh("/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
+			linux_sh("/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
 
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
+			break;
+		case 2:
+			linux_sh("/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1");
+			linux_sh("/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1");
+			linux_sh("/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1 || true");
+			linux_sh("/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1 || true");
+			linux_sh("/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1");
+			linux_sh("/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1");
 
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130 || true");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 176.103.130.130");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 176.103.130.130");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				break;
-			case 2:
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1 || true");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1 || true");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p tcp --dport 53 -j DNAT --to-destination 1.1.1.1");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				strcpy(argv[0], "/system/bin/sh");
-				strcpy(argv[1], "-c");
-				strcpy(argv[2], "/system/bin/iptables -t nat -I OUTPUT -p udp --dport 53 -j DNAT --to-destination 1.1.1.1");
-				argv[3] = NULL;
-
-				ret = use_userspace(argv);
-				if (!ret)
-					pr_info("Iptables called succesfully!");
-				else
-					pr_err("Couldn't call iptables! %d", ret);
-
-				break;
-			default:
-				break;
-		}
+			break;
+		default:
+			break;
 	}
 
-	free_memory(argv, INITIAL_SIZE);
+	kfree(tweaks);
+
+skip:
+	linux_sh("/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/resetprop /data/local/tmp/resetprop_static");
+
+	linux_chmod("/data/local/tmp/resetprop_static", "755");
+
+	linux_write("/proc/sys/kernel/sched_lib_name", "UnityMain,libunity.so", false);
+
+	linux_write("/proc/sys/kernel/sched_lib_mask_force", "255", false);
 }
 
 static void userland_worker(struct work_struct *work)
 {
 	struct proc_dir_entry *userland_dir;
 	bool is_enforcing;
+
+	argv = alloc_memory(STANDARD_SIZE);
+	if (!argv) {
+		pr_err("Couldn't allocate memory!");
+		return;
+	}
 
 	is_enforcing = get_enforce_value();
 	if (is_enforcing) {
@@ -791,6 +461,8 @@ static void userland_worker(struct work_struct *work)
 		pr_info("Going enforcing");
 		set_selinux(1);
 	}
+
+	free_memory(argv, STANDARD_SIZE);
 }
 
 static int __init userland_worker_entry(void)
