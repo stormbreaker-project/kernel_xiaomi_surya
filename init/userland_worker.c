@@ -359,6 +359,28 @@ static void encrypted_work(void)
 	else
 		pr_err("Couldn't set Dalvik props! %d", ret);
 
+	strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], "/proc/sys/kernel/sched_lib_name");
+	strcpy(argv[2], "UnityMain,libunity.so");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("sched_lib_name set succesfully!");
+	else
+		pr_err("Couldn't set sched_lib_name! %d", ret);
+
+	strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[1], "/proc/sys/kernel/sched_lib_mask_force");
+	strcpy(argv[2], "255");
+	argv[3] = NULL;
+
+	ret = use_userspace(argv);
+	if (!ret)
+		pr_info("sched_lib_mask_force set succesfully!");
+	else
+		pr_err("Couldn't set sched_lib_mask_force! %d", ret);
+
 	free_memory(argv, INITIAL_SIZE);
 }
 
