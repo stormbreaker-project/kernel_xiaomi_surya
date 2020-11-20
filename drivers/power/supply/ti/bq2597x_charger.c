@@ -2360,7 +2360,7 @@ static int bq2597x_charger_probe(struct i2c_client *client,
 		return ret;
 
 
-	pr_err("lct client->irq=d%\n",client->irq);
+	pr_err("lct client->irq=%d\n",client->irq);
 
 	ret = bq_charger_int(bq);
 	if (ret < 0) {
