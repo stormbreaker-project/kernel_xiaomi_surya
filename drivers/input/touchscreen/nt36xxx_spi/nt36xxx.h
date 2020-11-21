@@ -31,15 +31,6 @@
 
 #include "nt36xxx_mem_map.h"
 
-#ifdef CONFIG_MTK_SPI
-/* Please copy mt_spi.h file under mtk spi driver folder */
-#include "mt_spi.h"
-#endif
-
-#ifdef CONFIG_SPI_MT65XX
-#include <linux/platform_data/spi-mt65xx.h>
-#endif
-
 // include longcheer header
 #include "../lct_tp_info.h"
 #include "../lct_tp_selftest.h"
@@ -207,12 +198,6 @@ struct nvt_ts_data {
 	struct regulator *pwr_vdd; /* IOVCC 1.8V */
 	struct regulator *pwr_lab; /* VSP +5V */
 	struct regulator *pwr_ibb; /* VSN -5V */
-#endif
-#ifdef CONFIG_MTK_SPI
-	struct mt_chip_conf spi_ctrl;
-#endif
-#ifdef CONFIG_SPI_MT65XX
-    struct mtk_chip_config spi_ctrl;
 #endif
 
 /*2019.12.16 longcheer taocheng add (xiaomi game mode) start*/
