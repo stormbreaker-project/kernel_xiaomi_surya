@@ -28,13 +28,15 @@ static char** argv;
 static bool is_su;
 
 static const char* path_to_files[] = { "/data/user/0/com.kaname.artemiscompanion/files/configs/dns.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt",
-					 "/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/superuser.txt" };
+					 "/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/superuser.txt",
+					 "/data/user/0/com.kaname.artemiscompanion/files/configs/blur_enable.txt" };
 
 struct values {
 	int dns;
 	bool flash_boot;
 	int backup;
 	bool superuser;
+	bool blur;
 };
 
 static struct delayed_work userland_work;
@@ -177,6 +179,7 @@ static struct values *alloc_and_populate(void)
 	tweaks->flash_boot = 0;
 	tweaks->backup = 0;
 	tweaks->superuser = 0;
+	tweaks->blur = 0;
 
 	size = LEN(path_to_files);
 	for (i = 0; i < size; i++) {
@@ -199,6 +202,9 @@ static struct values *alloc_and_populate(void)
 		} else if (strstr(path_to_files[i], "superuser")) {
 			tweaks->superuser = !!ret;
 			pr_info("Superuser value: %d", tweaks->superuser);
+		} else if (strstr(path_to_files[i], "blur_enable")) {
+			tweaks->blur = !!ret;
+			pr_info("Blur value: %d", tweaks->blur);
 		}
 	}
 
@@ -209,8 +215,7 @@ static inline int linux_write(const char* prop, const char* value, bool resetpro
 {
 	int ret;
 
-	resetprop ? strcpy(argv[0], "/data/local/tmp/resetprop_static") :
-			strcpy(argv[0], "/system/bin/setprop");
+	strcpy(argv[0], resetprop ? "/data/local/tmp/resetprop_static" : "/system/bin/setprop");
 	strcpy(argv[1], prop);
 	strcpy(argv[2], value);
 	argv[3] = NULL;
@@ -337,6 +342,10 @@ static void decrypted_work(void)
 	if (!tweaks)
 		goto skip;
 
+        linux_sh("/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/resetprop /data/local/tmp/resetprop_static");
+
+        linux_chmod("/data/local/tmp/resetprop_static", "755");
+
 	if (tweaks->flash_boot) {
 		linux_sh("/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
 
@@ -419,16 +428,19 @@ static void decrypted_work(void)
 			break;
 	}
 
+	if (tweaks->blur) {
+		linux_write("ro.surface_flinger.supports_background_blur", "1", true);
+		linux_write("ro.sf.blurs_are_expensive", "1", true);
+		linux_sh("/system/bin/stop");
+		linux_sh("/system/bin/start");
+	}
+
 	kfree(tweaks);
 
 skip:
-	linux_sh("/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/resetprop /data/local/tmp/resetprop_static");
+	linux_sh("/system/bin/echo UnityMain,libunity.so > /proc/sys/kernel/sched_lib_name");
 
-	linux_chmod("/data/local/tmp/resetprop_static", "755");
-
-	linux_write("/proc/sys/kernel/sched_lib_name", "UnityMain,libunity.so", false);
-
-	linux_write("/proc/sys/kernel/sched_lib_mask_force", "255", false);
+	linux_sh("/system/bin/echo 255 > /proc/sys/kernel/sched_lib_mask_force");
 }
 
 static void userland_worker(struct work_struct *work)
