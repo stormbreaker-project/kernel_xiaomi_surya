@@ -3,7 +3,7 @@ echo "Cloning dependencies"
 git clone --depth=1 https://github.com/stormbreaker-project/kernel_surya -b  new  kernel
 cd kernel
 git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
-git clone --depth=1 https://github.com/Forenche/AnyKernel3 AnyKernel
+git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3 -b surya AnyKernel
 echo "Done"
 IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz-dtb
 TANGGAL=$(date +"%F-%S")
