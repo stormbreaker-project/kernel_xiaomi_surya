@@ -8516,7 +8516,7 @@ static int afe_get_cal_sp_th_vi_ftm_param(int32_t cal_type, size_t data_size,
 {
 	int i, ret = 0;
 	struct audio_cal_type_sp_th_vi_param *cal_data = data;
-	struct afe_sp_th_vi_get_param th_vi;
+	struct afe_sp_th_vi_get_param th_vi = {0};
 
 	if (this_afe.cal_data[AFE_FB_SPKR_PROT_TH_VI_CAL] == NULL ||
 	    cal_data == NULL ||
