@@ -5898,7 +5898,7 @@ static int msm_dai_q6_mi2s_platform_data_validation(
 			(struct msm_mi2s_pdata *) pdev->dev.platform_data;
 	unsigned int ch_cnt;
 	int rc = 0;
-	u16 sd_line;
+	u16 sd_line = 0;
 
 	if (mi2s_pdata == NULL) {
 		pr_err("%s: mi2s_pdata NULL", __func__);
