@@ -342,10 +342,6 @@ static void decrypted_work(void)
 	if (!tweaks)
 		goto skip;
 
-        linux_sh("/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/resetprop /data/local/tmp/resetprop_static");
-
-        linux_chmod("/data/local/tmp/resetprop_static", "755");
-
 	if (tweaks->flash_boot) {
 		linux_sh("/system/bin/printf 0 > /data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt");
 
@@ -364,6 +360,11 @@ static void decrypted_work(void)
 			}
 		}
 	}
+
+
+	linux_sh("/system/bin/cp /data/user/0/com.kaname.artemiscompanion/files/assets/resetprop /data/local/tmp/resetprop_static");
+
+	linux_chmod("/data/local/tmp/resetprop_static", "755");
 
 	if (tweaks->backup) {
 		if (!is_su)
@@ -404,6 +405,13 @@ static void decrypted_work(void)
 		is_su = true;
 	}
 
+	if (tweaks->blur) {
+		linux_write("ro.surface_flinger.supports_background_blur", "1", true);
+		linux_write("ro.sf.blurs_are_expensive", "1", true);
+		linux_sh("/system/bin/pkill -TERM -f surfaceflinger");
+		msleep(LONG_DELAY);
+        }
+
 	switch (tweaks->dns)
 	{
 		case 1:
@@ -428,19 +436,14 @@ static void decrypted_work(void)
 			break;
 	}
 
-	if (tweaks->blur) {
-		linux_write("ro.surface_flinger.supports_background_blur", "1", true);
-		linux_write("ro.sf.blurs_are_expensive", "1", true);
-		linux_sh("/system/bin/stop");
-		linux_sh("/system/bin/start");
-	}
-
 	kfree(tweaks);
 
 skip:
 	linux_sh("/system/bin/echo UnityMain,libunity.so > /proc/sys/kernel/sched_lib_name");
 
 	linux_sh("/system/bin/echo 255 > /proc/sys/kernel/sched_lib_mask_force");
+
+	linux_sh("/system/bin/stop vendor.input.classifier-1-0");
 }
 
 static void userland_worker(struct work_struct *work)
@@ -461,6 +464,7 @@ static void userland_worker(struct work_struct *work)
 	}
 
 	encrypted_work();
+
 	decrypted_work();
 
 	userland_dir = proc_mkdir_data("userland", 0777, NULL, NULL);
