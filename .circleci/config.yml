@@ -13,7 +13,7 @@ jobs:
            git clone https://github.com/akhilnarang/scripts && cd scripts && bash setup/android_build_env.sh && cd ..
            mkdir kernul
            cd kernul
-           wget https://raw.githubusercontent.com/stormbreaker-project/kernel_surya/new/.circleci/build.sh
+           wget https://raw.githubusercontent.com/stormbreaker-project/kernel_xiaomi_surya/new/.circleci/build.sh
            source build.sh
 workflows:
   version: 2.1
