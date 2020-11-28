@@ -1610,6 +1610,9 @@ static int qpnp_pon_config_parse_reset_info(struct qpnp_pon *pon,
 		dev_err(pon->dev, "Unable to read s2-type, rc=%d\n", rc);
 		return rc;
 	}
+	/* Hack, heh */
+	cfg->s2_type = PON_POWER_OFF_TYPE_WARM_RESET;
+
 	if (cfg->s2_type > QPNP_PON_RESET_TYPE_MAX) {
 		dev_err(pon->dev, "Invalid reset type specified %u\n",
 			cfg->s2_type);
