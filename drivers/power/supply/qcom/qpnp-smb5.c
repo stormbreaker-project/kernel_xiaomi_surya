@@ -1461,7 +1461,7 @@ static int smb5_usb_main_get_prop(struct power_supply *psy,
 		break;
 	}
 	if (rc < 0)
-		pr_err("Couldn't get prop %d rc = %d\n", psp, rc);
+		pr_debug("Couldn't get prop %d rc = %d\n", psp, rc);
 
 	return rc;
 }
@@ -1971,7 +1971,6 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 		rc = smblib_get_prop_batt_awake(chg, val);
 		break;
 	default:
-		pr_err("batt power supply prop %d not supported\n", psp);
 		return -EINVAL;
 	}
 
@@ -3837,17 +3836,14 @@ static int thermal_notifier_callback(struct notifier_block *noti, unsigned long 
 	struct fb_event *ev_data = data;
 	struct smb_charger *chg = container_of(noti, struct smb_charger, notifier);
 	int *blank;
-	printk("%s %d",__FUNCTION__,__LINE__);
 	if (ev_data && ev_data->data && chg) {
 		blank = ev_data->data;
 		if (event == MSM_DRM_EARLY_EVENT_BLANK && *blank == MSM_DRM_BLANK_UNBLANK) {
 			lct_backlight_off = false;
-			pr_info("thermal_notifier lct_backlight_off:%d",lct_backlight_off);
 			schedule_work(&chg->fb_notify_work);
 		}
 		else if (event == MSM_DRM_EVENT_BLANK && *blank == MSM_DRM_BLANK_POWERDOWN) {
 			lct_backlight_off = true;
-			pr_info("thermal_notifier lct_backlight_off:%d",lct_backlight_off);
 			schedule_work(&chg->fb_notify_work);
 		}
 	}
