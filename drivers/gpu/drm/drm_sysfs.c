@@ -319,9 +319,6 @@ static ssize_t disp_param_show(struct device *device,
 	return ret;
 }
 
-extern ssize_t smart_fps_value_show(struct device *device,
-			   struct device_attribute *attr,
-			   char *buf);
 
 static DEVICE_ATTR_RW(status);
 static DEVICE_ATTR_RO(enabled);
@@ -329,7 +326,6 @@ static DEVICE_ATTR_RO(dpms);
 static DEVICE_ATTR_RO(modes);
 static DEVICE_ATTR_RW(disp_param);
 static DEVICE_ATTR_RO(panel_info);
-static DEVICE_ATTR_RO(smart_fps_value);
 
 static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_status.attr,
@@ -338,7 +334,6 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_modes.attr,
 	&dev_attr_disp_param.attr,
 	&dev_attr_panel_info.attr,
-	&dev_attr_smart_fps_value.attr,
 	NULL
 };
 

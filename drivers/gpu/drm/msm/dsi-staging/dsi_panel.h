@@ -85,9 +85,6 @@ struct dsi_dfps_capabilities {
 	u32 *dfps_list;
 	u32 dfps_list_len;
 	bool dfps_support;
-	/* smart fps control */
-	bool smart_fps_support;
-	u32 smart_fps_value;
 };
 
 struct dsi_dyn_clk_caps {
@@ -235,7 +232,6 @@ struct dsi_panel {
 	u8 panel_read_data[BUF_LEN_MAX];
 	struct dsi_read_config xy_coordinate_cmds;
 	struct dsi_read_config max_luminance_cmds;
-	bool panel_max_frame_rate;
 };
 
 static inline bool dsi_panel_ulps_feature_enabled(struct dsi_panel *panel)
