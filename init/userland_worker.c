@@ -290,16 +290,6 @@ static void fix_TEE(void)
 		if (ret)
 			msleep(DELAY);
 	} while (ret && retries++ < 10);
-
-	linux_write("ro.product.system.model", "Pixel 4a", true);
-
-	linux_write("ro.product.vendor.model", "Pixel 4a", true);
-
-	linux_write("ro.product.product.model", "Pixel 4a", true);
-
-	linux_write("ro.product.odm.model", "Pixel 4a", true);
-
-	linux_write("ro.product.system_ext.model", "Pixel 4a", true);
 }
 
 static void encrypted_work(void)
