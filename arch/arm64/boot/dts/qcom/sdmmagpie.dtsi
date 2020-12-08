@@ -651,7 +651,8 @@
 		};
 		/* reserve for pstore */
 		ramoops_mem: ramoops@9d800000 {
-			compatible = "ramoops";
+			compatible = "removed-dma-pool", "ramoops";
+			no-map;
 			reg = <0x0 0x9d800000 0x0 0x00400000>;
 
 			record-size = <0x80000>;
