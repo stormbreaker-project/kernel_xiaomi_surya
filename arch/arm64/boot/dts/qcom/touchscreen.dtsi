@@ -19,7 +19,7 @@
 		reg = <0 >;	//Same as CS ID
 
 		/* SPI Configuration */
-		spi-max-frequency = <8000000 >;	//4800000,5000000,8000000,9600000,15000000,19200000
+		spi-max-frequency = <15000000 >;	//4800000,5000000,8000000,9600000,15000000,19200000
 
 		/* regulator Configuration */
 		touch_vddio-supply = <&L18A>;
