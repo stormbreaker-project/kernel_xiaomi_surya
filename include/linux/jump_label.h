@@ -265,14 +265,14 @@ static __always_inline void jump_label_init(void)
 
 static __always_inline bool static_key_false(struct static_key *key)
 {
-	if (unlikely(static_key_count(key) > 0))
+	if (unlikely_notrace(static_key_count(key) > 0))
 		return true;
 	return false;
 }
 
 static __always_inline bool static_key_true(struct static_key *key)
 {
-	if (likely(static_key_count(key) > 0))
+	if (likely_notrace(static_key_count(key) > 0))
 		return true;
 	return false;
 }
@@ -458,7 +458,7 @@ extern bool ____wrong_branch_error(void);
 		branch = !arch_static_branch_jump(&(x)->key, true);		\
 	else									\
 		branch = ____wrong_branch_error();				\
-	likely(branch);								\
+	likely_notrace(branch);								\
 })
 
 #define static_branch_unlikely(x)						\
@@ -470,13 +470,13 @@ extern bool ____wrong_branch_error(void);
 		branch = arch_static_branch(&(x)->key, false);			\
 	else									\
 		branch = ____wrong_branch_error();				\
-	unlikely(branch);							\
+	unlikely_notrace(branch);							\
 })
 
 #else /* !HAVE_JUMP_LABEL */
 
-#define static_branch_likely(x)		likely(static_key_enabled(&(x)->key))
-#define static_branch_unlikely(x)	unlikely(static_key_enabled(&(x)->key))
+#define static_branch_likely(x)		likely_notrace(static_key_enabled(&(x)->key))
+#define static_branch_unlikely(x)	unlikely_notrace(static_key_enabled(&(x)->key))
 
 #endif /* HAVE_JUMP_LABEL */
 
