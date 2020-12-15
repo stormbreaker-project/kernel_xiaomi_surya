@@ -123,7 +123,7 @@ uint64_t (*sarr_RND)[num_arr_RND + 1];  /* Array of Array of SECURE RND numbers 
 uint16_t CC_Busy_Flags = 0;             /* Binary Flags for Busy Arrays */
 int      CC_buffer_position = 0;        /* Array reserved to determine which buffer to use */
 uint64_t tm_seed;
-struct   TIMESPEC ts;
+struct   TIMESPEC tsp;
 
 /*
  * Global counters
@@ -153,8 +153,8 @@ int mod_init(void)
         /*
          * Entropy Initialize #1
          */
-        KTIME_GET_NS(&ts);
-        x    = (uint64_t)ts.tv_nsec;
+        KTIME_GET_NS(&tsp);
+        x    = (uint64_t)tsp.tv_nsec;
         s[0] = xorshft64();
         s[1] = xorshft64();
 
@@ -524,24 +524,24 @@ void update_sarray(int CC)
  */
  void seed_PRND_s0(void)
  {
-         KTIME_GET_NS(&ts);
-         s[0] = (s[0] << 31) ^ (uint64_t)ts.tv_nsec;
+         KTIME_GET_NS(&tsp);
+         s[0] = (s[0] << 31) ^ (uint64_t)tsp.tv_nsec;
          #ifdef DEBUG
          printk(KERN_INFO "[srandom] seed_PRNG_s0 x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
          #endif
  }
 void seed_PRND_s1(void)
 {
-        KTIME_GET_NS(&ts);
-        s[1] = (s[1] << 24) ^ (uint64_t)ts.tv_nsec;
+        KTIME_GET_NS(&tsp);
+        s[1] = (s[1] << 24) ^ (uint64_t)tsp.tv_nsec;
         #ifdef DEBUG
         printk(KERN_INFO "[srandom] seed_PRNG_s1 x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
         #endif
 }
 void seed_PRND_x(void)
 {
-        KTIME_GET_NS(&ts);
-        x = (x << 32) ^ (uint64_t)ts.tv_nsec;
+        KTIME_GET_NS(&tsp);
+        x = (x << 32) ^ (uint64_t)tsp.tv_nsec;
         #ifdef DEBUG
         printk(KERN_INFO "[srandom] seed_PRNG_x x:%llu, s[0]:%llu, s[1]:%llu\n", x, s[0], s[1]);
         #endif
