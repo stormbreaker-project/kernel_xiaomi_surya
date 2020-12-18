@@ -9483,7 +9483,7 @@ static int qseecom_suspend(struct platform_device *pdev, pm_message_t state)
 
 static int qseecom_resume(struct platform_device *pdev)
 {
-	int mode = 0;
+	int mode = LOW;
 	int ret = 0;
 	struct qseecom_clk *qclk;
 
@@ -9493,10 +9493,6 @@ static int qseecom_resume(struct platform_device *pdev)
 
 	mutex_lock(&qsee_bw_mutex);
 	mutex_lock(&clk_access_lock);
-	if (qseecom.cumulative_mode >= HIGH)
-		mode = HIGH;
-	else
-		mode = qseecom.cumulative_mode;
 
 	if (qseecom.cumulative_mode != INACTIVE) {
 		ret = msm_bus_scale_client_update_request(
