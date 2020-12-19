@@ -8461,7 +8461,6 @@ static int ufshcd_reset_and_restore(struct ufs_hba *hba)
 	int err = 0;
 	unsigned long flags;
 	int retries = MAX_HOST_RESET_RETRIES;
-	unsigned long flags;
 
 	ufshcd_custom_cmd_log(hba, "Reset-and-Restore-Enter");
 
