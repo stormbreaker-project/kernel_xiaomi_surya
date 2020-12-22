@@ -4237,7 +4237,7 @@ out:
 		clear_bit_unlock(add_tag, &hba->lrb_in_use);
 		ufshcd_release_all(hba);
 		ufshcd_vops_pm_qos_req_end(hba, pre_cmd->request, true);
-		ufshcd_complete_lrbp_crypto(hba, pre_cmd, add_lrbp);
+		ufshcd_vops_crypto_engine_cfg_end(hba, lrbp, pre_cmd->request);
 		ufsf_hpb_end_pre_req(&hba->ufsf, pre_cmd->request);
 	}
 #endif
@@ -10591,13 +10591,9 @@ static void ufshcd_vreg_set_lpm(struct ufs_hba *hba)
 	    !hba->dev_info.is_lu_power_on_wp) {
 		ufshcd_setup_vreg(hba, false);
 	} else if (!ufshcd_is_ufs_dev_active(hba)) {
-#if !defined(CONFIG_UFSTW)
 		ufshcd_toggle_vreg(hba->dev, hba->vreg_info.vcc, false);
-#endif
 		if (!ufshcd_is_link_active(hba)) {
-#if !defined(CONFIG_UFSTW)
 			ufshcd_config_vreg_lpm(hba, hba->vreg_info.vccq);
-#endif
 			ufshcd_config_vreg_lpm(hba, hba->vreg_info.vccq2);
 		}
 	}

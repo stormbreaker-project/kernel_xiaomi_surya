@@ -37,9 +37,12 @@
 
 #include "ufshcd.h"
 #include "ufshpb.h"
-#include "ufshcd-crypto.h"
 
 #define UFSHCD_REQ_SENSE_SIZE	18
+
+#if 0
+#define DEBUG_RETRY
+#endif
 
 /*
  * define global constants
@@ -580,7 +583,7 @@ static int ufshpb_set_pre_req(struct ufshpb_lu *hpb, struct scsi_cmnd *cmd,
 	/* 1. request setup */
 	blk_rq_append_bio(req, &bio);
 	req->cmd_flags = REQ_OP_WRITE | REQ_SYNC | REQ_OP_SCSI_OUT;
-	req->rq_flags = RQF_QUIET | __REQ_PREEMPT;
+	req->rq_flags = RQF_QUIET | RQF_PREEMPT;
 	req->timeout = msecs_to_jiffies(30000);
 	req->end_io_data = (void *)pre_req;
 	req->end_io = ufshpb_pre_req_compl_fn;
@@ -787,7 +790,7 @@ int ufshpb_prepare_add_lrbp(struct ufsf_feature *ufsf, int add_tag)
 	if (err)
 		goto map_err;
 
-	err = ufshcd_prepare_lrbp_crypto(hba, pre_cmd, add_lrbp);
+	err = ufshcd_vops_crypto_engine_cfg_start(hba, add_tag);
 	if (err)
 		goto crypto_err;
 
@@ -1030,6 +1033,18 @@ static void ufshpb_map_compl_process(struct ufshpb_req *map_req)
 	spin_unlock_irqrestore(&hpb->hpb_lock, flags);
 }
 
+#if defined(DEBUG_RETRY)
+static int debug_retry;
+static void hpb_read_buffer_retry_error_injection(struct scsi_sense_hdr *sshdr)
+{
+	sshdr->response_code = 0x70;
+	sshdr->sense_key = 0x5;
+	sshdr->asc = 0x6;
+	sshdr->ascq = 0x1;
+	sshdr->additional_length = 0x0;
+}
+#endif
+
 static void ufshpb_update_active_info(struct ufshpb_lu *hpb, int rgn_idx,
 				      int srgn_idx)
 {
@@ -1075,7 +1090,9 @@ static int ufshpb_map_req_error(struct ufshpb_req *map_req)
 	srgn = rgn->srgn_tbl + map_req->rb.srgn_idx;
 
 	scsi_normalize_sense(map_req->sense, SCSI_SENSE_BUFFERSIZE, &sshdr);
-
+#if defined(DEBUG_RETRY)
+	hpb_read_buffer_retry_error_injection(&sshdr);
+#endif
 	ERR_MSG("code %x sense_key %x asc %x ascq %x", sshdr.response_code,
 		sshdr.sense_key, sshdr.asc, sshdr.ascq);
 	ERR_MSG("byte4 %x byte5 %x byte6 %x additional_len %x", sshdr.byte4,
@@ -1135,6 +1152,12 @@ static void ufshpb_map_req_compl_fn(struct request *req, blk_status_t error)
 	unsigned long flags;
 	int ret;
 
+#if defined(DEBUG_RETRY)
+	if (++debug_retry % 10 == 0) {
+		error = 1;
+		ERR_MSG("error injection start");
+	}
+#endif
 #ifdef CONFIG_PM
 	ufshpb_mimic_blk_pm_put_request(req);
 #endif
@@ -1313,7 +1336,7 @@ static int ufshpb_execute_map_req(struct ufshpb_lu *hpb,
 	/* 1. request setup */
 	blk_rq_append_bio(req, &bio); /* req->__data_len is setted */
 	req->cmd_flags = REQ_OP_READ | REQ_OP_SCSI_IN;
-	req->rq_flags = RQF_QUIET | __REQ_PREEMPT;
+	req->rq_flags = RQF_QUIET | RQF_PREEMPT;
 	req->timeout = msecs_to_jiffies(30000);
 	req->end_io_data = (void *)map_req;
 
@@ -1687,8 +1710,10 @@ static void ufshpb_rsp_req_region_update(struct ufshpb_lu *hpb,
 	 */
 	spin_lock(&hpb->rsp_list_lock);
 	for (num = 0; num < rsp_field->active_rgn_cnt; num++) {
-		rgn_idx = be16_to_cpu(rsp_field->hpb_active_field[num].active_rgn);
-		srgn_idx = be16_to_cpu(rsp_field->hpb_active_field[num].active_srgn);
+		rgn_idx = be16_to_cpu(rsp_field->hpb_active_field[num].
+				      active_rgn);
+		srgn_idx = be16_to_cpu(rsp_field->hpb_active_field[num].
+				       active_srgn);
 
 		HPB_DEBUG(hpb, "act num: %d, region: %d, subregion: %d",
 			  num + 1, rgn_idx, srgn_idx);
@@ -1836,7 +1861,7 @@ static int ufshpb_execute_map_req_wait(struct ufshpb_lu *hpb,
 	if (ret)
 		return ret;
 
-	req = blk_get_request(q, REQ_OP_SCSI_IN, __REQ_PREEMPT);
+	req = blk_get_request(q, REQ_OP_SCSI_IN, GFP_KERNEL);
 	if (IS_ERR(req)) {
 		WARNING_MSG("cannot get request");
 		ret = -EIO;
@@ -1857,7 +1882,7 @@ static int ufshpb_execute_map_req_wait(struct ufshpb_lu *hpb,
 	blk_rq_append_bio(req, &bio); /* req->__data_len */
 	req->timeout = msecs_to_jiffies(30000);
 	req->cmd_flags |= REQ_OP_READ;
-	req->rq_flags |= RQF_QUIET | __REQ_PREEMPT;
+	req->rq_flags |= RQF_QUIET | RQF_PREEMPT;
 
 	/* 2. scsi_request setup */
 	rq = scsi_req(req);
@@ -2337,7 +2362,7 @@ static int ufshpb_table_mempool_init(struct ufshpb_lu *hpb)
 			mctx->m_page[j] = alloc_page(GFP_KERNEL | __GFP_ZERO);
 			if (!mctx->m_page[j]) {
 				for (k = 0; k < j; k++)
-					__free_page(mctx->m_page[k]);
+					kfree(mctx->m_page[k]);
 				goto release_mem;
 			}
 		}
@@ -2583,7 +2608,7 @@ static void ufshpb_init_lu_constant(struct ufshpb_dev_info *hpb_dev_info,
 		  hpb->entries_per_srgn, hpb->entries_per_srgn_shift,
 		  hpb->entries_per_srgn_mask);
 	INIT_INFO("mpages_per_subregion : %d", hpb->mpages_per_srgn);
-	INIT_INFO("===================================");
+	INIT_INFO("===================================\n");
 }
 
 static int ufshpb_lu_hpb_init(struct ufsf_feature *ufsf, int lun)
@@ -3137,6 +3162,7 @@ void ufshpb_suspend(struct ufsf_feature *ufsf)
 	seq_scan_lu(lun) {
 		hpb = ufsf->ufshpb_lup[lun];
 		if (hpb) {
+			INFO_MSG("ufshpb_lu %d goto suspend", lun);
 			ufshpb_cancel_jobs(hpb);
 		}
 	}
@@ -3156,6 +3182,9 @@ void ufshpb_resume(struct ufsf_feature *ufsf)
 			do_workq = !ufshpb_is_empty_rsp_lists(hpb);
 			do_retry_work =
 				!list_empty_careful(&hpb->lh_map_req_retry);
+
+			INFO_MSG("ufshpb_lu %d resume. do_workq %d retry %d",
+				 lun, do_workq, do_retry_work);
 
 			if (do_workq)
 				schedule_work(&hpb->ufshpb_task_workq);
@@ -3484,9 +3513,8 @@ static ssize_t ufshpb_sysfs_region_stat_show(struct ufshpb_lu *hpb, char *buf)
 			inact_cnt++;
 	}
 
-	ret = snprintf(buf, PAGE_SIZE,
-		       "Total %d pinned %d active %d inactive %d\n",
-		       hpb->rgns_per_lu, pin_cnt, act_cnt, inact_cnt);
+	ret = sprintf(buf, "Total %d pinned %d active %d inactive %d\n",
+		      hpb->rgns_per_lu, pin_cnt, act_cnt, inact_cnt);
 
 	return ret;
 }
@@ -3584,7 +3612,8 @@ static ssize_t ufshpb_sysfs_info_region_store(struct ufshpb_lu *hpb,
 		for (srgn_idx = 0; srgn_idx < hpb->rgn_tbl[rgn_idx].srgn_cnt;
 		     srgn_idx++) {
 			SYSFS_INFO("--- subregion %d state %d", srgn_idx,
-				   hpb->rgn_tbl[rgn_idx].srgn_tbl[srgn_idx].srgn_state);
+			       hpb->rgn_tbl[rgn_idx].srgn_tbl[srgn_idx].
+			       srgn_state);
 		}
 	}
 
@@ -3619,35 +3648,35 @@ err_out:
 }
 
 static struct ufshpb_sysfs_entry ufshpb_sysfs_entries[] = {
-	__ATTR(hpb_read_disable, 0644,
+	__ATTR(hpb_read_disable, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_prep_disable_show, ufshpb_sysfs_prep_disable_store),
-	__ATTR(map_cmd_disable, 0644,
+	__ATTR(map_cmd_disable, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_map_disable_show, ufshpb_sysfs_map_disable_store),
-	__ATTR(throttle_map_req, 0644,
+	__ATTR(throttle_map_req, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_throttle_map_req_show,
 	       ufshpb_sysfs_throttle_map_req_store),
-	__ATTR(throttle_pre_req, 0644,
+	__ATTR(throttle_pre_req, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_throttle_pre_req_show,
 	       ufshpb_sysfs_throttle_pre_req_store),
-	__ATTR(pre_req_min_tr_len, 0644,
+	__ATTR(pre_req_min_tr_len, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_pre_req_min_tr_len_show,
 	       ufshpb_sysfs_pre_req_min_tr_len_store),
-	__ATTR(pre_req_max_tr_len, 0644,
+	__ATTR(pre_req_max_tr_len, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_pre_req_max_tr_len_show,
 	       ufshpb_sysfs_pre_req_max_tr_len_store),
-	__ATTR(debug, 0644,
+	__ATTR(debug, S_IRUGO | S_IWUSR,
 	       ufshpb_sysfs_debug_show, ufshpb_sysfs_debug_store),
-	__ATTR(hpb_version, 0444, ufshpb_sysfs_version_show, NULL),
-	__ATTR(hit_count, 0444, ufshpb_sysfs_hit_show, NULL),
-	__ATTR(miss_count, 0444, ufshpb_sysfs_miss_show, NULL),
-	__ATTR(map_req_count, 0444, ufshpb_sysfs_map_req_show, NULL),
-	__ATTR(pre_req_count, 0444, ufshpb_sysfs_pre_req_show, NULL),
-	__ATTR(region_stat_count, 0444, ufshpb_sysfs_region_stat_show, NULL),
-	__ATTR(count_reset, 0200, NULL, ufshpb_sysfs_count_reset_store),
-	__ATTR(get_info_from_lba, 0200, NULL, ufshpb_sysfs_info_lba_store),
-	__ATTR(get_info_from_region, 0200, NULL,
+	__ATTR(hpb_version, S_IRUGO, ufshpb_sysfs_version_show, NULL),
+	__ATTR(hit_count, S_IRUGO, ufshpb_sysfs_hit_show, NULL),
+	__ATTR(miss_count, S_IRUGO, ufshpb_sysfs_miss_show, NULL),
+	__ATTR(map_req_count, S_IRUGO, ufshpb_sysfs_map_req_show, NULL),
+	__ATTR(pre_req_count, S_IRUGO, ufshpb_sysfs_pre_req_show, NULL),
+	__ATTR(region_stat_count, S_IRUGO, ufshpb_sysfs_region_stat_show, NULL),
+	__ATTR(count_reset, S_IWUSR, NULL, ufshpb_sysfs_count_reset_store),
+	__ATTR(get_info_from_lba, S_IWUSR, NULL, ufshpb_sysfs_info_lba_store),
+	__ATTR(get_info_from_region, S_IWUSR, NULL,
 	       ufshpb_sysfs_info_region_store),
-	__ATTR(release, 0200, NULL, ufshpb_sysfs_ufshpb_release_store),
+	__ATTR(release, S_IWUSR, NULL, ufshpb_sysfs_ufshpb_release_store),
 	__ATTR_NULL
 };
 
