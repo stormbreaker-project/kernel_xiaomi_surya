@@ -52,39 +52,39 @@ static int smartamp_params_ctrl(uint8_t *input, u8 dir, u8 count)
 
 	ppacket = (struct tas_dsp_pkt *)kmalloc (sizeof(struct tas_dsp_pkt), GFP_KERNEL);
 	if (!ppacket) {
-		pr_err ("TI-SmartPA: %s: kmalloc failed!", __func__);
+		pr_debug ("TI-SmartPA: %s: kmalloc failed!", __func__);
 		return -ENOMEM;
 	}
 
 	memset(ppacket, 0, sizeof(struct tas_dsp_pkt));
 	ret = copy_from_user (ppacket, input, sizeof(struct tas_dsp_pkt));
 	if (ret) {
-		pr_err("TI-SmartPA: %s: Error copying from user\n", __func__);
+		pr_debug("TI-SmartPA: %s: Error copying from user\n", __func__);
 		kfree (ppacket);
 		return -EFAULT;
 	}
 
 	index = (ppacket->page - 1) * 30 + (ppacket->offset - 8) / 4;
 	special_index = TAS_SA_IS_SPL_IDX(index);
-	pr_info("TI-SmartPA: %s: index = %d", __func__, index);
+	pr_debug("TI-SmartPA: %s: index = %d", __func__, index);
 	if (special_index == 0) {
 		if ((index < 0 || index > MAX_DSP_PARAM_INDEX)) {
-			pr_err("TI-SmartPA: %s: invalid index !\n", __func__);
+			pr_debug("TI-SmartPA: %s: invalid index !\n", __func__);
 			kfree(ppacket);
 			return -EINVAL;
 		}
 	}
-	pr_info("TI-SmartPA: %s: Valid Index. special = %s\n", __func__, special_index ? "Yes" : "No");
+	pr_debug("TI-SmartPA: %s: Valid Index. special = %s\n", __func__, special_index ? "Yes" : "No");
 
 	/* speakers are differentiated by slave ids */
 	if (ppacket->slave_id == SLAVE1) {
 		paramid = (paramid | (index) | (length << 16) | (1 << 24));
-		pr_err("TI-SmartPA: %s: Rcvd Slave id for slave 1, %x\n", __func__, ppacket->slave_id);
+		pr_debug("TI-SmartPA: %s: Rcvd Slave id for slave 1, %x\n", __func__, ppacket->slave_id);
 	} else if (ppacket->slave_id == SLAVE2) {
 		paramid = (paramid | (index) | (length << 16) | (2 << 24));
-		pr_err("TI-SmartPA: %s: Rcvd Slave id for slave 2, %x\n", __func__, ppacket->slave_id);
+		pr_debug("TI-SmartPA: %s: Rcvd Slave id for slave 2, %x\n", __func__, ppacket->slave_id);
 	} else {
-		pr_err("TI-SmartPA: %s: Wrong slaveid = %x\n", __func__, ppacket->slave_id);
+		pr_debug("TI-SmartPA: %s: Wrong slaveid = %x\n", __func__, ppacket->slave_id);
 	}
 
 	/*
@@ -94,7 +94,7 @@ static int smartamp_params_ctrl(uint8_t *input, u8 dir, u8 count)
 		(paramid == CAPI_V2_TAS_TX_ENABLE) ||
 		(paramid == CAPI_V2_TAS_RX_CFG) ||
 		(paramid == CAPI_V2_TAS_TX_CFG)) {
-		pr_err("TI-SmartPA: %s: %s Slave 0x%x params failed, paramid mismatch\n",
+		pr_debug("TI-SmartPA: %s: %s Slave 0x%x params failed, paramid mismatch\n",
 				__func__,
 				dir == TAS_GET_PARAM ? "get" : "set",
 				ppacket->slave_id);
@@ -105,18 +105,18 @@ static int smartamp_params_ctrl(uint8_t *input, u8 dir, u8 count)
 	ret = tas25xx_smartamp_algo_ctrl(ppacket->data, paramid,
 			dir, length * 4, AFE_SMARTAMP_MODULE_RX);
 	if (ret)
-		pr_err("TI-SmartPA: %s: %s Slave 0x%x params failed from afe, ret=%x\n",
+		pr_debug("TI-SmartPA: %s: %s Slave 0x%x params failed from afe, ret=%x\n",
 				__func__,
 				dir == TAS_GET_PARAM ? "get" : "set",
 				ppacket->slave_id, ret);
 	else
-		pr_info("TI-SmartPA: %s: Algo control returned %d\n",
+		pr_debug("TI-SmartPA: %s: Algo control returned %d\n",
 			__func__, ret);
 
 	if (dir == TAS_GET_PARAM) {
 		ret = copy_to_user(input, ppacket, sizeof(struct tas_dsp_pkt));
 		if (ret) {
-			pr_err("TI-SmartPA: %s: Error copying to user after DSP",
+			pr_debug("TI-SmartPA: %s: Error copying to user after DSP",
 				__func__);
 			ret = -EFAULT;
 		}
@@ -180,10 +180,10 @@ int tas_calib_init(void)
 {
 	int rc;
 
-	pr_err("TI-SmartPA: %s", __func__);
+	pr_debug("TI-SmartPA: %s", __func__);
 	rc = misc_register(&tas_calib_misc);
 	if (rc)
-		pr_err("TI-SmartPA: %s: register calib misc failed\n",
+		pr_debug("TI-SmartPA: %s: register calib misc failed\n",
 			__func__);
 	return rc;
 }
