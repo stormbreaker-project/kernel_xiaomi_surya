@@ -403,6 +403,7 @@
 	qcom,linearize-soc;
 	qcom,cl-feedback-on;
 	qcom,tcss-enable;
+	qcom,bass-enable;
 	qcom,vbatt-cutoff-mv = <3400>;
 	qcom,vbatt-low-mv = <3500>;
 	qcom,vbatt-low-cold-mv = <3700>;
