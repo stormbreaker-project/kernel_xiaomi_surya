@@ -10,7 +10,7 @@
 #
 # Copyright (C) 1995-2001 by Russell King
 
-LDFLAGS_vmlinux	:=--no-undefined -X -z norelro
+LDFLAGS_vmlinux	:=--no-undefined -X
 CPPFLAGS_vmlinux.lds = -DTEXT_OFFSET=$(TEXT_OFFSET)
 GZFLAGS		:=-9
 
@@ -135,7 +135,7 @@ LDFLAGS		+= -EB -maarch64_elf64_be_vec
 else
 # Prefer the baremetal ELF build target, but not all toolchains include
 # it so fall back to the standard linux version if needed.
-LDFLAGS		+=  -EB $(call ld-option, -maarch64elfb, -maarch64linuxb)
+LDFLAGS		+=  -EB $(call ld-option, -maarch64elfb, -maarch64linuxb  -z norelro)
 endif
 UTS_MACHINE	:= aarch64_be
 else
@@ -146,7 +146,7 @@ ifeq ($(ld-name),gold)
 LDFLAGS		+= -EL -maarch64_elf64_le_vec
 else
 # Same as above, prefer ELF but fall back to linux target if needed.
-LDFLAGS		+= -EL $(call ld-option, -maarch64elf, -maarch64linux)
+LDFLAGS		+= -EL $(call ld-option, -maarch64elf, -maarch64linux  -z norelro)
 endif
 UTS_MACHINE	:= aarch64
 endif
