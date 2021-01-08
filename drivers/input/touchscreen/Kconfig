@@ -1296,6 +1296,14 @@ config TOUCHSCREEN_RAYDIUM_CHIPSET
 
 	  If unsure, say N.
 
+config TOUCHSCREEN_COMMON
+	tristate "Longcheer tp info driver"
+	default y
+	help
+	  Say Y here if you have lct tp info connected.
+
+	  If unsure, say N.
+
 source "drivers/input/touchscreen/nt36xxx_spi/Kconfig"
 
 endif
