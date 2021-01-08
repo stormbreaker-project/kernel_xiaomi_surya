@@ -210,6 +210,7 @@ ifeq ($(KERNEL_BUILD), 1)
 	obj-y	+= wcd9360/
 	obj-y	+= wcd937x/
 	obj-y	+= bolero/
+	obj-y	+= tas256x/
 endif
 
 ifeq ($(CONFIG_SND_SOC_GCOV), y)
