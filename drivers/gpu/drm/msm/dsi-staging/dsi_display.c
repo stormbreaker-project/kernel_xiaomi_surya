@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2020 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -18,6 +19,7 @@
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/err.h>
+#include <drm/drm_notifier.h>
 
 #include "msm_drv.h"
 #include "sde_connector.h"
@@ -46,6 +48,8 @@
 #define MAX_TE_SOURCE_ID  2
 
 DEFINE_MUTEX(dsi_display_clk_mutex);
+
+char g_lcd_id_mi[64];
 
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
@@ -618,6 +622,95 @@ static void dsi_display_parse_te_data(struct dsi_display *display)
 	display->te_source = val;
 }
 
+static char dcs_cmd[2] = {0x00, 0x00}; /* DTYPE_DCS_READ */
+static struct dsi_cmd_desc dcs_read_cmd = {
+	{0, 6, MIPI_DSI_MSG_REQ_ACK, 0, 5, sizeof(dcs_cmd), dcs_cmd, 0, 0},
+	1,
+	5,
+};
+
+static int dsi_display_read_reg(struct dsi_display_ctrl *ctrl, char cmd0,
+		char cmd1, char *rbuf, int len)
+{
+	int rc = 0;
+	struct dsi_cmd_desc *cmds;
+	u32 flags = 0;
+
+	if (!ctrl || !ctrl->ctrl)
+		return -EINVAL;
+
+	/*
+	 * When DSI controller is not in initialized state, we do not want to
+	 * report a false failure and hence we defer until next read
+	 * happen.
+	 */
+	if (!dsi_ctrl_validate_host_state(ctrl->ctrl))
+		return 1;
+
+	dcs_cmd[0] = cmd0;
+	dcs_cmd[1] = cmd1;
+
+	cmds = &dcs_read_cmd;
+	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
+
+	memset(rbuf, 0x0, SZ_4K);
+	if (cmds->last_command) {
+		cmds->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
+		flags |= DSI_CTRL_CMD_LAST_COMMAND;
+	}
+	cmds->msg.rx_buf = rbuf;
+	cmds->msg.rx_len = len;
+	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &cmds->msg, flags);
+	if (rc <= 0) {
+		pr_err("rx cmd transfer failed rc=%d\n", rc);
+		return rc;
+	}
+	pr_debug("rbuf[0]=%x,rbuf[1]=%x,rbuf[2]=%x,rbuf[3]=%x,rbuf[4]=%x,rbuf[5]=%x,rbuf[6]=%x,rbuf[7]=%x\n",
+			rbuf[0], rbuf[1], rbuf[2], rbuf[3], rbuf[4], rbuf[5], rbuf[6], rbuf[7]);
+	return rc;
+}
+
+static char dcs_cmd_page[2] = {0x00, 0x00}; /* DTYPE_DCS_READ */
+static struct dsi_cmd_desc dcs_read_cmd_page = {
+		{0, 0x15, MIPI_DSI_MSG_REQ_ACK, 0, 5, sizeof(dcs_cmd_page), dcs_cmd_page, 0, 0},
+		1,
+		5,
+};
+
+static int dsi_display_write_reg_page(struct dsi_display_ctrl *ctrl, char cmd0,
+		char cmd1, char *rbuf, int len)
+{
+	int rc = 0;
+	struct dsi_cmd_desc *cmds;
+	u32 flags = 0;
+
+	if (!ctrl || !ctrl->ctrl)
+		return -EINVAL;
+
+	if (!dsi_ctrl_validate_host_state(ctrl->ctrl))
+		return 1;
+
+	dcs_cmd_page[0] = cmd0;
+	dcs_cmd_page[1] = cmd1;
+	cmds = &dcs_read_cmd_page;
+	flags |= (DSI_CTRL_CMD_FETCH_MEMORY);
+
+	memset(rbuf, 0x0, SZ_4K);
+	if (cmds->last_command) {
+		cmds->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
+		flags |= DSI_CTRL_CMD_LAST_COMMAND;
+	}
+	cmds->msg.rx_buf = NULL;
+	cmds->msg.rx_len = 0;
+	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &cmds->msg, flags);
+	if (rc < 0) {
+		pr_err("rx cmd transfer failed rc=%d\n", rc);
+		return rc;
+	}
+
+	return rc;
+}
+
 static int dsi_display_read_status(struct dsi_display_ctrl *ctrl,
 		struct dsi_panel *panel)
 {
@@ -854,6 +947,87 @@ release_panel_lock:
 	return rc;
 }
 
+int dsi_display_read_panel(struct dsi_panel *panel, struct dsi_read_config *read_config)
+{
+	struct mipi_dsi_host *host;
+	struct dsi_display *display;
+	struct dsi_display_ctrl *ctrl;
+	struct dsi_cmd_desc *cmds;
+	int i, rc = 0, count = 0;
+	u32 flags = 0;
+
+	if (panel == NULL || read_config == NULL)
+		return -EINVAL;
+
+	host = panel->host;
+	if (host) {
+		display = to_dsi_display(host);
+		if (display == NULL)
+			return -EINVAL;
+	} else
+		return -EINVAL;
+
+	if (!panel->panel_initialized) {
+		pr_info("Panel not initialized\n");
+		return -EINVAL;
+	}
+
+	if (!read_config->enabled) {
+		pr_info("read operation was not permitted\n");
+		return -EPERM;
+	}
+
+	dsi_display_clk_ctrl(display->dsi_clk_handle,
+		DSI_ALL_CLKS, DSI_CLK_ON);
+
+	ctrl = &display->ctrl[display->cmd_master_idx];
+
+	rc = dsi_display_cmd_engine_enable(display);
+	if (rc) {
+		pr_err("cmd engine enable failed\n");
+		rc = -EPERM;
+		goto exit_ctrl;
+	}
+
+	if (display->tx_cmd_buf == NULL) {
+		rc = dsi_host_alloc_cmd_tx_buffer(display);
+		if (rc) {
+			pr_err("failed to allocate cmd tx buffer memory\n");
+			goto exit;
+		}
+	}
+
+	count = read_config->read_cmd.count;
+	cmds = read_config->read_cmd.cmds;
+	if (cmds->last_command) {
+		cmds->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
+		flags |= DSI_CTRL_CMD_LAST_COMMAND;
+	}
+	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
+
+	memset(read_config->rbuf, 0x0, sizeof(read_config->rbuf));
+	cmds->msg.rx_buf = read_config->rbuf;
+	cmds->msg.rx_len = read_config->cmds_rlen;
+
+	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &(cmds->msg), flags);
+	if (rc <= 0) {
+		pr_err("rx cmd transfer failed rc=%d\n", rc);
+		goto exit;
+	}
+
+	for (i = 0; i < read_config->cmds_rlen; i++) //debug
+		pr_info("0x%x ", read_config->rbuf[i]);
+	pr_info("\n");
+
+exit:
+	dsi_display_cmd_engine_disable(display);
+exit_ctrl:
+	dsi_display_clk_ctrl(display->dsi_clk_handle,
+		DSI_ALL_CLKS, DSI_CLK_OFF);
+
+	return rc;
+}
+
 static int dsi_display_cmd_prepare(const char *cmd_buf, u32 cmd_buf_len,
 		struct dsi_cmd_desc *cmd, u8 *payload, u32 payload_len)
 {
@@ -1059,28 +1233,57 @@ int dsi_display_set_power(struct drm_connector *connector,
 {
 	struct dsi_display *display = disp;
 	int rc = 0;
+	struct drm_notify_data g_notify_data;
+	struct drm_device *dev = NULL;
+	int event = 0;
 
 	if (!display || !display->panel) {
 		pr_err("invalid display/panel\n");
 		return -EINVAL;
 	}
 
+	if (!connector || !connector->dev) {
+		pr_err("invalid connector/dev\n");
+		return -EINVAL;
+	} else {
+		dev = connector->dev;
+		event = dev->doze_state;
+	}
+
+	g_notify_data.data = &event;
+
 	switch (power_mode) {
 	case SDE_MODE_DPMS_LP1:
+		drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
 		rc = dsi_panel_set_lp1(display->panel);
+		drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
 		break;
 	case SDE_MODE_DPMS_LP2:
+		drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
 		rc = dsi_panel_set_lp2(display->panel);
+		drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
 		break;
 	case SDE_MODE_DPMS_ON:
 		if (display->panel->power_mode == SDE_MODE_DPMS_LP1 ||
-			display->panel->power_mode == SDE_MODE_DPMS_LP2)
+			display->panel->power_mode == SDE_MODE_DPMS_LP2) {
+			drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
 			rc = dsi_panel_set_nolp(display->panel);
+			drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
+		}
 		break;
 	case SDE_MODE_DPMS_OFF:
 	default:
+		if (dev->pre_state != SDE_MODE_DPMS_LP1 &&
+                                        dev->pre_state != SDE_MODE_DPMS_LP2)
+			break;
+
+		drm_notifier_call_chain(DRM_EARLY_EVENT_BLANK, &g_notify_data);
+		rc = dsi_panel_set_nolp(display->panel);
+		drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
 		return rc;
 	}
+
+	dev->pre_state = power_mode;
 
 	pr_debug("Power mode transition from %d to %d %s",
 		 display->panel->power_mode, power_mode,
@@ -5056,6 +5259,68 @@ static int dsi_display_sysfs_deinit(struct dsi_display *display)
 
 }
 
+int lct_tp_lockdown_info_callback(void)
+{
+	bool is_already_read = false;
+	ssize_t rc = 0;
+	char *buf = NULL;
+	struct dsi_display *display;
+	struct dsi_display_ctrl *ctrl = NULL;
+
+	if (is_already_read)
+		return 0;
+
+	if (!display) {
+		pr_err("Invalid display\n");
+		return -EINVAL;
+	}
+
+	if (display->tx_cmd_buf == NULL) {
+		rc = dsi_host_alloc_cmd_tx_buffer(display);
+		if (rc) {
+			pr_err("failed to allocate cmd tx buffer memory\n");
+			goto done;
+		}
+	}
+
+	rc = dsi_display_cmd_engine_enable(display);
+	if (rc) {
+		pr_err("cmd engine enable failed\n");
+		return -EPERM;
+	}
+
+	buf = kzalloc(PAGE_SIZE, GFP_KERNEL);
+	if (IS_ERR_OR_NULL(buf)) {
+		pr_err("%s: kzalloc() request memory failed!\n", __func__);
+		return -ENOMEM;
+	}
+
+	ctrl = &display->ctrl[display->cmd_master_idx];
+	if (strnstr(g_lcd_id_mi, "huaxing", strlen(g_lcd_id_mi)) != NULL) {
+		rc = dsi_display_write_reg_page(ctrl, 0xFF, 0x21, buf, sizeof(buf));
+		rc = dsi_display_read_reg(ctrl, 0xF1, 0x00, buf, sizeof(buf));
+	} else {
+		rc = dsi_display_write_reg_page(ctrl, 0xFF, 0x21, buf, sizeof(buf));
+		rc = dsi_display_read_reg(ctrl, 0xF1, 0x00, buf, sizeof(buf));
+	}
+	if (rc < 0) {
+		pr_err("get lockdown failed rc=%d\n", rc);
+		goto exit;
+	}
+
+	rc = snprintf(buf, PAGE_SIZE, "%02X%02X%02X%02X%02X%02X%02X%02X\n",
+			buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+
+	update_lct_tp_info(NULL, buf);
+	is_already_read = true;
+
+exit:
+	kfree(buf);
+	dsi_display_cmd_engine_disable(display);
+done:
+	return rc;
+}
+
 /**
  * dsi_display_bind - bind dsi device with controlling device
  * @dev:        Pointer to base of platform device
@@ -5277,6 +5542,7 @@ static int dsi_display_bind(struct device *dev,
 
 	/* register te irq handler */
 	dsi_display_register_te_irq(display);
+	set_lct_tp_lockdown_info_callback(lct_tp_lockdown_info_callback);
 
 	goto error;
 
@@ -5488,6 +5754,7 @@ int dsi_display_dev_probe(struct platform_device *pdev)
 	display->pdev = pdev;
 	display->boot_disp = boot_disp;
 	display->dsi_type = dsi_type;
+	display->is_prim_display = true;
 
 	dsi_display_parse_cmdline_topology(display, index);
 
