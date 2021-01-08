@@ -1,5 +1,5 @@
 /* Copyright (c) 2018, The Linux Foundation. All rights reserved.
- *
+ * Copyright (C) 2020 XiaoMi, Inc.
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
  * only version 2 as published by the Free Software Foundation.
@@ -16,6 +16,11 @@
 #define CONFIG_SND_SOC_WCD9XXX_V2 1
 #define CONFIG_SND_SOC_WCD_MBHC 1
 #define CONFIG_SND_SOC_WSA881X 1
+#define CONFIG_SND_SOC_TAS256X 1
+#define CONFIG_TAS256X_CODEC 1
+#define CONFIG_TAS256X_REGMAP 1
+#define CONFIG_TAS25XX_ALGO 1
+#define CONFIG_TAS_SA_CHANNELS 2
 #define CONFIG_SND_SOC_WCD_DSP_MGR 1
 #define CONFIG_SND_SOC_WCD_SPI 1
 #define CONFIG_SND_SOC_WCD934X 1
