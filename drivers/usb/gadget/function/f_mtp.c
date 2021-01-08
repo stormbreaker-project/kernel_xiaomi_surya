@@ -2,7 +2,7 @@
  * Gadget Function Driver for MTP
  *
  * Copyright (C) 2010 Google, Inc.
- * Author: Mike Lockwood <lockwood@android.com>
+ * Copyright (C) 2020 XiaoMi, Inc.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -614,6 +614,7 @@ static ssize_t mtp_read(struct file *fp, char __user *buf,
 		goto wait_err;
 	}
 
+	cdev = dev->cdev;
 	len = ALIGN(count, dev->ep_out->maxpacket);
 	if (len > mtp_rx_req_len)
 		return -EINVAL;
