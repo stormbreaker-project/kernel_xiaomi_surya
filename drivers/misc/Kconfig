@@ -595,6 +595,11 @@ config TEST_IRQ_REQUESTER
 
 	  If in doubt, say N.
 
+config LDO_WL2866D
+	bool  "multi ldo wl2866d"
+	---help---
+	This option enables multi ldo wl2866d.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
