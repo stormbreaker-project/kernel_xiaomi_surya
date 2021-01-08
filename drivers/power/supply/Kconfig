@@ -612,4 +612,6 @@ config CHARGER_RT9455
 
 source "drivers/power/supply/qcom/Kconfig"
 
+source "drivers/power/supply/ti/Kconfig"
+
 endif # POWER_SUPPLY
