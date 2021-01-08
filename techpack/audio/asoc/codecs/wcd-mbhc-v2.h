@@ -1,4 +1,5 @@
 /* Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2020 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -137,6 +138,9 @@ do {                                                    \
 #define WCD_MBHC_JACK_BUTTON_MASK (SND_JACK_BTN_0 | SND_JACK_BTN_1 | \
 				  SND_JACK_BTN_2 | SND_JACK_BTN_3 | \
 				  SND_JACK_BTN_4 | SND_JACK_BTN_5)
+
+#define WCD_MBHC_JACK_USB_3_5_MASK (SND_JACK_UNSUPPORTED | SND_JACK_HEADSET)
+
 #define OCP_ATTEMPT 20
 #define HS_DETECT_PLUG_TIME_MS (3 * 1000)
 #define SPECIAL_HS_DETECT_TIME_MS (2 * 1000)
@@ -587,6 +591,7 @@ struct wcd_mbhc {
 
 	struct snd_soc_jack headset_jack;
 	struct snd_soc_jack button_jack;
+	struct snd_soc_jack usb_3_5_jack;
 	struct mutex codec_resource_lock;
 
 	/* Holds codec specific interrupt mapping */
