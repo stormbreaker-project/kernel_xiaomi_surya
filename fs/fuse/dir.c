@@ -533,6 +533,7 @@ static int fuse_create_open(struct inode *dir, struct dentry *entry,
 	ff->fh = outopen.fh;
 	ff->nodeid = outentry.nodeid;
 	ff->open_flags = outopen.open_flags;
+	fuse_passthrough_setup(fc, ff, &outopen);
 #ifdef CONFIG_FUSE_FS_SHORTCIRCUIT
 	if (args.private_lower_rw_file != NULL)
 		ff->rw_lower_file = args.private_lower_rw_file;
