@@ -2215,6 +2215,11 @@ static int fuse_file_mmap(struct file *file, struct vm_area_struct *vma)
 	if (ff->rw_lower_file)
 		return fuse_shortcircuit_mmap(file, vma);
 #endif /* CONFIG_FUSE_FS_SHORTCIRCUIT */
+	struct fuse_file *ff = file->private_data;
+
+	if (ff->passthrough.filp)
+		return fuse_passthrough_mmap(file, vma);
+
 	if ((vma->vm_flags & VM_SHARED) && (vma->vm_flags & VM_MAYWRITE))
 		fuse_link_write_file(file);
 
