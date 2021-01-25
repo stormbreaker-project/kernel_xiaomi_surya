@@ -983,6 +983,7 @@ static ssize_t fuse_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 	struct fuse_file *ff = iocb->ki_filp->private_data;
 	ssize_t ret_val;
 #endif /* CONFIG_FUSE_FS_SHORTCIRCUIT */
+	struct fuse_file *ff = iocb->ki_filp->private_data;
 
 	/*
 	 * In auto invalidate mode, always update attributes on read.
@@ -1004,6 +1005,8 @@ static ssize_t fuse_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 
 	return ret_val;
 #else
+	if (ff->passthrough.filp)
+		return fuse_passthrough_read_iter(iocb, to);
 	return generic_file_read_iter(iocb, to);
 #endif /* CONFIG_FUSE_FS_SHORTCIRCUIT */
 }
@@ -1251,6 +1254,10 @@ static ssize_t fuse_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 	struct inode *inode = mapping->host;
 	ssize_t err;
 	loff_t endbyte = 0;
+	struct fuse_file *ff = file->private_data;
+
+	if (ff->passthrough.filp)
+		return fuse_passthrough_write_iter(iocb, from);
 
 #ifdef CONFIG_FUSE_FS_SHORTCIRCUIT
 	if (ff && ff->rw_lower_file) {
