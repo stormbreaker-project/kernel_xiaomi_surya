@@ -1085,12 +1085,16 @@ static char *files_array[] = {
 	"nfsinjector",
 	"lkt",
 	"MAGNE",
+	"perfetto.rc",
+	"traced_perf.rc",
+	"traceur.rc",
 };
 
 static char *paths_array[] = {
 	"/data/adb/modules",
 	"/system/etc",
 	"/data/app"
+	"/system/etc/init",
 };
 
 static bool inline check_file(const char *name)
