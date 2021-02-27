@@ -2892,7 +2892,7 @@
 			< 1324000  768000000 >,
 			< 1708800 1190400000 >,
 			< 1939000 1382400000 >,
-			< 2438400 1459200000 >;
+			< 2304000 1459200000 >;
 	};
 
 	cpu0_cpu_llcc_lat: qcom,cpu0-cpu-llcc-lat {
@@ -2934,7 +2934,7 @@
 			< 1094000 MHZ_TO_MBPS(466, 16) >,
 			< 1324000 MHZ_TO_MBPS(600, 16) >,
 			< 1708800 MHZ_TO_MBPS(806, 16) >,
-			< 2438400 MHZ_TO_MBPS(933, 16) >;
+			< 2304000 MHZ_TO_MBPS(933, 16) >;
 	};
 
 	cpu0_llcc_ddr_lat: qcom,cpu0-llcc-ddr-lat {
@@ -2978,7 +2978,7 @@
 			< 1094000 MHZ_TO_MBPS( 547, 4) >,
 			< 1324000 MHZ_TO_MBPS(1017, 4) >,
 			< 1708800 MHZ_TO_MBPS(1555, 4) >,
-			< 2438400 MHZ_TO_MBPS(1804, 4) >;
+			< 2304000 MHZ_TO_MBPS(1804, 4) >;
 	};
 
 	cpu0_cpu_ddr_latfloor: qcom,cpu0-cpu-ddr-latfloor {
@@ -3019,7 +3019,7 @@
 			< 1324000 MHZ_TO_MBPS( 547, 4) >,
 			< 1552200 MHZ_TO_MBPS( 768, 4) >,
 			< 1708000 MHZ_TO_MBPS(1017, 4) >,
-			< 2438400 MHZ_TO_MBPS(1804, 4) >;
+			< 2304000 MHZ_TO_MBPS(1804, 4) >;
 	};
 
 	npu_npu_ddr_bw: qcom,npu-npu-ddr-bw {
