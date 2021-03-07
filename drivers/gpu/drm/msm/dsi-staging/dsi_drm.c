@@ -388,10 +388,27 @@ static void dsi_bridge_post_disable(struct drm_bridge *bridge)
 		atomic_set(&prim_panel_is_on, false);
 }
 
+#if CONFIG_TOUCHSCREEN_COMMON
+typedef int(*touchpanel_recovery_cb_p_t)(void);
+static touchpanel_recovery_cb_p_t touchpanel_recovery_cb_p;
+int set_touchpanel_recovery_callback(touchpanel_recovery_cb_p_t cb)
+{
+	if (IS_ERR_OR_NULL(cb))
+		return -EINVAL;
+	touchpanel_recovery_cb_p = cb;
+	return 0;
+}
+EXPORT_SYMBOL(set_touchpanel_recovery_callback);
+#endif
+
 static void prim_panel_off_delayed_work(struct work_struct *work)
 {
 	mutex_lock(&gbridge->base.lock);
 	if (atomic_read(&prim_panel_is_on)) {
+#if CONFIG_TOUCHSCREEN_COMMON
+		if (!IS_ERR_OR_NULL(touchpanel_recovery_cb_p))
+			touchpanel_recovery_cb_p();
+#endif
 		dsi_bridge_post_disable(&gbridge->base);
 		__pm_relax(&prim_panel_wakelock);
 		mutex_unlock(&gbridge->base.lock);
