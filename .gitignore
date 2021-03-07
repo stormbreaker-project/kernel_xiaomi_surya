@@ -125,3 +125,7 @@ all.config
 
 # fetched Android config fragments
 kernel/configs/android-*.cfg
+
+# kernel builds
+*.zip
+out/
