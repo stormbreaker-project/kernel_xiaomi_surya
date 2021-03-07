@@ -10,7 +10,7 @@ echo "Done"
 IMAGE=$(pwd)/out/arch/arm64/boot/Image
 TANGGAL=$(date +"%F-%S")
 START=$(date +"%s")
-export CONFIG_PATH=$PWD/arch/arm64/configs/surya_user_defconfig
+export CONFIG_PATH=$PWD/arch/arm64/configs/surya-perf_defconfig
 TC_DIR=${PWD}
 GCC64_DIR="${PWD}/gcc64"
 GCC32_DIR="${PWD}/gcc32"
@@ -53,7 +53,7 @@ function finerr() {
 }
 # Compile plox
 function compile() {
-   make O=out ARCH=arm64 surya_user_defconfig
+   make O=out ARCH=arm64 surya-perf_defconfig
        make -j$(nproc --all) O=out \
                              ARCH=arm64 \
 			     CROSS_COMPILE_ARM32=arm-eabi- \
