@@ -284,6 +284,11 @@ struct dsi_display {
 	u32 te_source;
 };
 
+//Update /proc/tp_info & /proc/tp_lockdown_info node
+extern void update_lct_tp_info(char *tp_info_buf, char *tp_lockdown_info_buf);
+//Set tp_lockdown_info node callback funcation
+extern void set_lct_tp_lockdown_info_callback(int (*pfun)(void));
+
 int dsi_display_dev_probe(struct platform_device *pdev);
 int dsi_display_dev_remove(struct platform_device *pdev);
 
