@@ -4,10 +4,10 @@ git clone --depth=1 https://github.com/stormbreaker-project/kernel_xiaomi_surya 
 cd kernel
 git clone --depth=1 https://github.com/mvaisakh/gcc-arm64 -b lld-integration gcc64
 git clone --depth=1 https://github.com/mvaisakh/gcc-arm -b lld-integration gcc32
-git clone --depth=1 https://github.com/Forenche/AnyKernel3 -b surya AnyKernel
+git clone --depth=1 https://github.com/Forenche/AnyKernel3 -b master AnyKernel
 git clone --depth=1 https://android.googlesource.com/platform/system/libufdt libufdt
 echo "Done"
-IMAGE=$(pwd)/out/arch/arm64/boot/Image
+IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz-dtb
 TANGGAL=$(date +"%F-%S")
 START=$(date +"%s")
 export CONFIG_PATH=$PWD/arch/arm64/configs/surya-perf_defconfig
@@ -61,7 +61,7 @@ function compile() {
 			     AR=aarch64-elf-ar \
 			     OBJDUMP=aarch64-elf-objdump \
 			     STRIP=aarch64-elf-strip
-   cp out/arch/arm64/boot/Image AnyKernel
+   cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
    python2 "libufdt/utils/src/mkdtboimg.py" \
 					create "out/arch/arm64/boot/dtbo.img" --page_size=4096 out/arch/arm64/boot/dts/qcom/*.dtbo
    cp out/arch/arm64/boot/dtbo.img AnyKernel
