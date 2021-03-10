@@ -69,7 +69,6 @@
 #include <linux/lockdep.h>
 #include <linux/nmi.h>
 #include <linux/psi.h>
-#include <linux/cpu_input_boost.h>
 #include <linux/devfreq_boost.h>
 #include <linux/khugepaged.h>
 
@@ -4232,7 +4231,6 @@ retry:
 		goto nopage;
 
 	/* Boost when memory is low so allocation latency doesn't get too bad */
-	cpu_input_boost_kick_max(100);
 	devfreq_boost_kick_max(DEVFREQ_MSM_LLCCBW, 100);
 	devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 100);
 
