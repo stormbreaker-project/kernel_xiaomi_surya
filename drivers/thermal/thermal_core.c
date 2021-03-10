@@ -1694,7 +1694,7 @@ thermal_boost_store(struct device *dev,
 				      struct device_attribute *attr, const char *buf, size_t len)
 {
 	int ret;
-	ret = snprintf(boost_buf, PAGE_SIZE, buf);
+	ret = snprintf(boost_buf, sizeof(boost_buf), buf);
 	return len;
 }
 
@@ -1775,7 +1775,7 @@ static ssize_t
 thermal_board_sensor_temp_store(struct device *dev,
 				struct device_attribute *attr, const char *buf, size_t len)
 {
-       snprintf(board_sensor_temp, PAGE_SIZE, buf);
+       snprintf(board_sensor_temp, sizeof(board_sensor_temp), buf);
 
        return len;
 }
