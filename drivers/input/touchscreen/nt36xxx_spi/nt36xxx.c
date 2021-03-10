@@ -786,11 +786,11 @@ info_retry:
 #ifdef CHECK_TOUCH_VENDOR
 	switch (ts->touch_vendor_id) {
 	case TP_VENDOR_HUAXING:
-		snprintf(tp_info_buf, PAGE_SIZE, "[Vendor]huaxing,[FW]0x%02x,[IC]nt36672c\n", ts->fw_ver);
+		snprintf(tp_info_buf, sizeof(tp_info_buf), "[Vendor]huaxing,[FW]0x%02x,[IC]nt36672c\n", ts->fw_ver);
 		update_lct_tp_info(tp_info_buf, NULL);
 		break;
 	case TP_VENDOR_TIANMA:
-		snprintf(tp_info_buf, PAGE_SIZE, "[Vendor]tianma,[FW]0x%02x,[IC]nt36672c\n", ts->fw_ver);
+		snprintf(tp_info_buf, sizeof(tp_info_buf), "[Vendor]tianma,[FW]0x%02x,[IC]nt36672c\n", ts->fw_ver);
 		update_lct_tp_info(tp_info_buf, NULL);
 		break;
 	}
