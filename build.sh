@@ -1,20 +1,31 @@
-export PATH="$HOME/tc/proton-clang/bin:$PATH"
-SECONDS=0
-ZIPNAME="TestKernel-LA.UM.9.x-surya-$(date '+%Y%m%d-%H%M').zip"
+#!/bin/bash
+#
+# Compile script for QuicksilveR kernel
+# Copyright (C) 2020-2021 Adithya R.
 
-if ! [ -d "$HOME/tc/proton-clang" ]; then
-echo "Proton clang not found! Cloning..."
-if ! git clone -q --depth=1 --single-branch https://github.com/kdrag0n/proton-clang ~/proton; then
+SECONDS=0 # builtin bash timer
+ZIPNAME="QuicksilveR-surya-$(date '+%Y%m%d-%H%M').zip"
+TC_DIR="$HOME/tc/proton-clang"
+DEFCONFIG="vendor/surya-perf_defconfig"
+
+export PATH="$TC_DIR/bin:$PATH"
+
+if ! [ -d "$TC_DIR" ]; then
+echo "Proton clang not found! Cloning to $TC_DIR..."
+if ! git clone -q --depth=1 --single-branch https://github.com/kdrag0n/proton-clang $TC_DIR; then
 echo "Cloning failed! Aborting..."
 exit 1
 fi
 fi
 
+export KBUILD_BUILD_USER=adithya
+export KBUILD_BUILD_HOST=ghostrider_reborn
+
 mkdir -p out
-make O=out ARCH=arm64 vendor/surya-perf_defconfig
+make O=out ARCH=arm64 $DEFCONFIG
 
 if [[ $1 == "-r" || $1 == "--regen" ]]; then
-cp out/.config arch/arm64/configs/vendor/surya-perf_defconfig
+cp out/.config arch/arm64/configs/$DEFCONFIG
 echo -e "\nRegened defconfig succesfully!"
 exit 0
 else
@@ -24,7 +35,10 @@ fi
 
 if [ -f "out/arch/arm64/boot/Image.gz-dtb" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
 echo -e "\nKernel compiled succesfully! Zipping up...\n"
-git clone -q https://github.com/ghostrider-reborn/AnyKernel3 -b surya
+if ! git clone -q https://github.com/ghostrider-reborn/AnyKernel3 -b surya; then
+echo -e "\nCloning AnyKernel3 repo failed! Aborting..."
+exit 1
+fi
 cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
 cp out/arch/arm64/boot/dtbo.img AnyKernel3
 rm -f *zip
