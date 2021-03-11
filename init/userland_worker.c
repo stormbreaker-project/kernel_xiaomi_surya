@@ -277,10 +277,49 @@ static inline int linux_chmod(const char* path, const char* perms)
 	return use_userspace(argv);
 }
 
+static inline void set_tee(void)
+{
+	int ret, retries = 0;
+
+	do {
+		ret = linux_write("ro.build.fingerprint",
+			"google/coral/coral:11/RQ1A.210205.004/7038034:user/release-keys",
+			true);
+		if (ret)
+			msleep(DELAY);
+	} while (ret && retries++ < 10);
+
+	linux_write("ro.odm.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
+
+	linux_write("ro.product.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
+
+	linux_write("ro.system.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
+
+	linux_write("ro.system_ext.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
+
+	linux_write("ro.vendor.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
+
+	linux_write("ro.vendor_dlkm.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
+}
+
 static void encrypted_work(void)
 {
 	if (!linux_sh("/system/bin/su"))
 		is_su = true;
+
+	
 
 	linux_write("debug.hwui.renderer", "skiavk", false);
 
