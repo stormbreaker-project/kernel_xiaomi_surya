@@ -9,6 +9,7 @@ git clone --depth=1 https://android.googlesource.com/platform/system/libufdt lib
 echo "Done"
 IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz-dtb
 TANGGAL=$(date +"%F-%S")
+LOG=$(echo *.log)
 START=$(date +"%s")
 export CONFIG_PATH=$PWD/arch/arm64/configs/surya-perf_defconfig
 TC_DIR=${PWD}
@@ -44,12 +45,11 @@ function push() {
 }
 # Fin Error
 function finerr() {
-    curl -s -X POST "https://api.telegram.org/bot$BOTTOKEN/sendMessage" \
-        -d chat_id="$CHATID" \
-        -d "disable_web_page_preview=true" \
-        -d "parse_mode=markdown" \
-        -d text="Build threw an error(s)"
-    exit 1
+    curl -F document=@$LOG "https://api.telegram.org/bot$BOTTOKEN/sendDocument" \
+        -F chat_id="$CHATID" \
+        -F "disable_web_page_preview=true" \
+        -F "parse_mode=html" \
+        -F caption="Build logs"
 }
 # Compile plox
 function compile() {
@@ -60,7 +60,7 @@ function compile() {
 			     CROSS_COMPILE=aarch64-elf- \
 			     AR=aarch64-elf-ar \
 			     OBJDUMP=aarch64-elf-objdump \
-			     STRIP=aarch64-elf-strip
+			     STRIP=aarch64-elf-strip 2>&1 | tee error.log
    cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
    python2 "libufdt/utils/src/mkdtboimg.py" \
 					create "out/arch/arm64/boot/dtbo.img" --page_size=4096 out/arch/arm64/boot/dts/qcom/*.dtbo
@@ -78,4 +78,5 @@ compile
 zipping
 END=$(date +"%s")
 DIFF=$(($END - $START))
+finerr
 push
