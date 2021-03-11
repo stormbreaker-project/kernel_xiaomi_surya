@@ -352,8 +352,8 @@
 			reg-names = "lpg-base", "lut-base";
 			#pwm-cells = <2>;
 			qcom,num-lpg-channels = <3>;
-			qcom,lut-patterns = <40 39 37 35 33 31 29 27 25 20 19
-						17 11 6 0 0 0 0 0 0 0>;
+			qcom,lut-patterns = <0 0 0 0 10 20 30 40 50 60 70 80 70
+						60 50 40 30 20 10 0 0 0 0>;
 			lpg1 {
 				qcom,lpg-chan-id = <1>;
 				qcom,ramp-step-ms = <100>;
@@ -392,7 +392,7 @@
 			compatible = "qcom,tri-led";
 			reg = <0xd000 0x100>;
 			red {
-				label = "red";
+				label = "white";
 				pwms = <&pm6150l_lpg 0 1000000>;
 				led-sources = <0>;
 				linux,default-trigger = "timer";
@@ -402,12 +402,14 @@
 				pwms = <&pm6150l_lpg 1 1000000>;
 				led-sources = <1>;
 				linux,default-trigger = "timer";
+				status = "disabled";
 			};
 			blue {
 				label = "blue";
 				pwms = <&pm6150l_lpg 2 1000000>;
 				led-sources = <2>;
 				linux,default-trigger = "timer";
+				status = "disabled";
 			};
 		};
 
