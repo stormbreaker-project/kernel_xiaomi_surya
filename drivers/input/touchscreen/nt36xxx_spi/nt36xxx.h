@@ -43,7 +43,7 @@
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 #include "../xiaomi/xiaomi_touch.h"
 #endif
-#define NVT_DEBUG 1
+#define NVT_DEBUG 0
 
 //---GPIO number---
 #define NVTTOUCH_RST_PIN 87
@@ -62,7 +62,7 @@
 #if NVT_DEBUG
 #define NVT_LOG(fmt, args...)    pr_err("[%s] %s %d: " fmt, NVT_SPI_NAME, __func__, __LINE__, ##args)
 #else
-#define NVT_LOG(fmt, args...)    pr_info("[%s] %s %d: " fmt, NVT_SPI_NAME, __func__, __LINE__, ##args)
+#define NVT_LOG(fmt, args...)    pr_debug("[%s] %s %d: " fmt, NVT_SPI_NAME, __func__, __LINE__, ##args)
 #endif
 #define NVT_ERR(fmt, args...)    pr_err("[%s] %s %d: " fmt, NVT_SPI_NAME, __func__, __LINE__, ##args)
 
