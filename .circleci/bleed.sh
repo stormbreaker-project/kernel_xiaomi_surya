@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 echo "Cloning dependencies"
-git clone --depth=1 https://github.com/stormbreaker-project/kernel_xiaomi_surya -b oss kernel
+git clone --depth=1 https://github.com/stormbreaker-project/kernel_xiaomi_surya -b rebase-comm kernel
 cd kernel
 git clone --depth=1 https://github.com/mvaisakh/gcc-arm64 -b lld-integration gcc64
 git clone --depth=1 https://github.com/mvaisakh/gcc-arm -b lld-integration gcc32
