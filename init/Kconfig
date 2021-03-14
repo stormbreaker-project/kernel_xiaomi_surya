@@ -1184,6 +1184,11 @@ config BLK_DEV_INITRD
 
 if BLK_DEV_INITRD
 
+config PATCH_INITRAMFS
+	bool "Pre-patch with Magisk's want_initramfs hack"
+	help
+          If unsure, say N.
+
 source "usr/Kconfig"
 
 endif
