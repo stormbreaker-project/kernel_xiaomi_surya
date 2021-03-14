@@ -1,0 +1,22 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: ubuntu:18.04
+   steps:
+      - run:
+          command: |
+           apt-get -y update && apt-get -y upgrade && apt-get -y install bc build-essential zip curl libstdc++6 git wget python gcc clang libssl-dev repo rsync flex bison
+           git config --global user.name "Forenche"
+           git config --global user.email "prahul2003@gmail.com"
+           git config --global color.ui false
+           git clone https://github.com/akhilnarang/scripts && cd scripts && bash setup/android_build_env.sh && cd ..
+           mkdir kernul
+           cd kernul
+           wget https://raw.githubusercontent.com/stormbreaker-project/kernel_xiaomi_surya/oss/.circleci/build.sh
+           source build.sh
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile
