@@ -1,21 +1,16 @@
 #!/usr/bin/env bash
 echo "Cloning dependencies"
-git clone --depth=1 https://github.com/stormbreaker-project/kernel_xiaomi_surya -b  alpha  kernel
+git clone --depth=1 https://github.com/mahajant99/kernel_xiaomi_sweet -b  sweet-r-oss  kernel
 cd kernel
-git clone --depth=1 https://github.com/mvaisakh/gcc-arm64 -b lld-integration gcc64
-git clone --depth=1 https://github.com/mvaisakh/gcc-arm -b lld-integration gcc32
+git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
 git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3 -b surya AnyKernel
 git clone --depth=1 https://android.googlesource.com/platform/system/libufdt libufdt
 echo "Done"
 IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz-dtb
 TANGGAL=$(date +"%F-%S")
-LOG=$(echo *.log)
 START=$(date +"%s")
-export CONFIG_PATH=$PWD/arch/arm64/configs/surya-perf_defconfig
-TC_DIR=${PWD}
-GCC64_DIR="${PWD}/gcc64"
-GCC32_DIR="${PWD}/gcc32"
-PATH="$TC_DIR/bin/:$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH"
+export CONFIG_PATH=$PWD/arch/arm64/configs/sweet_defconfig
+PATH="${PWD}/clang/bin:$PATH"
 export ARCH=arm64
 export KBUILD_BUILD_HOST="Drone-CI"
 export KBUILD_BUILD_USER="forenche"
@@ -53,7 +48,7 @@ function finerr() {
 }
 # Compile plox
 function compile() {
-   make O=out ARCH=arm64 surya-perf_defconfig
+   make O=out ARCH=arm64 sweet_defconfig
        make -j$(nproc --all) O=out \
                              ARCH=arm64 \
 			     CROSS_COMPILE_ARM32=arm-eabi- \
@@ -69,7 +64,7 @@ function compile() {
 # Zipping
 function zipping() {
     cd AnyKernel || exit 1
-    zip -r9 surya-Stormbreaker-${TANGGAL}.zip *
+    zip -r9 sweet-${TANGGAL}.zip *
     cd ..
 }
 sticker
