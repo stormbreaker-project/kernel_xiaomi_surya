@@ -51,9 +51,11 @@ function compile() {
    make O=out ARCH=arm64 sweet_defconfig
        make -j$(nproc --all) O=out \
                              ARCH=arm64 \
-			     CC=clang \
-			     CROSS_COMPILE=aarch64-linux-gnu- \
-			     CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+			     CROSS_COMPILE_ARM32=arm-eabi- \
+			     CROSS_COMPILE=aarch64-elf- \
+			     AR=aarch64-elf-ar \
+			     OBJDUMP=aarch64-elf-objdump \
+			     STRIP=aarch64-elf-strip 2>&1 | tee error.log
    cp out/arch/arm64/boot/Image.gz-dtb AnyKernel
    python2 "libufdt/utils/src/mkdtboimg.py" \
 					create "out/arch/arm64/boot/dtbo.img" --page_size=4096 out/arch/arm64/boot/dts/qcom/*.dtbo
