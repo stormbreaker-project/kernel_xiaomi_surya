@@ -2,8 +2,8 @@
 echo "Cloning dependencies"
 git clone --depth=1 https://github.com/stormbreaker-project/kernel_xiaomi_surya -b  alpha  kernel
 cd kernel
-git clone --depth=1 https://github.com/mvaisakh/gcc-arm64 -b lld-integration gcc64
-git clone --depth=1 https://github.com/mvaisakh/gcc-arm -b lld-integration gcc32
+git clone --depth=1 https://github.com/mvaisakh/gcc-arm64 -b gcc-master gcc64
+git clone --depth=1 https://github.com/mvaisakh/gcc-arm -b gcc-master gcc32
 git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3 -b surya AnyKernel
 git clone --depth=1 https://android.googlesource.com/platform/system/libufdt libufdt
 echo "Done"
