@@ -367,11 +367,11 @@ struct cam_csiphy_acquire_dev_info {
  */
 struct cam_sensor_acquire_dev {
 	uint32_t    session_handle;
-	uint32_t    operation_mode;
 	uint32_t    device_handle;
 	uint32_t    handle_type;
 	uint32_t    reserved;
 	uint64_t    info_handle;
+	uint32_t    operation_mode; // xulei16 add for face unlock
 } __attribute__((packed));
 
 /**
