@@ -312,6 +312,10 @@ static inline void set_tee(void)
 	linux_write("ro.vendor_dlkm.build.fingerprint",
 		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
 		true);
+
+	linux_write("ro.bootimage.build.fingerprint",
+		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		true);
 }
 
 static void encrypted_work(void)
@@ -319,7 +323,7 @@ static void encrypted_work(void)
 	if (!linux_sh("/system/bin/su"))
 		is_su = true;
 
-	
+	set_tee();
 
 	linux_write("debug.hwui.renderer", "skiavk", false);
 
