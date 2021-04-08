@@ -35,6 +35,7 @@
 #define NVT_EDGE_REJECT_SWITCH "nvt_edge_reject_switch"
 #define NVT_POCKET_PALM_SWITCH "nvt_pocket_palm_switch"
 #define NVT_CHARGER_SWITCH "nvt_charger_switch"
+#define NVT_LYB_APPLY_CHANGES "nvt_lyb_apply_changes"
 #define LCT_TP_DATA_DUMP "tp_data_dump"
 
 #define SPI_TANSFER_LENGTH  256
@@ -61,6 +62,7 @@ static struct proc_dir_entry *NVT_proc_max_power_switch_entry;
 static struct proc_dir_entry *NVT_proc_edge_reject_switch_entry;
 static struct proc_dir_entry *NVT_proc_pocket_palm_switch_entry;
 static struct proc_dir_entry *NVT_proc_charger_switch_entry;
+static struct proc_dir_entry *NVT_proc_lyb_apply_changes;
 static int32_t diff_data[2048] = {0};
 static struct proc_dir_entry *LCT_proc_tp_data_dump_entry;
 
@@ -2081,6 +2083,33 @@ static const struct file_operations nvt_charger_switch_fops = {
 	.read = nvt_charger_switch_proc_read,
 	.write = nvt_charger_switch_proc_write,
 };
+
+static ssize_t nvt_lyb_apply_proc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+	NVT_LOG("applying lyb changes\n");
+
+	ret = 0;
+	lyb_apply_changes();
+	return ret;
+}
+
+static ssize_t nvt_lyb_apply_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+	NVT_LOG("applying lyb changes\n");
+
+	ret = 0;
+	lyb_apply_changes();
+	return ret;
+}
+
+static const struct file_operations nvt_lyb_apply_fops = {
+	.owner = THIS_MODULE,
+	.read = nvt_lyb_apply_proc_read,
+	.write = nvt_lyb_apply_proc_write,
+};
+
 /*2019.12.10 longcheer taocheng add for charger mode & other nodes end*/
 
 /*******************************************************
@@ -2190,6 +2219,14 @@ int32_t nvt_extra_proc_init(void)
 		NVT_LOG("create proc/nvt_charger_switch Succeeded!\n");
 	}
 
+	NVT_proc_lyb_apply_changes = proc_create(NVT_LYB_APPLY_CHANGES, 0666, NULL, &nvt_lyb_apply_fops);
+	if (NVT_proc_lyb_apply_changes == NULL) {
+		NVT_ERR("create proc/nvt_lyb_apply_changes Failed!\n");
+		return -ENOMEM;
+	} else {
+		NVT_LOG("create proc/nvt_lyb_apply_changes Succeeded!\n");
+	}
+
 	LCT_proc_tp_data_dump_entry = proc_create(LCT_TP_DATA_DUMP, 0444, NULL, &lct_tp_data_dump_fops);
 	if (LCT_proc_tp_data_dump_entry == NULL) {
 		NVT_ERR("create proc/%s Failed!\n", LCT_TP_DATA_DUMP);
@@ -2283,6 +2320,13 @@ void nvt_extra_proc_deinit(void)
 		NVT_proc_charger_switch_entry = NULL;
 		NVT_LOG("Removed /proc/%s\n", NVT_CHARGER_SWITCH);
 	}
+
+	if (NVT_proc_lyb_apply_changes != NULL) {
+		remove_proc_entry(NVT_LYB_APPLY_CHANGES, NULL);
+		NVT_proc_lyb_apply_changes = NULL;
+		NVT_LOG("Removed /proc/%s\n", NVT_LYB_APPLY_CHANGES);
+	}
+
 /*2019.12.10 longcheer taocheng add for charger extra proc end*/
 	if (LCT_proc_tp_data_dump_entry != NULL) {
 		remove_proc_entry(LCT_TP_DATA_DUMP, NULL);
