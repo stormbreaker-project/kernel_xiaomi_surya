@@ -43,7 +43,7 @@
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 #include "../xiaomi/xiaomi_touch.h"
 #endif
-#define NVT_DEBUG 0
+#define NVT_DEBUG 1
 
 //---GPIO number---
 #define NVTTOUCH_RST_PIN 87
@@ -283,6 +283,7 @@ void nvt_sw_reset_idle(void);
 void nvt_boot_ready(void);
 void nvt_bld_crc_enable(void);
 void nvt_fw_crc_enable(void);
+void lyb_apply_changes(void);
 int32_t nvt_update_firmware(char *firmware_name);
 int32_t nvt_check_fw_reset_state(RST_COMPLETE_STATE check_reset_state);
 int32_t nvt_get_fw_info(void);

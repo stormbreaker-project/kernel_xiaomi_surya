@@ -134,6 +134,33 @@ static uint8_t bTouchIsAwake;
 static uint8_t open_pocket_fail;
 static uint8_t close_pocket_fail;
 
+static int lyb_override = 0;
+module_param(lyb_override, int, 0644);
+
+static int lyb_ts_param = 0;
+module_param(lyb_ts_param, int, 0644);
+
+static int lyb_angle_callback = 270;
+module_param(lyb_angle_callback, int, 0644);
+
+static int lyb_palm_status = 0;
+module_param(lyb_palm_status, int, 0644);
+
+static int lyb_touch_game_mode = 1;
+module_param(lyb_touch_game_mode, int, 0644);
+
+static int lyb_touch_active_mode = 1;
+module_param(lyb_touch_active_mode, int, 0644);
+
+static int lyb_touch_up_thresh = 41;
+module_param(lyb_touch_up_thresh, int, 0644);
+
+static int lyb_touch_tolerance = 255;
+module_param(lyb_touch_tolerance, int, 0644);
+
+static int lyb_touch_edge = 1;
+module_param(lyb_touch_edge, int, 0644);
+
 #if WAKEUP_GESTURE
 #define WAKEUP_OFF 4
 #define WAKEUP_ON 5
@@ -2067,8 +2094,7 @@ static void nvt_init_touchmode_data(void)
 	return;
 }
 
-
-static int nvt_set_cur_value(int nvt_mode, int nvt_value)
+static int nvt_set_cur_value_actual(int nvt_mode, int nvt_value)
 {
 
 	uint8_t nvt_game_value[2] = {0};
@@ -2121,13 +2147,30 @@ static int nvt_set_cur_value(int nvt_mode, int nvt_value)
 	case Touch_Tolerance:
 		/* jitter 0,1,2,3,4,5 = default,weakest,weak,mediea,strong,strongest*/
 		temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][SET_CUR_VALUE];
-		if (temp_value >= 0 && temp_value <= 80)
-			reg_value = 0;
-		else if (temp_value > 80 && temp_value <= 150)
-			reg_value = 1;
-		else if (temp_value > 150 && temp_value <= 255)
-			reg_value = 2;
-
+		if (lyb_ts_param == 1)
+		{
+			// expose more values
+			if (temp_value >= 0 && temp_value <= 80)
+				reg_value = 0;
+			else if (temp_value > 80 && temp_value <= 150)
+				reg_value = 1;
+			else if (temp_value > 150 && temp_value <= 200)
+				reg_value = 2;
+			else if (temp_value > 200 && temp_value <= 225)
+				reg_value = 3;
+			else if (temp_value > 225 && temp_value <= 235)
+				reg_value = 4;
+			else if (temp_value > 235 && temp_value <= 255)
+				reg_value = 5;
+		} else {
+			// default behaviour
+			if (temp_value >= 0 && temp_value <= 80)
+				reg_value = 0;
+			else if (temp_value > 80 && temp_value <= 150)
+				reg_value = 1;
+			else if (temp_value > 150 && temp_value <= 255)
+				reg_value = 2;
+		}
 		nvt_game_value[0] = 0x70;
 		nvt_game_value[1] = reg_value;
 		break;
@@ -2173,6 +2216,14 @@ static int nvt_set_cur_value(int nvt_mode, int nvt_value)
 			NVT_ERR("change game mode fail");
 		}
 	}
+	return 0;
+}
+
+static int nvt_set_cur_value(int nvt_mode, int nvt_value)
+{
+	// make sure userspace didn't set anything when overriden
+	if (lyb_override != 2)
+		return nvt_set_cur_value_actual(nvt_mode, nvt_value);
 	return 0;
 }
 
@@ -3025,6 +3076,23 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	return 0;
 }
 
+void lyb_apply_changes()
+{
+	if (lyb_override >= 1)	{
+		// 1 == AOSP with touch profile
+		lct_tp_set_screen_angle_callback(lyb_angle_callback);
+		if (lyb_override >= 2)	{
+			// 2 == AOSP without touch profile
+			set_lct_tp_palm_status((lyb_palm_status == 0));
+			nvt_set_cur_value_actual(Touch_Game_Mode, lyb_touch_game_mode);
+			nvt_set_cur_value_actual(Touch_Active_MODE, lyb_touch_active_mode);
+			nvt_set_cur_value_actual(Touch_UP_THRESHOLD, lyb_touch_up_thresh);
+			nvt_set_cur_value_actual(Touch_Tolerance, lyb_touch_tolerance);
+			nvt_set_cur_value_actual(Touch_Edge_Filter, lyb_touch_edge);
+		}
+	}
+}
+
 /*******************************************************
 Description:
 	Novatek touchscreen driver resume function.
@@ -3117,6 +3185,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 		lct_nvt_tp_palm_callback(true);
 	}
 #endif
+	lyb_apply_changes();
 
 	return 0;
 }
