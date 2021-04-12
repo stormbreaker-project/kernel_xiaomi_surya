@@ -755,6 +755,24 @@ config BIG_CPU_MASK
 	  heterogeneous system. Use 0 if you are unsure, which just results in
 	  this storing the bitmask of all available CPUs.
 
+config BIG_CPU_FIRST_MASK
+	int "Bitmask of the first big CPU"
+	default 0
+	help
+	  This bitmask specifies the first big CPU which is cpu6 for a Big.Little
+	  chipset having two CPUs (cpu6 and cpu7) on the Big cluster.
+	  
+	  Set it 0 if you are unsure.
+
+config BIG_CPU_SECOND_MASK
+	int "Bitmask of the second big CPU"
+	default 0
+	help
+	  This bitmask specifies the second big CPU which is cpu7 for a Big.Little
+	  chipset having two CPUs (cpu6 and cpu7) on the Big cluster.
+	  
+	  Set it 0 if you are unsure.
+
 config HOTPLUG_CPU
 	bool "Support for hot-pluggable CPUs"
 	select GENERIC_IRQ_MIGRATION
