@@ -788,6 +788,18 @@ config BIG_CPU_MASK
 	  heterogeneous system. Use 0 if you are unsure, which just results in
 	  this storing the bitmask of all available CPUs.
 
+config BIG_CPU_DRM_MASK
+	int "Bitmask of available big CPUs to affine DRM"
+	default 64
+	help
+	  This bitmask specifies which of the CPUs are for affining DRM irqs.
+
+config BIG_CPU_KGSL_MASK
+	int "Bitmask of available big CPUs to affine KGSL"
+	default 128
+	help
+	  This bitmask specifies which of the CPUs are for affining KGSL irqs.
+
 config HOTPLUG_CPU
 	bool "Support for hot-pluggable CPUs"
 	select GENERIC_IRQ_MIGRATION
