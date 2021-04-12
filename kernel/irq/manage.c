@@ -33,6 +33,8 @@ struct irq_desc_list {
 static LIST_HEAD(perf_crit_irqs);
 static DEFINE_RAW_SPINLOCK(perf_irqs_lock);
 static int perf_cpu_index = -1;
+static int perf_cpu_first_index = -1;
+static int perf_cpu_second_index = -1;
 static bool perf_crit_suspended;
 
 #ifdef CONFIG_IRQ_FORCED_THREADING
@@ -1200,6 +1202,12 @@ static void affine_one_perf_thread(struct irqaction *action)
 	if (action->flags & IRQF_PERF_AFFINE)
 		mask = cpu_perf_mask;
 
+	if (action->flags & IRQF_PERF_FIRST_AFFINE)
+		mask = cpu_perf_first_mask;
+
+	if (action->flags & IRQF_PERF_SECOND_AFFINE)
+		mask = cpu_perf_second_mask;
+
 	action->thread->flags |= PF_PERF_CRITICAL;
 	set_cpus_allowed_ptr(action->thread, mask);
 }
@@ -1222,6 +1230,16 @@ static void affine_one_perf_irq(struct irq_desc *desc, unsigned int perf_flag)
 	if (perf_flag & IRQF_PERF_AFFINE) {
 		mask = cpu_perf_mask;
 		mask_index = &perf_cpu_index;
+	}
+
+	if (perf_flag & IRQF_PERF_FIRST_AFFINE) {
+		mask = cpu_perf_first_mask;
+		mask_index = &perf_cpu_first_index;
+	}
+
+	if (perf_flag & IRQF_PERF_SECOND_AFFINE) {
+		mask = cpu_perf_second_mask;
+		mask_index = &perf_cpu_second_index;
 	}
 
 	if (!cpumask_intersects(mask, cpu_online_mask)) {
@@ -1297,6 +1315,8 @@ void reaffine_perf_irqs(bool from_hotplug)
 	if (!from_hotplug || !perf_crit_suspended) {
 		perf_crit_suspended = false;
 		perf_cpu_index = -1;
+		perf_cpu_first_index = -1;
+		perf_cpu_second_index = -1;
 		list_for_each_entry(data, &perf_crit_irqs, list) {
 			struct irq_desc *desc = data->desc;
 
@@ -1566,7 +1586,8 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 			irqd_set(&desc->irq_data, IRQD_NO_BALANCING);
 		}
 
-		if (new->flags & IRQF_PERF_AFFINE) {
+		if (new->flags & (IRQF_PERF_AFFINE | 
+				IRQF_PERF_FIRST_AFFINE | IRQF_PERF_SECOND_AFFINE)) {
 			affine_one_perf_thread(new);
 			irqd_set(&desc->irq_data, IRQD_PERF_CRITICAL);
 			*old_ptr = new;
