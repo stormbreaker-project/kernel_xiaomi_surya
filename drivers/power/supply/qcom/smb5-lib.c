@@ -6716,7 +6716,7 @@ int smblib_get_quick_charge_type(struct smb_charger *chg)
 		smblib_err(chg, "Couldn't get batt health rc=%d\n", rc);
 
 	if ((pval.intval == POWER_SUPPLY_HEALTH_COLD)
-			|| (pval.intval == POWER_SUPPLY_HEALTH_HOT))
+			|| (pval.intval == POWER_SUPPLY_HEALTH_OVERHEAT))
 		return 0;
 
 	/* davinic do not need to report this type */
