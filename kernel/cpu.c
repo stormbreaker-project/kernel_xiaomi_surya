@@ -537,21 +537,6 @@ static int bringup_cpu(unsigned int cpu)
 	return bringup_wait_for_ap(cpu);
 }
 
-static int finish_cpu(unsigned int cpu)
-{
-	struct task_struct *idle = idle_thread_get(cpu);
-	struct mm_struct *mm = idle->active_mm;
-
-	/*
-	 * idle_task_exit() will have switched to &init_mm, now
-	 * clean up any remaining active_mm state.
-	 */
-	if (mm != &init_mm)
-		idle->active_mm = &init_mm;
-	mmdrop(mm);
-	return 0;
-}
-
 /*
  * Hotplug state machine related functions
  */
@@ -1507,7 +1492,7 @@ static struct cpuhp_step cpuhp_bp_states[] = {
 	[CPUHP_BRINGUP_CPU] = {
 		.name			= "cpu:bringup",
 		.startup.single		= bringup_cpu,
-		.teardown.single	= finish_cpu,
+		.teardown.single	= NULL,
 		.cant_stop		= true,
 	},
 	/*
