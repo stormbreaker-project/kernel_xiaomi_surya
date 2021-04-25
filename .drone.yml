@@ -19,7 +19,7 @@ steps:
     commands:
       - apt update && apt-get install -y build-essential bc python curl git zip ftp gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi libssl-dev lftp zstd wget libfl-dev clang flex bison cpio
       - mkdir kernul && cd kernul
-      - wget https://raw.githubusercontent.com/stormbreaker-project/kernel_xiaomi_surya/alpha/.circleci/bleed.sh
+      - wget https://gitlab.com/Forenche/mainline-surya/-/raw/staging/kramel.sh
       - chmod +x bleed.sh
       - bash bleed.sh
 
