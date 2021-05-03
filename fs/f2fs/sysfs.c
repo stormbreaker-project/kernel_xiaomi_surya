@@ -70,7 +70,7 @@ static unsigned char *__struct_ptr(struct f2fs_sb_info *sbi, int struct_type)
 	return NULL;
 }
 
-static ssize_t dirty_segments_show(struct f2fs_attr *a,
+static ssize_t dirty_segments_dev_show(struct f2fs_attr *a,
 		struct f2fs_sb_info *sbi, char *buf)
 {
 	return sprintf(buf, "%llu\n",
@@ -522,7 +522,7 @@ F2FS_RW_ATTR(FAULT_INFO_TYPE, f2fs_fault_info, inject_type, inject_type);
 #endif
 F2FS_RW_ATTR(F2FS_SBI, f2fs_sb_info, data_io_flag, data_io_flag);
 F2FS_RW_ATTR(F2FS_SBI, f2fs_sb_info, node_io_flag, node_io_flag);
-F2FS_GENERAL_RO_ATTR(dirty_segments);
+F2FS_GENERAL_RO_ATTR(dirty_segments_dev);
 F2FS_GENERAL_RO_ATTR(free_segments);
 F2FS_GENERAL_RO_ATTR(lifetime_write_kbytes);
 F2FS_GENERAL_RO_ATTR(features);
@@ -598,7 +598,7 @@ static struct attribute *f2fs_attrs[] = {
 #endif
 	ATTR_LIST(data_io_flag),
 	ATTR_LIST(node_io_flag),
-	ATTR_LIST(dirty_segments),
+	ATTR_LIST(dirty_segments_dev),
 	ATTR_LIST(free_segments),
 	ATTR_LIST(unusable),
 	ATTR_LIST(lifetime_write_kbytes),
@@ -864,7 +864,7 @@ int __init f2fs_init_sysfs(void)
 {
 	int ret;
 
-	kobject_set_name(&f2fs_kset.kobj, "f2fs_dev");
+	kobject_set_name(&f2fs_kset.kobj, "f2fs");
 	f2fs_kset.kobj.parent = fs_kobj;
 	ret = kset_register(&f2fs_kset);
 	if (ret)
@@ -876,7 +876,7 @@ int __init f2fs_init_sysfs(void)
 		kobject_put(&f2fs_feat);
 		kset_unregister(&f2fs_kset);
 	} else {
-		f2fs_proc_root = proc_mkdir("fs/f2fs_dev", NULL);
+		f2fs_proc_root = proc_mkdir("fs/f2fs", NULL);
 	}
 	return ret;
 }
@@ -885,7 +885,7 @@ void f2fs_exit_sysfs(void)
 {
 	kobject_put(&f2fs_feat);
 	kset_unregister(&f2fs_kset);
-	remove_proc_entry("fs/f2fs_dev", NULL);
+	remove_proc_entry("fs/f2fs", NULL);
 	f2fs_proc_root = NULL;
 }
 
