@@ -17,6 +17,12 @@ config FUSE_FS
 	  If you want to develop a userspace FS, or if you want to use
 	  a filesystem based on FUSE, answer Y or M.
 
+config FUSE_SHORTCIRCUIT
+	bool "OnePlus FUSE Optimization"
+	depends on FUSE_FS
+	help
+	  An optimization for better /sdcard/ performance on Android by OnePlus.
+
 config CUSE
 	tristate "Character device in Userspace support"
 	depends on FUSE_FS
