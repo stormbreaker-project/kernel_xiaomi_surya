@@ -175,9 +175,12 @@ static inline bool jump_entry_is_init(const struct jump_entry *entry)
 	return (unsigned long)entry->key & 2UL;
 }
 
-static inline void jump_entry_set_init(struct jump_entry *entry)
+static inline void jump_entry_set_init(struct jump_entry *entry, bool set)
 {
-	entry->key |= 2;
+	if (set)
+		entry->key |= 2;
+	else
+		entry->key &= ~2;
 }
 
 #endif
