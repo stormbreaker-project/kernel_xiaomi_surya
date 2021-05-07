@@ -3842,7 +3842,6 @@ static ssize_t ext4_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 	size_t count = iov_iter_count(iter);
 	loff_t offset = iocb->ki_pos;
 	ssize_t ret;
-	int rw = iov_iter_rw(iter);
 
 	if (!fscrypt_dio_supported(iocb, iter))
 		return 0;
