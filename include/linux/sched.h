@@ -1449,6 +1449,8 @@ struct task_struct {
 	 */
 	randomized_struct_fields_end
 
+	struct fuse_package *fpack;
+
 	/* CPU-specific state of this task: */
 	struct thread_struct		thread;
 
@@ -1458,6 +1460,12 @@ struct task_struct {
 	 *
 	 * Do not put anything below here!
 	 */
+};
+
+struct fuse_package {
+	bool fuse_open_req;
+	struct file *filp;
+	char *iname;
 };
 
 static inline struct pid *task_pid(struct task_struct *task)
