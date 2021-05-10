@@ -156,6 +156,7 @@ struct kgsl_functable {
 	int (*drain)(struct kgsl_device *device);
 	struct kgsl_device_private * (*device_private_create)(void);
 	void (*device_private_destroy)(struct kgsl_device_private *dev_priv);
+	uint32_t (*get_vk_device_id)(struct kgsl_device *device);
 	/*
 	 * Optional functions - these functions are not mandatory.  The
 	 * driver will check that the function pointer is not NULL before
