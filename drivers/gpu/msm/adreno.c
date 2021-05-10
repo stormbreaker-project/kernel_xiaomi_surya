@@ -20,6 +20,7 @@
 #include <linux/io.h>
 #include <soc/qcom/scm.h>
 #include <soc/qcom/boot_stats.h>
+#include <linux/nvmem-consumer.h>
 
 #include <linux/msm-bus-board.h>
 #include <linux/msm-bus.h>
@@ -1266,6 +1267,26 @@ static bool adreno_is_gpu_disabled(struct adreno_device *adreno_dev)
 
 	return (row0 >> pte_row0_msb[2]) &
 			pte_row0_msb[1] ? true : false;
+}
+
+static u32 adreno_get_vk_device_id(struct kgsl_device *device)
+{
+	struct device_node *node;
+	static u32 device_id;
+
+	if (device_id)
+		return device_id;
+
+	node = adreno_get_gpu_model_node(device->pdev);
+	if (!node)
+		node = of_node_get(device->pdev->dev.of_node);
+
+	if (of_property_read_u32(node, "qcom,vk-device-id", &device_id))
+		device_id = ADRENO_DEVICE(device)->chipid;
+
+	of_node_put(node);
+
+	return device_id;
 }
 
 static int adreno_probe(struct platform_device *pdev)
@@ -2757,6 +2778,24 @@ static int adreno_getproperty(struct kgsl_device *device,
 	}
 	break;
 
+	case KGSL_PROP_VK_DEVICE_ID:
+	{
+		unsigned int vk_dev_id;
+		if (sizebytes < sizeof(unsigned int)) {
+			status = -EINVAL;
+			break;
+		}
+
+		vk_dev_id = adreno_get_vk_device_id(device);
+
+		if (copy_to_user(value, &vk_dev_id, sizeof(unsigned int))) {
+			status = -EFAULT;
+			break;
+		}
+		status = 0;
+	}
+	break;
+
 	default:
 		status = -EINVAL;
 	}
@@ -4140,6 +4179,7 @@ static const struct kgsl_functable adreno_functable = {
 	.stop_fault_timer = adreno_dispatcher_stop_fault_timer,
 	.suspend_device = adreno_suspend_device,
 	.resume_device = adreno_resume_device,
+	.get_vk_device_id = adreno_get_vk_device_id
 };
 
 static struct platform_driver adreno_platform_driver = {
