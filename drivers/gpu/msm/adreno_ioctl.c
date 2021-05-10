@@ -1,4 +1,4 @@
-/* Copyright (c) 2002,2007-2018,2020 The Linux Foundation. All rights reserved.
+/* Copyright (c) 2002,2007-2018,2020-2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -195,11 +195,8 @@ long adreno_ioctl_helper(struct kgsl_device_private *dev_priv,
 			break;
 	}
 
-	if (i == len) {
-		KGSL_DRV_INFO(dev_priv->device,
-			"invalid ioctl code 0x%08X\n", cmd);
+	if (i == len)
 		return -ENOIOCTLCMD;
-	}
 
 	if (WARN_ON(_IOC_SIZE(cmds[i].cmd) > sizeof(data))) {
 		if (__ratelimit(&_rs))
