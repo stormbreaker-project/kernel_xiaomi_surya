@@ -9332,7 +9332,7 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
 
 	/* Don't allow boosted tasks to be pulled to small cores */
 	if (env->flags & LBF_IGNORE_STUNE_BOOSTED_TASKS &&
-		(schedtune_task_boost(p) > 10))
+		(schedtune_task_boost(p) > 0))
 		return 0;
 
 	if (task_running(env->src_rq, p)) {
