@@ -3803,6 +3803,8 @@ int sched_updown_migrate_handler(struct ctl_table *table, int write,
 	if (!write) {
 		ret = proc_douintvec_capacity(table, write, buffer, lenp, ppos);
 		goto unlock_mutex;
+	} else {
+		goto unlock_mutex;
 	}
 
 	/*
