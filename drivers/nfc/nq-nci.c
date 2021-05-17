@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2021 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -29,6 +30,8 @@
 #include <linux/compat.h>
 #endif
 #include <linux/jiffies.h>
+
+extern char *saved_command_line;
 
 struct nqx_platform_data {
 	unsigned int irq_gpio;
@@ -560,7 +563,7 @@ int nfc_ioctl_power_states(struct file *filp, unsigned long arg)
 	int r = 0;
 	struct nqx_dev *nqx_dev = filp->private_data;
 
-	if (arg == 0) {
+	if (arg == 0 || arg == 8) {
 		/*
 		 * We are attempting a hardware reset so let us disable
 		 * interrupts to avoid spurious notifications to upper
@@ -595,7 +598,7 @@ int nfc_ioctl_power_states(struct file *filp, unsigned long arg)
 				dev_err(&nqx_dev->client->dev, "unable to disable clock\n");
 		}
 		nqx_dev->nfc_ven_enabled = false;
-	} else if (arg == 1) {
+	} else if (arg == 1 || arg == 7) {
 		nqx_enable_irq(nqx_dev);
 		dev_dbg(&nqx_dev->client->dev,
 			"gpio_set_value enable: %s: info: %p\n",
@@ -1223,6 +1226,12 @@ static int nqx_probe(struct i2c_client *client,
 	struct nqx_dev *nqx_dev;
 
 	dev_dbg(&client->dev, "%s: enter\n", __func__);
+
+	if (strnstr(saved_command_line, "androidboot.hwc=India", strlen(saved_command_line)) != NULL) {
+		dev_err(&client->dev, "%s:CHECK_NFC_NONE_NFC androidboot.hwc=India :not nqx_probe\n", __func__);
+		return -ENODEV;
+	}
+
 	if (client->dev.of_node) {
 		platform_data = devm_kzalloc(&client->dev,
 			sizeof(struct nqx_platform_data), GFP_KERNEL);
@@ -1438,6 +1447,7 @@ static int nqx_probe(struct i2c_client *client,
 	}
 	nqx_disable_irq(nqx_dev);
 
+#if 0
 	/*
 	 * To be efficient we need to test whether nfcc hardware is physically
 	 * present before attempting further hardware initialisation.
@@ -1450,6 +1460,7 @@ static int nqx_probe(struct i2c_client *client,
 		/* We don't think there is hardware switch NFC OFF */
 		goto err_request_hw_check_failed;
 	}
+#endif
 
 	/* Register reboot notifier here */
 	r = register_reboot_notifier(&nfcc_notifier);
@@ -1611,7 +1622,7 @@ static struct i2c_driver nqx = {
 static int nfcc_reboot(struct notifier_block *notifier, unsigned long val,
 			  void *v)
 {
-	gpio_set_value(disable_ctrl, 1);
+	gpio_set_value(disable_ctrl, 0);
 	return NOTIFY_OK;
 }
 
