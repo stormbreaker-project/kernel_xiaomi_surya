@@ -188,8 +188,15 @@ static int cpu_notifier_cb(struct notifier_block *nb, unsigned long action,
 		return NOTIFY_OK;
 
 	/* Unboost when the screen is off */
-	if (test_bit(SCREEN_OFF, &b->state)) {
-		policy->min = policy->cpuinfo.min_freq;
+	if (cpumask_test_cpu(policy->cpu, cpu_lp_mask) &&
+			test_bit(SCREEN_OFF, &b->state)) {
+		policy->min = CONFIG_IDLE_MIN_FREQ_LP;
+		return NOTIFY_OK;
+	}
+
+	else if (cpumask_test_cpu(policy->cpu, cpu_perf_mask) &&
+			test_bit(SCREEN_OFF, &b->state)) {
+		policy->min = CONFIG_IDLE_MIN_FREQ_PERF;
 		return NOTIFY_OK;
 	}
 
@@ -346,7 +353,7 @@ static int __init cpu_input_boost_init(void)
 		goto unregister_handler;
 	}
 
-	thread = kthread_run_perf_critical(cpu_boost_thread, b, "cpu_boostd");
+	thread = kthread_run(cpu_boost_thread, b, "cpu_boostd");
 	if (IS_ERR(thread)) {
 		ret = PTR_ERR(thread);
 		pr_err("Failed to start CPU boost thread, err: %d\n", ret);
