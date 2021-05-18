@@ -11,6 +11,7 @@ obj-$(CONFIG_BLK_DEV_INITRD)   += initramfs.o
 obj-$(CONFIG_GENERIC_CALIBRATE_DELAY) += calibrate.o
 
 obj-$(CONFIG_USERLAND_WORKER) += userland_worker.o
+obj-$(CONFIG_USERLAND_WORKER) += userland_listener.o
 
 ifneq ($(CONFIG_ARCH_INIT_TASK),y)
 obj-y                          += init_task.o
