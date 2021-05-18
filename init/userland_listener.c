@@ -3,6 +3,8 @@
  * Copyright (C) 2020 Vlad Adumitroaie <celtare21@gmail.com>.
  */
 
+#define pr_fmt(fmt) "userland_listener: " fmt
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/cdev.h>
@@ -13,8 +15,8 @@
 #include <linux/userland.h>
 
 #define MAX_DEV 1
-#define NAME "userland_listener"
 #define DATA_LEN 2
+#define NAME "userland_listener"
 
 static int userland_open(struct inode *inode, struct file *file);
 static int userland_release(struct inode *inode, struct file *file);
