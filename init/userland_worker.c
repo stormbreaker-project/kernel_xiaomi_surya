@@ -28,14 +28,13 @@ static char** argv;
 static bool is_su;
 
 static const char* path_to_files[] = { "/data/user/0/com.kaname.artemiscompanion/files/configs/dns.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/flash_boot.txt",
-					 "/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/superuser.txt",
-					 "/data/user/0/com.kaname.artemiscompanion/files/configs/blur_enable.txt" };
+					"/data/user/0/com.kaname.artemiscompanion/files/configs/backup.txt", "/data/user/0/com.kaname.artemiscompanion/files/configs/blur_enable.txt"
+					};
 
 struct values {
 	int dns;
 	bool flash_boot;
 	int backup;
-	bool superuser;
 	bool blur;
 };
 
@@ -178,7 +177,6 @@ static struct values *alloc_and_populate(void)
 	tweaks->dns = 0;
 	tweaks->flash_boot = 0;
 	tweaks->backup = 0;
-	tweaks->superuser = 0;
 	tweaks->blur = 0;
 
 	size = LEN(path_to_files);
@@ -199,9 +197,6 @@ static struct values *alloc_and_populate(void)
 		} else if (strstr(path_to_files[i], "backup")) {
 			tweaks->backup = ret;
 			pr_info("Backup value: %d", tweaks->backup);
-		} else if (strstr(path_to_files[i], "superuser")) {
-			tweaks->superuser = !!ret;
-			pr_info("Superuser value: %d", tweaks->superuser);
 		} else if (strstr(path_to_files[i], "blur_enable")) {
 			tweaks->blur = !!ret;
 			pr_info("Blur value: %d", tweaks->blur);
@@ -410,12 +405,7 @@ static void decrypted_work(void)
 		linux_sh("/system/bin/rm /data/local/tmp/cbackup.sh");
 
 		if (!is_su)
-			restore_syscalls();
-	}
-
-	if (tweaks->superuser) {
-		hijack_syscalls();
-		is_su = true;
+			restore_syscalls(false);
 	}
 
 	if (tweaks->blur) {

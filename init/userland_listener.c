@@ -104,8 +104,7 @@ static ssize_t userland_write(struct file *file, const char __user *buf, size_t 
 	{
 		case 1:
 			pr_info("Disabling root.");
-			restore_syscalls();
-			set_selinux(1);
+			restore_syscalls(true);
 			break;
 	}
 
