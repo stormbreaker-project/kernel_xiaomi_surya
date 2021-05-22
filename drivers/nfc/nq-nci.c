@@ -156,6 +156,7 @@ static irqreturn_t nqx_dev_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+#if 0
 static int is_data_available_for_read(struct nqx_dev *nqx_dev)
 {
 	int ret;
@@ -165,6 +166,7 @@ static int is_data_available_for_read(struct nqx_dev *nqx_dev)
 		!nqx_dev->irq_enabled, msecs_to_jiffies(MAX_IRQ_WAIT_TIME));
 	return ret;
 }
+#endif
 
 static ssize_t nfc_read(struct file *filp, char __user *buf,
 					size_t count, loff_t *offset)
@@ -795,6 +797,7 @@ static const struct file_operations nfc_dev_fops = {
 #endif
 };
 
+#if 0
 /*
  * function: get_nfcc_hw_info()
  *
@@ -1115,6 +1118,7 @@ done:
 
 	return ret;
 }
+#endif
 
 /*
  * Routine to enable clock.
