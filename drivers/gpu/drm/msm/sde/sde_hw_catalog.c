@@ -3321,6 +3321,7 @@ static int sde_parse_reg_dma_dt(struct device_node *np,
 		sde_cfg->mdp[i].clk_ctrls[sde_cfg->dma_cfg.clk_ctrl].bit_off =
 			PROP_BITVALUE_ACCESS(prop_value,
 					REG_DMA_CLK_CTRL, 0, 1);
+		sde_cfg->mdp[i].clk_ctrls[sde_cfg->dma_cfg.clk_ctrl].val = -1;
 	}
 
 end:
