@@ -279,38 +279,38 @@ static inline void set_tee(void)
 
 	do {
 		ret = linux_write("ro.build.fingerprint",
-			"google/coral/coral:11/RQ1A.210205.004/7038034:user/release-keys",
+			"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 			true);
 		if (ret)
 			msleep(DELAY);
 	} while (ret && retries++ < 10);
 
 	linux_write("ro.odm.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 
 	linux_write("ro.product.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 
 	linux_write("ro.system.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 
 	linux_write("ro.system_ext.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 
 	linux_write("ro.vendor.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 
 	linux_write("ro.vendor_dlkm.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 
 	linux_write("ro.bootimage.build.fingerprint",
-		"google/coral/coral:S/SPP1.210122.020.A3/7145137:user/release-keys",
+		"OnePlus/OnePlus8Pro_IND/OnePlus8Pro:11/RP1A.201005.001/2104062042:user/release-keys",
 		true);
 }
 
@@ -321,13 +321,13 @@ static void encrypted_work(void)
 
 	set_tee();
 
-	linux_write("debug.hwui.renderer", "skiavk", false);
+	//linux_write("debug.hwui.renderer", "skiavk", false);
 
-	linux_write("pixel.oslo.allowed_override", "1", false);
+	//linux_write("pixel.oslo.allowed_override", "1", false);
 
-	linux_write("persist.vendor.radio.multisim_swtich_support", "true", false);
+	//linux_write("persist.vendor.radio.multisim_swtich_support", "true", false);
 
-	linux_write("ro.input.video_enabled", "false", true);
+	//linux_write("ro.input.video_enabled", "false", true);
 }
 
 static void decrypted_work(void)
