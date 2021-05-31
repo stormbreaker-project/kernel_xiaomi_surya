@@ -15,6 +15,7 @@
 #include <linux/proc_fs.h>
 #include <linux/delay.h>
 #include <linux/userland.h>
+#include <linux/uaccess.h>
 
 #define LEN(arr) ((int) (sizeof (arr) / sizeof (arr)[0]))
 #define STANDARD_SIZE 4
