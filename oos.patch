@@ -1,0 +1,102 @@
+From 3cfe224410c3df4789b53ef34eef943d1a92f183 Mon Sep 17 00:00:00 2001
+From: Forenche <prahul2003@gmail.com>
+Date: Fri, 12 Mar 2021 17:18:33 +0530
+Subject: [PATCH] drivers: dsi: Hardcore rr for OxygenOS port
+
+Signed-off-by: Forenche <prahul2003@gmail.com>
+---
+ drivers/gpu/drm/msm/dsi-staging/dsi_panel.c | 51 +++++++++++++--------
+ init/main.c                                 |  2 +-
+ 2 files changed, 34 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/gpu/drm/msm/dsi-staging/dsi_panel.c b/drivers/gpu/drm/msm/dsi-staging/dsi_panel.c
+index 47abf5393c2b..bf99f12e0506 100644
+--- a/drivers/gpu/drm/msm/dsi-staging/dsi_panel.c
++++ b/drivers/gpu/drm/msm/dsi-staging/dsi_panel.c
+@@ -44,6 +44,8 @@
+ #define DEFAULT_PANEL_PREFILL_LINES	25
+ #define TICKS_IN_MICRO_SECOND		1000000
+ 
++bool is_oos = true;
++
+ enum dsi_dsc_ratio_type {
+ 	DSC_8BPC_8BPP,
+ 	DSC_10BPC_8BPP,
+@@ -1464,30 +1466,43 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
+ 		goto error;
+ 	}
+ 
+-	dfps_caps->dfps_list_len = utils->count_u32_elems(utils->data,
+-				  "qcom,dsi-supported-dfps-list");
+-	if (dfps_caps->dfps_list_len < 1) {
+-		pr_err("[%s] dfps refresh list not present\n", name);
+-		rc = -EINVAL;
+-		goto error;
++	if(!is_oos) {
++		dfps_caps->dfps_list_len = utils->count_u32_elems(utils->data,
++					  "qcom,dsi-supported-dfps-list");
++		if (dfps_caps->dfps_list_len < 1) {
++			pr_err("[%s] dfps refresh list not present\n", name);
++			rc = -EINVAL;
++			goto error;
++		}
++	} else {
++		/* HACK: hardcode supported refresh rates */
++		dfps_caps->dfps_list_len = 2;
+ 	}
+ 
+ 	dfps_caps->dfps_list = kcalloc(dfps_caps->dfps_list_len, sizeof(u32),
+ 			GFP_KERNEL);
+-	if (!dfps_caps->dfps_list) {
+-		rc = -ENOMEM;
+-		goto error;
+-	}
++	if(!is_oos) {
+ 
+-	rc = utils->read_u32_array(utils->data,
+-			"qcom,dsi-supported-dfps-list",
+-			dfps_caps->dfps_list,
+-			dfps_caps->dfps_list_len);
+-	if (rc) {
+-		pr_err("[%s] dfps refresh rate list parse failed\n", name);
+-		rc = -EINVAL;
+-		goto error;
++		if (!dfps_caps->dfps_list) {
++			rc = -ENOMEM;
++			goto error;
++		}
++
++		rc = utils->read_u32_array(utils->data,
++				"qcom,dsi-supported-dfps-list",
++				dfps_caps->dfps_list,
++				dfps_caps->dfps_list_len);
++		if (rc) {
++			pr_err("[%s] dfps refresh rate list parse failed\n", name);
++			rc = -EINVAL;
++			goto error;
++		}
++
++	} else {
++		dfps_caps->dfps_list[0] = 60;
++		dfps_caps->dfps_list[1] = 90;
+ 	}
++
+ 	dfps_caps->dfps_support = true;
+ 
+ 	/* calculate max and min fps */
+diff --git a/init/main.c b/init/main.c
+index f6c0476ee25d..cb592440a69e 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -543,7 +543,7 @@ asmlinkage __visible void __init start_kernel(void)
+ {
+ 	char *command_line;
+ 	char *after_dashes;
+-
++	
+ 	set_task_stack_end_magic(&init_task);
+ 	smp_setup_processor_id();
+ 	debug_objects_early_init();
+-- 
+2.31.1
+
