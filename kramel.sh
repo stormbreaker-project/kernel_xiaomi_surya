@@ -68,16 +68,6 @@ function zipping() {
     zip -r9 Surya-StormBreaker-${TANGGAL}.zip *
     cd ..
 }
-# Clean
-function clean() {
-    rm -rf out
-    rm -rf AnyKernel/dtbo.img
-    rm -rf AnyKernel/Image.gz-dtb
-    make mrproper
-}
-function apply_patch() {
-    git apply oos.patch
-}
 sticker
 sendinfo
 compile
@@ -86,16 +76,3 @@ END=$(date +"%s")
 DIFF=$(($END - $START))
 finerr
 push
-if [ -f $(pwd)/out/arch/arm64/boot/Image.gz-dtb ]
-	then
-	sticker
-	sendinfo
-	compile
-	zipping
-	END=$(date +"%s")
-	DIFF=$(($END - $START))
-	finerr
-
-else
-exit 1
-fi
