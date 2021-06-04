@@ -165,7 +165,7 @@ mpath=`dirname $$mdpath`; rm -rf $$mpath;\
 fi
 endef
 
-$(KERNEL_OUT): $(KERNEL_DEBUGFS)
+$(KERNEL_OUT):
 	mkdir -p $(KERNEL_OUT)
 
 ifneq ($(KERNEL_LEGACY_DIR),true)
