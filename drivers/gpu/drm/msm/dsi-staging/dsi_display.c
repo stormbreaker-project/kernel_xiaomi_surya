@@ -19,6 +19,7 @@
 #include <linux/of_gpio.h>
 #include <linux/err.h>
 #include <linux/sched.h>
+#include <linux/battery_saver.h>
 
 #include "msm_drv.h"
 #include "sde_connector.h"
@@ -7649,7 +7650,7 @@ int dsi_display_pre_commit(void *display,
 
 unsigned int dsi_panel_get_refresh_rate(void)
 {
-	return READ_ONCE(cur_refresh_rate);
+	return unlikely(is_battery_saver_on()) ? 60 : READ_ONCE(cur_refresh_rate);
 }
 
 int dsi_display_enable(struct dsi_display *display)
