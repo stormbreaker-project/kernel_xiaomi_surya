@@ -34,6 +34,7 @@
 #   U - undefined global symbols
 #   N - debugging symbols
 #   w - local weak symbols
+#   W - weak symbols if they contain .c.
 
 # readprofile starts reading symbols when _stext is found, and
 # continue until it finds a symbol which is not either of 'T', 't',
@@ -41,4 +42,4 @@
 # so we just ignore them to let readprofile continue to work.
 # (At least sparc64 has __crc_ in the middle).
 
-$NM -n $1 | grep -v '\( [aNUw] \)\|\(__crc_\)\|\( \$[adt]\)\|\( \.L\)' > $2
+$NM -n $1 | grep -v '\( [aNUw] \)\|\(__crc_\)\|\( \$[adt]\)\|\( \.L\)\|\(W .*\.c\.\)' > $2
