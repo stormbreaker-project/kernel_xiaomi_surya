@@ -21,6 +21,12 @@ fi
 export KBUILD_BUILD_USER=adithya
 export KBUILD_BUILD_HOST=ghostrider_reborn
 
+if [[ $1 = "-r" || $1 = "--regen" ]]; then
+make O=out ARCH=arm64 $DEFCONFIG savedefconfig
+cp out/defconfig arch/arm64/configs/$DEFCONFIG
+exit
+fi
+
 if [[ $1 = "-c" || $1 = "--clean" ]]; then
 rm -rf out
 fi
