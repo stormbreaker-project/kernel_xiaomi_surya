@@ -27,6 +27,23 @@
 #include "cam_req_mgr_interface.h"
 #include "cam_context.h"
 
+#define TRACE_EVENT(x, ...)
+
+#define trace_cam_apply_req(x, ...)
+#define trace_cam_buf_done(x, ...)
+#define trace_cam_cdm_cb(x, ...)
+#define trace_cam_context_state(x, ...)
+#define trace_cam_flush_req(x, ...)
+#define trace_cam_icp_fw_dbg(x, ...)
+#define trace_cam_irq_activated(x, ...)
+#define trace_cam_irq_handled(x, ...)
+#define trace_cam_isp_activated_irq(x, ...)
+#define trace_cam_isp_irq_delay_detect(x, ...)
+#define trace_cam_req_mgr_add_req(x, ...)
+#define trace_cam_req_mgr_apply_request(x, ...)
+#define trace_cam_req_mgr_connect_device(x, ...)
+#define trace_cam_submit_to_hw(x, ...)
+
 TRACE_EVENT(cam_context_state,
 	TP_PROTO(const char *name, struct cam_context *ctx),
 	TP_ARGS(name, ctx),
