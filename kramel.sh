@@ -67,8 +67,8 @@ function compile() {
 }
 # Zipping
 function zipping() {
-    cd AnyKernel || exit 1
-    zip -r9 Surya-StormBreaker-${TANGGAL}.zip *
+    cd AnyKernel
+    make normal
     cd ..
 }
 sticker
