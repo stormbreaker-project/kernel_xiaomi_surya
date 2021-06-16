@@ -1427,6 +1427,24 @@ static int dsi_panel_parse_dyn_clk_caps(struct dsi_panel *panel)
 	return 0;
 }
 
+unsigned int __read_mostly min_fps = 0;
+static int __init read_min_fps(char *s)
+{
+	if (s)
+		min_fps = simple_strtoul(s, NULL, 0);
+	return 1;
+}
+__setup("dfps.min_fps=", read_min_fps);
+
+unsigned int __read_mostly max_fps = 0;
+static int __init read_max_fps(char *s)
+{
+	if (s)
+		max_fps = simple_strtoul(s, NULL, 0);
+	return 1;
+}
+__setup("dfps.max_fps=", read_max_fps);
+
 static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 {
 	int rc = 0;
@@ -1504,6 +1522,20 @@ static int dsi_panel_parse_dfps_caps(struct dsi_panel *panel)
 	}
 
 	dfps_caps->dfps_support = true;
+
+	if (min_fps || max_fps) {
+		pr_info("DEBUG :: %s:%d :: OVERRIDE dfps_caps->dfps_list_len = 2.", __func__, __LINE__);
+		dfps_caps->dfps_list_len = 2;
+
+		pr_info("DEBUG :: %s:%d :: OVERRIDE dfps_caps->min_refresh_rate = dfps_caps->dfps_list[0] = %lu.", __func__, __LINE__, min_fps);
+		dfps_caps->min_refresh_rate = dfps_caps->dfps_list[0] = (u32) min_fps;
+
+		pr_info("DEBUG :: %s:%d :: OVERRIDE dfps_caps->max_refresh_rate = dfps_caps->dfps_list[1] = %lu.", __func__, __LINE__, max_fps);
+		dfps_caps->max_refresh_rate = dfps_caps->dfps_list[1] = (u32) max_fps;
+
+		/* No need to calculate min-max */
+		goto error;
+	}
 
 	/* calculate max and min fps */
 	dfps_caps->max_refresh_rate = dfps_caps->dfps_list[0];
