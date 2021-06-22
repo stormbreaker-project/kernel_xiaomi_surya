@@ -11,6 +11,7 @@
 #include <linux/oom.h>
 #include <linux/sort.h>
 #include <linux/vmpressure.h>
+#include <linux/msm_drm_notify.h>
 #include <uapi/linux/sched/types.h>
 
 /* Needed to prevent Android from thinking there's no LMK and thus rebooting */
@@ -36,10 +37,13 @@ static struct victim_info victims[MAX_VICTIMS] __cacheline_aligned_in_smp;
 static struct task_struct *task_bucket[SHRT_MAX + 1] __cacheline_aligned;
 static DECLARE_WAIT_QUEUE_HEAD(oom_waitq);
 static DECLARE_COMPLETION(reclaim_done);
+static DEFINE_SPINLOCK(pressure_lock);
 static __cacheline_aligned_in_smp DEFINE_RWLOCK(mm_free_lock);
 static int nr_victims;
+static unsigned long min_pressure;
 static atomic_t needs_reclaim = ATOMIC_INIT(0);
 static atomic_t nr_killed = ATOMIC_INIT(0);
+static bool screen_on = true;
 
 #define ADJ_MAX 1000
 #define ADJ_DIVISOR 50
@@ -315,18 +319,86 @@ void simple_lmk_mm_freed(struct mm_struct *mm)
 	read_unlock(&mm_free_lock);
 }
 
+static bool is_oom_conditions(unsigned long old_pressure, unsigned long new_pressure, unsigned long min_pressure)
+{
+	return old_pressure == 100 && new_pressure == old_pressure && new_pressure >= min_pressure;
+}
+
+static unsigned long get_min_pressure(void)
+{
+	unsigned long value;
+
+	spin_lock(&pressure_lock);
+	value = min_pressure;
+	spin_unlock(&pressure_lock);
+
+	return value;
+}
+
+static void set_min_pressure(unsigned long value)
+{
+	spin_lock(&pressure_lock);
+	min_pressure = value;
+	spin_unlock(&pressure_lock);
+}
+
 static int simple_lmk_vmpressure_cb(struct notifier_block *nb,
 				    unsigned long pressure, void *data)
 {
-	if (pressure == 100 && !atomic_cmpxchg_acquire(&needs_reclaim, 0, 1))
+	unsigned long min_pressure_margin = get_min_pressure();
+	static unsigned long new_pressure = 0;
+	static unsigned long old_pressure;
+
+	old_pressure = new_pressure;
+	new_pressure = pressure;
+
+	if (is_oom_conditions(old_pressure, new_pressure, min_pressure_margin) &&
+			!atomic_cmpxchg_acquire(&needs_reclaim, 0, 1))
 		wake_up(&oom_waitq);
 
+	return NOTIFY_OK;
+}
+
+static int msm_drm_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data)
+{
+	struct msm_drm_notifier *evdata = data;
+	int *blank;
+
+	if (event != MSM_DRM_EVENT_BLANK)
+		goto out;
+
+	if (!evdata || !evdata->data || evdata->id != MSM_DRM_PRIMARY_DISPLAY)
+		goto out;
+
+	blank = evdata->data;
+	switch (*blank) {
+	case MSM_DRM_BLANK_POWERDOWN:
+	case MSM_DRM_BLANK_LP:
+		if (!screen_on)
+			break;
+		screen_on = false;
+		set_min_pressure(95);
+		break;
+	case MSM_DRM_BLANK_UNBLANK:
+		if (screen_on)
+			break;
+		screen_on = true;
+		set_min_pressure(100);
+		break;
+	}
+
+out:
 	return NOTIFY_OK;
 }
 
 static struct notifier_block vmpressure_notif = {
 	.notifier_call = simple_lmk_vmpressure_cb,
 	.priority = INT_MAX
+};
+
+static struct notifier_block fb_notifier_block = {
+	.notifier_call = msm_drm_notifier_callback,
 };
 
 /* Initialize Simple LMK when lmkd in Android writes to the minfree parameter */
@@ -340,6 +412,7 @@ static int simple_lmk_init_set(const char *val, const struct kernel_param *kp)
 				     "simple_lmkd");
 		BUG_ON(IS_ERR(thread));
 		BUG_ON(vmpressure_notifier_register(&vmpressure_notif));
+		BUG_ON(msm_drm_register_client(&fb_notifier_block));
 	}
 
 	return 0;
