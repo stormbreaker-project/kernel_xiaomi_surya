@@ -11,6 +11,7 @@
 
 #include "f2fs.h"
 #include "node.h"
+#include <notrace.h>
 
 bool f2fs_may_inline_data(struct inode *inode)
 {

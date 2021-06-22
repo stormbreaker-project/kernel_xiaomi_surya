@@ -20,7 +20,7 @@
 #include "segment.h"
 #include "xattr.h"
 #include "acl.h"
-#include <trace/events/f2fs.h>
+#include <notrace.h>
 
 static struct inode *f2fs_new_inode(struct inode *dir, umode_t mode)
 {

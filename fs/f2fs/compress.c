@@ -16,7 +16,7 @@
 
 #include "f2fs.h"
 #include "node.h"
-#include <trace/events/f2fs.h>
+#include <notrace.h>
 
 /* Some architectures don't have PAGE_KERNEL_RO */
 #ifndef PAGE_KERNEL_RO

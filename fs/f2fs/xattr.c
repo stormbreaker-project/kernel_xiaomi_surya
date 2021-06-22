@@ -22,6 +22,7 @@
 #include "f2fs.h"
 #include "xattr.h"
 #include "segment.h"
+#include <notrace.h>
 
 static void *xattr_alloc(struct f2fs_sb_info *sbi, int size, bool *is_inline)
 {

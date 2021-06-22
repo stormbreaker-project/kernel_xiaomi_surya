@@ -9,7 +9,7 @@
 #define __F2FS_TRACE_H__
 
 #ifdef CONFIG_F2FS_IO_TRACE
-#include <trace/events/f2fs.h>
+#include <notrace.h>
 
 enum file_type {
 	__NORMAL_FILE,

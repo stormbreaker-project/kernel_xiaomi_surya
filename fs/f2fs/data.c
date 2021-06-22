@@ -23,8 +23,6 @@
 #include "f2fs.h"
 #include "node.h"
 #include "segment.h"
-#include "trace.h"
-#include <trace/events/f2fs.h>
 
 #define NUM_PREALLOC_POST_READ_CTXS	128
 
@@ -3785,6 +3783,7 @@ static sector_t f2fs_bmap(struct address_space *mapping, sector_t block)
 
 #ifdef CONFIG_MIGRATION
 #include <linux/migrate.h>
+#include <notrace.h>
 
 int f2fs_migrate_page(struct address_space *mapping,
 		struct page *newpage, struct page *page, enum migrate_mode mode)

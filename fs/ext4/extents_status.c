@@ -15,7 +15,6 @@
 #include <linux/seq_file.h>
 #include "ext4.h"
 
-#include <trace/events/ext4.h>
 
 /*
  * According to previous discussion in Ext4 Developer Workshop, we
@@ -459,6 +458,7 @@ ext4_es_try_to_merge_right(struct inode *inode, struct extent_status *es)
 
 #ifdef ES_AGGRESSIVE_TEST
 #include "ext4_extents.h"	/* Needed when ES_AGGRESSIVE_TEST is defined */
+#include <notrace.h>
 
 static void ext4_es_insert_extent_ext_check(struct inode *inode,
 					    struct extent_status *es)

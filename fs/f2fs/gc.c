@@ -22,7 +22,7 @@
 #include "node.h"
 #include "segment.h"
 #include "gc.h"
-#include <trace/events/f2fs.h>
+#include <notrace.h>
 
 #define TRIGGER_RAPID_GC (!screen_on && power_supply_is_system_supplied() > 0)
 static bool screen_on = true;

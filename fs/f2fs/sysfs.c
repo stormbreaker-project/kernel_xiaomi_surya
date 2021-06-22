@@ -15,7 +15,7 @@
 #include "f2fs.h"
 #include "segment.h"
 #include "gc.h"
-#include <trace/events/f2fs.h>
+#include <notrace.h>
 
 static struct proc_dir_entry *f2fs_proc_root;
 

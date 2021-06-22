@@ -30,10 +30,9 @@
 #include "segment.h"
 #include "xattr.h"
 #include "gc.h"
-#include "trace.h"
 
 #define CREATE_TRACE_POINTS
-#include <trace/events/f2fs.h>
+#include <notrace.h>
 
 static struct kmem_cache *f2fs_inode_cachep;
 

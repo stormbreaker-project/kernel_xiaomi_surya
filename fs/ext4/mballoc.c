@@ -28,7 +28,7 @@
 #include <linux/slab.h>
 #include <linux/nospec.h>
 #include <linux/backing-dev.h>
-#include <trace/events/ext4.h>
+#include <notrace.h>
 
 #ifdef CONFIG_EXT4_DEBUG
 ushort ext4_mballoc_debug __read_mostly;

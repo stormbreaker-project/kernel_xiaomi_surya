@@ -22,6 +22,7 @@
 #include <linux/mutex.h>
 #include "ext4_jbd2.h"
 #include "ext4.h"
+#include <notrace.h>
 
 /*
  */

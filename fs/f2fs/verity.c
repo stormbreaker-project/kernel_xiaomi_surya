@@ -28,6 +28,7 @@
 
 #include "f2fs.h"
 #include "xattr.h"
+#include <notrace.h>
 
 static inline loff_t f2fs_verity_metadata_pos(const struct inode *inode)
 {

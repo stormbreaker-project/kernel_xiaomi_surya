@@ -22,6 +22,7 @@
 #include <linux/namei.h>
 #include "ext4.h"
 #include "xattr.h"
+#include <notrace.h>
 
 static const char *ext4_encrypted_get_link(struct dentry *dentry,
 					   struct inode *inode,

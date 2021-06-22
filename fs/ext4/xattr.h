@@ -8,6 +8,7 @@
 */
 
 #include <linux/xattr.h>
+#include <notrace.h>
 
 /* Magic value in attribute blocks */
 #define EXT4_XATTR_MAGIC		0xEA020000
