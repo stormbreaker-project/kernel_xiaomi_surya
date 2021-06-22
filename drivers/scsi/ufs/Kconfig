@@ -123,6 +123,62 @@ config SCSI_UFSHCD_CMD_LOGGING
 	  Select this if you want above mentioned debug information captured.
 	  If unsure, say N.
 
+config UFSFEATURE30
+	bool "UFS feature activate for UFS3.0"
+	default n
+	depends on SCSI_UFSHCD
+	help
+	UFS feature activate such as hpb, tw and etc.
+
+config UFSFEATURE31
+	bool "UFS feature activate for UFS3.1"
+	default n
+	depends on SCSI_UFSHCD
+	help
+	UFS feature activate such as hpb, tw and etc.
+
+config UFSFEATURE
+	bool "UFS feature activate"
+	default n
+	depends on SCSI_UFSHCD
+	help
+	UFS feature activate such as hpb, tw and etc.
+
+config UFSHPB
+	bool "UFS Host Performance Booster support"
+	default n
+	depends on SCSI_UFSHCD
+	help
+	UFS HPB Feature Enable
+
+config HPB_ERR_INJECTION
+	bool "HPB ERROR INJECTION"
+	depends on SCSI_UFSHCD && UFSHPB
+	help
+	error injection for checking HPB entry integrity
+
+config UFSTW
+	bool "UFS Turbo Write support"
+	default n
+	depends on SCSI_UFSHCD
+	help
+	UFS TW Feature Enable
+
+config UFSTW_IGNORE_GUARANTEE_BIT
+	bool "Ignore UFS Turbo Write Life Time Guarantee bit for POC"
+	default n
+	depends on SCSI_UFSHCD && UFSTW
+	help
+	ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
+
+config UFSTW_BOOT_ENABLED
+        bool "Turbo Write enabled at boot time"
+	default n
+	depends on SCSI_UFSHCD && UFSTW
+	help
+	fTurboWriteEn and fTurboWriteBufferFlushDuringHibnerEnter flags
+	are enabled at boot time.
+
 config SCSI_UFS_CRYPTO
 	bool "UFS Crypto Engine Support"
 	depends on SCSI_UFSHCD && BLK_INLINE_ENCRYPTION

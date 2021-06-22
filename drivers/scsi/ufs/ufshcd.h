@@ -75,6 +75,14 @@
 #include "ufs.h"
 #include "ufshci.h"
 
+#if defined(CONFIG_UFSFEATURE)
+#if defined(CONFIG_UFSFEATURE31)
+#include "ufs31/ufsfeature.h"
+#elif defined(CONFIG_UFSFEATURE30)
+#include "ufs30/ufsfeature.h"
+#endif
+#endif
+
 #define UFSHCD "ufshcd"
 #define UFSHCD_DRIVER_VERSION "0.3"
 
@@ -232,6 +240,10 @@ struct ufshcd_lrb {
 #endif /* CONFIG_SCSI_UFS_CRYPTO */
 
 	bool req_abort_skip;
+
+#if defined(CONFIG_UFSFEATURE) && defined(CONFIG_UFSHPB)
+	int hpb_ctx_id;
+#endif
 };
 
 /**
@@ -385,6 +397,15 @@ struct ufs_hba_variant_ops {
 };
 
 /**
+ * struct ufs_hba_pm_qos_variant_ops - variant specific PM QoS callbacks
+ */
+struct ufs_hba_pm_qos_variant_ops {
+	void		(*req_start)(struct ufs_hba *hba, struct request *req);
+	void		(*req_end)(struct ufs_hba *hba, struct request *req,
+				   bool should_lock);
+};
+
+/**
  * struct ufs_hba_variant - variant specific parameters
  * @name: variant name
  */
@@ -392,6 +413,7 @@ struct ufs_hba_variant {
 	struct device				*dev;
 	const char				*name;
 	struct ufs_hba_variant_ops		*vops;
+	struct ufs_hba_pm_qos_variant_ops	*pm_qos_vops;
 };
 
 struct keyslot_mgmt_ll_ops;
@@ -1083,6 +1105,10 @@ struct ufs_hba {
 	/* distinguish between resume and restore */
 	bool restore;
 
+#if defined(CONFIG_UFSFEATURE)
+	struct ufsf_feature ufsf;
+#endif
+
 #ifdef CONFIG_SCSI_UFS_CRYPTO
 	/* crypto */
 	union ufs_crypto_capabilities crypto_capabilities;
@@ -1368,6 +1394,15 @@ int ufshcd_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
 	enum flag_idn idn, bool *flag_res);
 int ufshcd_read_string_desc(struct ufs_hba *hba, int desc_index,
 			    u8 *buf, u32 size, bool ascii);
+#if defined(CONFIG_UFSFEATURE)
+int ufshcd_exec_dev_cmd(struct ufs_hba *hba,
+			enum dev_cmd_type cmd_type, int timeout);
+int ufshcd_hibern8_hold(struct ufs_hba *hba, bool async);
+void ufshcd_hold_all(struct ufs_hba *hba);
+void ufshcd_release_all(struct ufs_hba *hba);
+int ufshcd_comp_scsi_upiu(struct ufs_hba *hba, struct ufshcd_lrb *lrbp);
+int ufshcd_map_sg(struct ufs_hba *hba, struct ufshcd_lrb *lrbp);
+#endif
 int ufshcd_query_attr(struct ufs_hba *hba, enum query_opcode opcode,
 	enum attr_idn idn, u8 index, u8 selector, u32 *attr_val);
 int ufshcd_query_descriptor_retry(struct ufs_hba *hba, enum query_opcode opcode,
@@ -1576,6 +1611,21 @@ static inline unsigned int ufshcd_vops_get_user_cap_mode(struct ufs_hba *hba)
 	if (hba->var && hba->var->vops->get_user_cap_mode)
 		return hba->var->vops->get_user_cap_mode(hba);
 	return 0;
+}
+
+static inline void ufshcd_vops_pm_qos_req_start(struct ufs_hba *hba,
+		struct request *req)
+{
+	if (hba->var && hba->var->pm_qos_vops &&
+		hba->var->pm_qos_vops->req_start)
+		hba->var->pm_qos_vops->req_start(hba, req);
+}
+
+static inline void ufshcd_vops_pm_qos_req_end(struct ufs_hba *hba,
+		struct request *req, bool lock)
+{
+	if (hba->var && hba->var->pm_qos_vops && hba->var->pm_qos_vops->req_end)
+		hba->var->pm_qos_vops->req_end(hba, req, lock);
 }
 
 extern struct ufs_pm_lvl_states ufs_pm_lvl_states[];
