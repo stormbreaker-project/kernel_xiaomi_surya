@@ -264,7 +264,10 @@ build_kernel() {
 			CROSS_COMPILE=aarch64-linux-gnu- \
 			CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
 			CC=clang \
+			NM=llvm-nm \
 			AR=llvm-ar \
+			LD=ld.lld \
+			OBJCOPY=llvm-objcopy \
 			OBJDUMP=llvm-objdump \
 			STRIP=llvm-strip
 		)
