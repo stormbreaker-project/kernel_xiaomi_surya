@@ -3316,10 +3316,12 @@ static void ext4_mb_collect_stats(struct ext4_allocation_context *ac)
 			atomic_inc(&sbi->s_bal_breaks);
 	}
 
+#if 0
 	if (ac->ac_op == EXT4_MB_HISTORY_ALLOC)
 		trace_ext4_mballoc_alloc(ac);
 	else
 		trace_ext4_mballoc_prealloc(ac);
+#endif
 }
 
 /*
