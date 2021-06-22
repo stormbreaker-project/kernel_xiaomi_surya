@@ -11,6 +11,7 @@
 
 #include "f2fs.h"
 #include "node.h"
+#include <notrace.h>
 
 static LIST_HEAD(f2fs_list);
 static DEFINE_SPINLOCK(f2fs_list_lock);

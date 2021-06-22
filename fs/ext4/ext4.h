@@ -933,6 +933,7 @@ do {									       \
 #endif /* defined(__KERNEL__) || defined(__linux__) */
 
 #include "extents_status.h"
+#include <notrace.h>
 
 /*
  * Lock subclasses for i_data_sem in the ext4_inode_info structure.

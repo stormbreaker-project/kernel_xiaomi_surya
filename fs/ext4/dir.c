@@ -28,6 +28,7 @@
 #include <linux/unicode.h>
 #include "ext4.h"
 #include "xattr.h"
+#include <notrace.h>
 
 #define DOTDOT_OFFSET 12
 

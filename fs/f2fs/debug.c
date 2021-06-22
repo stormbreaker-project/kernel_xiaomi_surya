@@ -19,6 +19,7 @@
 #include "node.h"
 #include "segment.h"
 #include "gc.h"
+#include <notrace.h>
 
 static LIST_HEAD(f2fs_stat_list);
 static DEFINE_MUTEX(f2fs_stat_mutex);

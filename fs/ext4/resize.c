@@ -16,6 +16,7 @@
 #include <linux/slab.h>
 
 #include "ext4_jbd2.h"
+#include <notrace.h>
 
 struct ext4_rcu_ptr {
 	struct rcu_head rcu;

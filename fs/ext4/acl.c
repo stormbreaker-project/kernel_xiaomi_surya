@@ -10,6 +10,7 @@
 #include "ext4.h"
 #include "xattr.h"
 #include "acl.h"
+#include <notrace.h>
 
 /*
  * Convert from filesystem to in-memory representation.

@@ -16,6 +16,7 @@
 
 #include <linux/init.h>
 #include <linux/xattr.h>
+#include <notrace.h>
 
 /* Magic value in attribute blocks */
 #define F2FS_XATTR_MAGIC                0xF2F52011
