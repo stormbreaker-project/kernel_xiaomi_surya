@@ -2735,13 +2735,10 @@ out:
 
 static inline int ufshpb_version_check(struct ufshpb_dev_info *hpb_dev_info)
 {
-	if (hpb_dev_info->hpb_ver != UFSHPB_VER) {
-		INIT_INFO("Driver = %.2x %.2x, Device = %.2x %.2x",
-			  GET_BYTE_1(UFSHPB_VER), GET_BYTE_0(UFSHPB_VER),
-			  GET_BYTE_1(hpb_dev_info->hpb_ver),
-			  GET_BYTE_0(hpb_dev_info->hpb_ver));
-		return -ENODEV;
-	}
+	INIT_INFO("Driver = %.2x %.2x, Device = %.2x %.2x",
+		  GET_BYTE_1(UFSHPB_VER), GET_BYTE_0(UFSHPB_VER),
+		  GET_BYTE_1(hpb_dev_info->hpb_ver),
+		  GET_BYTE_0(hpb_dev_info->hpb_ver));
 	return 0;
 }
 

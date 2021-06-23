@@ -527,10 +527,6 @@ static inline int ufstw_version_check(struct ufstw_dev_info *tw_dev_info)
 {
 	INFO_MSG("tw_dev [55] wTurboWriteVersion Driver = %.4x, Device = %.4x",
 		UFSTW_VER, tw_dev_info->tw_ver);
-	if (tw_dev_info->tw_ver != UFSTW_VER) {
-		ERR_MSG("ERROR: TW version mismatch. So TW disabled.");
-		return -ENODEV;
-	}
 	return 0;
 }
 
