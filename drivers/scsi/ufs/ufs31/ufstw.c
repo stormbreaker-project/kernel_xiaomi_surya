@@ -298,9 +298,6 @@ static inline int ufstw_version_mismatched(struct ufstw_dev_info *tw_dev_info)
 	INFO_MSG("TW Driver Version : %.6X%s", UFSTW_DD_VER,
 		 UFSTW_DD_VER_POST);
 
-	if (tw_dev_info->tw_ver != UFSTW_VER)
-		return -ENODEV;
-
 	return 0;
 }
 
