@@ -512,10 +512,6 @@ static inline int ufstw_version_check(struct ufstw_dev_info *tw_dev_info)
 
 	INIT_INFO("TW Driver Version : %.4X", UFSTW_DD_VER);
 
-	if (tw_dev_info->tw_ver != UFSTW_VER) {
-		ERR_MSG("ERROR: TW Spec Version mismatch. So TW disabled.");
-		return -ENODEV;
-	}
 	return 0;
 }
 
