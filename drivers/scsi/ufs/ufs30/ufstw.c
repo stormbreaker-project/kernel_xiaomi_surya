@@ -43,6 +43,7 @@
 static int ufstw_create_sysfs(struct ufsf_feature *ufsf, struct ufstw_lu *tw);
 static int ufstw_clear_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res);
 static int ufstw_read_lu_attr(struct ufstw_lu *tw, u8 idn, u32 *attr_val);
+static void ufstw_override_lun_feature(struct ufsf_feature *ufsf);
 
 static inline void ufstw_lu_get(struct ufstw_lu *tw)
 {
@@ -735,6 +736,7 @@ void ufstw_init(struct ufsf_feature *ufsf)
 	 */
 	ufstw_disable_ee(ufsf);
 	ufstw_init_dev_jobs(ufsf);
+	ufstw_override_lun_feature(ufsf);
 	ufsf->tw_debug = false;
 	atomic_set(&ufsf->tw_state, TW_PRESENT);
 	return;
@@ -859,6 +861,57 @@ void ufstw_release(struct kref *kref)
 	}
 
 	RELEASE_INFO("end release");
+}
+
+/*
+ * Override the lun features to force ufstw
+ */
+static void ufstw_override_lun_feature(struct ufsf_feature *ufsf)
+{
+	struct ufstw_lu *tw;
+	int lun;
+	int ret;
+
+	if (atomic_read(&ufsf->tw_state) == TW_FAILED) {
+		ERR_MSG("tw_state == TW_FAILED(%d)", atomic_read(&ufsf->tw_state));
+		return;
+	}
+
+	seq_scan_lu(lun) {
+		tw = ufsf->tw_lup[lun];
+		if (!tw)
+			continue;
+
+		TW_DEBUG(ufsf, "customer:tw[%d]=%p", lun, tw);
+		ufstw_lu_get(tw);
+
+		/*enable TW*/
+		tw->tw_enable = 1;
+		ret = ufstw_set_lu_flag(tw, QUERY_FLAG_IDN_TW_EN, &tw->tw_enable);
+		if (ret) {
+			ERR_MSG("TW enable fail");
+			tw->tw_enable = 0;
+			goto out;
+		}
+
+		/*enable TW flush during hibern*/
+		tw->tw_flush_during_hibern_enter = 1;
+		ret = ufstw_set_lu_flag(tw,
+				QUERY_FLAG_IDN_TW_FLUSH_DURING_HIBERN,
+				&tw->tw_flush_during_hibern_enter);
+		if (ret) {
+			ERR_MSG("Enable TW flush during hibern fail");
+			tw->tw_flush_during_hibern_enter = 0;
+			goto out;
+		}
+
+		ufstw_lu_put(tw);
+
+	}
+	return;
+out:
+	ufstw_lu_put(tw);
+	return;
 }
 
 static void ufstw_reset(struct ufsf_feature *ufsf)

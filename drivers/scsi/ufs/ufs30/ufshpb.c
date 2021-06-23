@@ -598,7 +598,7 @@ static int ufshpb_set_pre_req(struct ufshpb_lu *hpb, struct scsi_cmnd *cmd,
 
 static bool ufshpb_is_support_chunk(int transfer_len)
 {
-	return transfer_len <= HPB_MULTI_CHUNK_HIGH;
+	return true;
 }
 
 static int ufshpb_check_pre_req_cond(struct ufshpb_lu *hpb,
@@ -2871,6 +2871,40 @@ out_free_mem:
 	return ret;
 }
 
+static void ufshpb_purge_active_region(struct ufshpb_lu *hpb)
+{
+	struct ufshpb_region *rgn;
+	struct ufshpb_subregion *srgn;
+	unsigned long flags;
+	int rgn_idx, srgn_idx, state;
+
+	RELEASE_INFO("Start");
+	spin_lock_irqsave(&hpb->hpb_lock, flags);
+	for (rgn_idx = 0; rgn_idx < hpb->rgns_per_lu; rgn_idx++) {
+		rgn = hpb->rgn_tbl + rgn_idx;
+
+		if (rgn->rgn_state == HPBREGION_INACTIVE)
+			continue;
+
+		if (rgn->rgn_state == HPBREGION_PINNED)
+			state = HPBSUBREGION_DIRTY;
+		else if (rgn->rgn_state == HPBREGION_ACTIVE) {
+			state = HPBSUBREGION_UNUSED;
+			ufshpb_cleanup_lru_info(&hpb->lru_info, rgn);
+		} else
+			continue;
+
+		for (srgn_idx = 0; srgn_idx < rgn->srgn_cnt; srgn_idx++) {
+			srgn = rgn->srgn_tbl + srgn_idx;
+
+			ufshpb_purge_active_subregion(hpb, srgn, state);
+		}
+	}
+	spin_unlock_irqrestore(&hpb->hpb_lock, flags);
+
+	RELEASE_INFO("END");
+}
+
 static void ufshpb_drop_retry_list(struct ufshpb_lu *hpb)
 {
 	struct ufshpb_req *map_req, *next;
@@ -3008,6 +3042,7 @@ static void ufshpb_reset(struct ufsf_feature *ufsf)
 			ufshpb_cancel_jobs(hpb);
 			ufshpb_drop_retry_list(hpb);
 			ufshpb_drop_rsp_lists(hpb);
+			ufshpb_purge_active_region(hpb);
 		}
 	}
 
