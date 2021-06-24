@@ -1212,6 +1212,9 @@ endchoice
 config LTO_GCC
 	bool "Enable Link Time Optimization for GCC"
 
+config GCC_GRAPHITE
+	bool "Enable GCC Polyhedral Loop Optimization (Graphite)"
+
 config SYSCTL
 	bool
 
