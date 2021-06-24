@@ -72,9 +72,6 @@
 #define SWAPPER_TABLE_SHIFT	PMD_SHIFT
 #endif
 
-/* The size of the initial kernel direct mapping */
-#define SWAPPER_INIT_MAP_SIZE	(_AC(1, UL) << SWAPPER_TABLE_SHIFT)
-
 /*
  * Initial memory map attributes.
  */
