@@ -37,10 +37,9 @@ static struct victim_info victims[MAX_VICTIMS] __cacheline_aligned_in_smp;
 static struct task_struct *task_bucket[SHRT_MAX + 1] __cacheline_aligned;
 static DECLARE_WAIT_QUEUE_HEAD(oom_waitq);
 static DECLARE_COMPLETION(reclaim_done);
-static DEFINE_SPINLOCK(pressure_lock);
 static __cacheline_aligned_in_smp DEFINE_RWLOCK(mm_free_lock);
 static int nr_victims;
-static unsigned long min_pressure;
+static atomic_t min_pressure = ATOMIC_INIT(0);
 static atomic_t needs_reclaim = ATOMIC_INIT(0);
 static atomic_t nr_killed = ATOMIC_INIT(0);
 static bool screen_on = true;
@@ -324,28 +323,10 @@ static bool is_oom_conditions(unsigned long old_pressure, unsigned long new_pres
 	return old_pressure == min_pressure && new_pressure == old_pressure && new_pressure >= min_pressure;
 }
 
-static unsigned long get_min_pressure(void)
-{
-	unsigned long value;
-
-	spin_lock(&pressure_lock);
-	value = min_pressure;
-	spin_unlock(&pressure_lock);
-
-	return value;
-}
-
-static void set_min_pressure(unsigned long value)
-{
-	spin_lock(&pressure_lock);
-	min_pressure = value;
-	spin_unlock(&pressure_lock);
-}
-
 static int simple_lmk_vmpressure_cb(struct notifier_block *nb,
 				    unsigned long pressure, void *data)
 {
-	unsigned long min_pressure_margin = get_min_pressure();
+	unsigned long min_pressure_margin = atomic_read_acquire(&min_pressure);
 	static unsigned long new_pressure = 0;
 	static unsigned long old_pressure;
 
@@ -378,13 +359,13 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 		if (!screen_on)
 			break;
 		screen_on = false;
-		set_min_pressure(95);
+		atomic_set_release(&min_pressure, 95);
 		break;
 	case MSM_DRM_BLANK_UNBLANK:
 		if (screen_on)
 			break;
 		screen_on = true;
-		set_min_pressure(100);
+		atomic_set_release(&min_pressure, 100);
 		break;
 	}
 
