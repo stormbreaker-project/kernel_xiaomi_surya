@@ -321,7 +321,7 @@ void simple_lmk_mm_freed(struct mm_struct *mm)
 
 static bool is_oom_conditions(unsigned long old_pressure, unsigned long new_pressure, unsigned long min_pressure)
 {
-	return old_pressure == 100 && new_pressure == old_pressure && new_pressure >= min_pressure;
+	return old_pressure == min_pressure && new_pressure == old_pressure && new_pressure >= min_pressure;
 }
 
 static unsigned long get_min_pressure(void)
