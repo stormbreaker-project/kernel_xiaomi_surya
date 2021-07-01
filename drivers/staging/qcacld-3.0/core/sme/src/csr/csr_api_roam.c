@@ -11076,6 +11076,8 @@ void csr_roam_joined_state_msg_processor(struct mac_context *mac, void *msg_buf)
 							(struct qdf_mac_addr *)
 							   pUpperLayerAssocCnf->
 							   bssId, &sessionId);
+		if (!QDF_IS_STATUS_SUCCESS(status))
+			return;
 		pSession = CSR_GET_SESSION(mac, sessionId);
 
 		if (!pSession) {
