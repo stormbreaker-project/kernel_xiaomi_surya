@@ -69,7 +69,7 @@ void cam_common_util_get_curr_timestamp(struct timeval *time_stamp)
 {
 	struct timespec ts;
 
-	get_monotonic_boottime(&ts);
+	ktime_get_ts(&ts);
 	time_stamp->tv_sec    = ts.tv_sec;
 	time_stamp->tv_usec   = ts.tv_nsec/1000;
 }
