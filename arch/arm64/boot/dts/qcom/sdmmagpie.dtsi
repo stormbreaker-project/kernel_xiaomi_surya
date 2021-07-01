@@ -1432,15 +1432,6 @@
 		#thermal-sensor-cells = <1>;
 	};
 
-	dcc: dcc_v2@10a2000 {
-		compatible = "qcom,dcc-v2";
-		reg = <0x10a2000 0x1000>,
-		      <0x10ae000 0x2000>;
-		reg-names = "dcc-base", "dcc-ram-base";
-
-		dcc-ram-offset = <0x6000>;
-	};
-
 	qcom,llcc@9200000 {
 		compatible = "qcom,llcc-core", "syscon", "simple-mfd";
 		reg = <0x9200000 0x450000>;
@@ -2479,14 +2470,6 @@
 		qcom,no-clock-support;
 		iommus = <&apps_smmu 0x0504 0x0011>,
 			<&apps_smmu 0x0514 0x0011>;
-	};
-
-	qcom_tzlog: tz-log@146aa720 {
-		compatible = "qcom,tz-log";
-		reg = <0x146aa720 0x3000>;
-		qcom,hyplog-enabled;
-		hyplog-address-offset = <0x410>;
-		hyplog-size-offset = <0x414>;
 	};
 
 	spmi_bus: qcom,spmi@c440000 {
