@@ -268,7 +268,7 @@ cmd_gzip = (cat $(filter-out FORCE,$^) | gzip -n -f -9 > $@) || \
 
 # DTC
 # ---------------------------------------------------------------------------
-DTC ?= $(objtree)/scripts/dtc/dtc
+DTC ?= $(objtree)/scripts/dtc-aosp/dtc-aosp
 
 # Silence warnings
 DTC_FLAGS += -q
@@ -310,12 +310,6 @@ cmd_dt_S_dtb=						\
 $(obj)/%.dtb.S: $(obj)/%.dtb
 	$(call cmd,dt_S_dtb)
 
-ifneq ($(DTC_EXT),)
-DTC = $(DTC_EXT)
-else
-DTC = $(objtree)/scripts/dtc/dtc
-endif
-
 quiet_cmd_dtc = DTC     $@
 cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
 	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
@@ -332,7 +326,7 @@ dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
 # mkdtimg
 #----------------------------------------------------------------------------
 quiet_cmd_mkdtimg = DTBOIMG $@
-cmd_mkdtimg = python2 $(srctree)/scripts/dtc/libfdt/mkdtboimg.py create $@ --page_size=4096 $(filter-out FORCE,$^)
+cmd_mkdtimg = python2 $(srctree)/scripts/ufdt/libufdt/utils/src/mkdtboimg.py cfg_create $@ $<
 
 # cat
 # ---------------------------------------------------------------------------

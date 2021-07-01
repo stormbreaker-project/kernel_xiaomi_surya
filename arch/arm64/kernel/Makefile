@@ -70,6 +70,8 @@ obj-m					+= $(arm64-obj-m)
 head-y					:= head.o
 extra-y					+= $(head-y) vmlinux.lds
 
+obj-$(CONFIG_BUILD_ARM64_EMBEDDED_DTB) += embedded-dtb.o select-embedded-dt.o
+
 ifeq ($(CONFIG_DEBUG_EFI),y)
 AFLAGS_head.o += -DVMLINUX_PATH="\"$(realpath $(objtree)/vmlinux)\""
 endif

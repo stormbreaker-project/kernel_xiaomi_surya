@@ -85,7 +85,7 @@ PTTG=1
 DEF_REG=0
 
 # Files/artifacts
-FILES=Image.gz-dtb
+FILES=Image.gz
 
 # Ship dtbo.img (select this only if your source has support to building dtbo.img)
 # 1 is YES | 0 is NO(default)
@@ -311,8 +311,6 @@ gen_zip() {
 	mv "$KERNEL_DIR"/out/arch/arm64/boot/$FILES AnyKernel3/$FILES
 	if [ $SHIP_DTBO = 1 ]
 	then
-		python2 "libufdt/utils/src/mkdtboimg.py" \
-					create "out/arch/arm64/boot/dtbo.img" --page_size=4096 out/arch/arm64/boot/dts/qcom/*.dtbo
 		mv "$KERNEL_DIR"/out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
 	fi
 	cdir AnyKernel3

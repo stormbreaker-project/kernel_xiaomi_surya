@@ -95,5 +95,9 @@ extern void remove_pagetable(unsigned long start,
 #endif
 #endif
 
+#ifdef CONFIG_BUILD_ARM64_EMBEDDED_DTB
+extern void select_embedded_dt(void *dt_virt) __init;
+#endif
+
 #endif	/* !__ASSEMBLY__ */
 #endif

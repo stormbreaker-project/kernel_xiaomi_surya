@@ -244,6 +244,12 @@ PHONY += dtbs dtbs_install
 dtbs: prepare scripts
 	$(Q)$(MAKE) $(build)=$(boot)/dts
 
+ifeq ($(CONFIG_BUILD_ARM64_EMBEDDED_DTB),y)
+$(obj)/kernel/embedded-dtb.c: dtbs dtbo.img
+	$(Q)$(MAKE) $(build)=$(boot) $(obj)/arch/arm64/boot/../kernel/embedded-dtb.c
+arch/arm64/kernel: $(obj)/kernel/embedded-dtb.c
+endif
+
 dtbs_install:
 	$(Q)$(MAKE) $(dtbinst)=$(boot)/dts
 
@@ -253,12 +259,8 @@ Image-dtb: vmlinux scripts dtbs
 Image.gz-dtb: vmlinux scripts dtbs Image.gz
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
-$(KBUILD_DTBO_IMG): dtbs
+dtbo.img: $(boot)/dts/dtboimg.cfg dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
-
-all: $(KBUILD_DTBO_IMG)
-endif
 
 PHONY += vdso_install
 vdso_install:
@@ -268,6 +270,9 @@ vdso_install:
 archclean:
 	$(Q)$(MAKE) $(clean)=$(boot)
 	$(Q)$(MAKE) $(clean)=$(boot)/dts
+
+CLEAN_FILES += $(boot)/Image $(boot)/Image-dtb $(boot)/Image.* $(boot)/dtbo.img
+MRPROPER_FILES += $(boot)/Image $(boot)/Image-dtb $(boot)/Image.* $(boot)/dtbo.img
 
 ifeq ($(KBUILD_EXTMOD),)
 # We need to generate vdso-offsets.h before compiling certain files in kernel/.
