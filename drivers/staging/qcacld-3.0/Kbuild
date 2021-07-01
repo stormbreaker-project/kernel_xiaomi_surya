@@ -2301,7 +2301,6 @@ ccflags-y += $(INCS)
 
 cppflags-y +=	-DANI_OS_TYPE_ANDROID=6 \
 		-Wall \
-		-Werror \
 		-Wno-unknown-warning-option \
 		-D__linux__
 
