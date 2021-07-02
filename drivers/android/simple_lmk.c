@@ -355,12 +355,6 @@ static int msm_drm_notifier_callback(struct notifier_block *self,
 	blank = evdata->data;
 	switch (*blank) {
 	case MSM_DRM_BLANK_POWERDOWN:
-	case MSM_DRM_BLANK_LP:
-		if (!screen_on)
-			break;
-		screen_on = false;
-		atomic_set_release(&min_pressure, 95);
-		break;
 	case MSM_DRM_BLANK_UNBLANK:
 		if (screen_on)
 			break;
