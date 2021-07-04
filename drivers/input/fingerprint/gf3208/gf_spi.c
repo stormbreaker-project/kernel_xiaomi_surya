@@ -26,6 +26,8 @@
 #include <linux/irq.h>
 #include <linux/list.h>
 #include <linux/module.h>
+#include <linux/msm_drm_notify.h>
+#include <linux/notifier.h>
 #include <linux/of_gpio.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
@@ -55,6 +57,7 @@ struct gf_dev {
 	struct list_head device_entry;
 	struct platform_device *spi;
 	struct input_dev *input;
+	struct notifier_block notifier;
 	unsigned users;
 	signed irq_gpio;
 	signed reset_gpio;
@@ -258,6 +261,41 @@ static const struct file_operations gf_fops = {
 	.release = gf_release,
 };
 
+static inline int gf_state_chg_cb(struct notifier_block *nb,
+					unsigned long val, void *data)
+{
+	struct gf_dev *gf_dev = container_of(nb, struct gf_dev, notifier);
+	struct msm_drm_notifier *evdata = data;
+	unsigned int blank;
+	char temp[4] = { 0x0 };
+
+	if (val != MSM_DRM_EVENT_BLANK)
+		return 0;
+
+	if (evdata && evdata->data && val == MSM_DRM_EVENT_BLANK && gf_dev) {
+		blank = *(int *)(evdata->data);
+
+		switch (blank) {
+			case MSM_DRM_BLANK_POWERDOWN:
+				temp[0] = 2;
+				sendnlmsg(temp);
+				break;
+			case MSM_DRM_BLANK_UNBLANK:
+				temp[0] = 3;
+				sendnlmsg(temp);
+				break;
+			default:
+				break;
+		}
+	}
+
+	return NOTIFY_OK;
+}
+
+static struct notifier_block gf_notifier = {
+	.notifier_call = gf_state_chg_cb,
+};
+
 static struct class *gf_class;
 static inline int gf_probe(struct platform_device *pdev) {
 	struct gf_dev *gf_dev = &gf;
@@ -300,6 +338,7 @@ static inline int gf_probe(struct platform_device *pdev) {
 			clear_bit(MINOR(gf_dev->devt), minors);
 		}
 	}
+	msm_drm_register_client(&gf_notifier);
 	return status;
 }
 
@@ -311,6 +350,7 @@ static inline int gf_remove(struct platform_device *pdev) {
 	list_del(&gf_dev->device_entry);
 	device_destroy(gf_class, gf_dev->devt);
 	clear_bit(MINOR(gf_dev->devt), minors);
+	msm_drm_unregister_client(&gf_notifier);
 	return 0;
 }
 
