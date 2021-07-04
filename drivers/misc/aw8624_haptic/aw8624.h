@@ -346,6 +346,7 @@ struct aw8624 {
 	int index;
 	int vmax;
 	int gain;
+	int ulevel;
 	int f0_value;
 	unsigned char level;
 
