@@ -312,6 +312,8 @@ gen_zip() {
 	if [ $SHIP_DTBO = 1 ]
 	then
 		mv "$KERNEL_DIR"/out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
+		ls "$KERNEL_DIR"/out/arch/arm64/boot/dts/qcom/
+		cp -r "$KERNEL_DIR"/out/arch/arm64/boot/dts/qcom/*.dtb AnyKernel3/dtb
 	fi
 	cdir AnyKernel3
 	make normal
