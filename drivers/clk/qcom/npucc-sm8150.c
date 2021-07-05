@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -259,7 +259,6 @@ static const struct freq_tbl ftbl_npu_cc_cal_dp_clk_src[] = {
 };
 
 static const struct freq_tbl ftbl_npu_cc_cal_dp_clk_src_sm8150_v2[] = {
-	F(125000000, P_NPU_CC_CRC_DIV, 1, 0, 0),
 	F(300000000, P_NPU_CC_CRC_DIV, 1, 0, 0),
 	F(400000000, P_NPU_CC_CRC_DIV, 1, 0, 0),
 	F(487000000, P_NPU_CC_CRC_DIV, 1, 0, 0),
