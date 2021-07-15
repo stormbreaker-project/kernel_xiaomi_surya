@@ -1037,7 +1037,7 @@ static void ipa_ut_ipa_ready_cb(void *user_data)
  * If IPA driver already ready, continue initialization immediately.
  * if not, wait for IPA ready notification by IPA driver context
  */
-int __init ipa_ut_module_init(void)
+int ipa_ut_module_init(void)
 {
 	int ret = 0;
 	bool init_framewok = true;
