@@ -1188,9 +1188,10 @@ static int usb_bam_disconnect_ipa_prod(
 		if (ctx->pipes_enabled_per_bam == 0)
 			log_event_err("%s: wrong pipes enabled counter for bam=%d\n",
 				__func__, pipe_connect->bam_type);
-		else
+		else {
 			ctx->pipes_enabled_per_bam -= 1;
 			spin_unlock(&ctx->usb_bam_lock);
+		}
 	}
 
 	return 0;
@@ -1310,9 +1311,10 @@ retry:
 		if (ctx->pipes_enabled_per_bam == 0)
 			log_event_err("%s: wrong pipes enabled counter for bam=%d\n",
 				 __func__, pipe_connect->bam_type);
-		else
+		else {
 			ctx->pipes_enabled_per_bam -= 1;
 			spin_unlock(&ctx->usb_bam_lock);
+		}
 	}
 
 	pipe_connect->ipa_clnt_hdl = -1;
