@@ -29,7 +29,7 @@ ifeq ($(cc-name),clang)
 CFLAGS_vgettimeofday.o = -O3
 ccflags-y += $(DISABLE_LTO)
 else
-CFLAGS_vgettimeofday.o = -O2
+CFLAGS_vgettimeofday.o = -O3
 CFLAGS_vgettimeofday.o += -mcmodel=tiny
 endif
 
