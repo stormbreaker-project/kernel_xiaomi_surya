@@ -29,7 +29,7 @@ enum vdd_mx_levels {
 	VDD_MX_NUM,
 };
 
-static int vdd_mx_corner[] = {
+static int vdd_mx_corner[] __maybe_unused = {
 	RPM_REGULATOR_LEVEL_NONE,		/* VDD_NONE */
 	RPM_REGULATOR_LEVEL_MIN_SVS,		/* VDD_MIN */
 	RPM_REGULATOR_LEVEL_LOW_SVS,		/* VDD_LOWER */
