@@ -1416,7 +1416,7 @@ int cmdq_init(struct cmdq_host *cq_host, struct mmc_host *mmc,
 
 	err = cmdq_host_init_crypto(cq_host);
 	if (err)
-		pr_err("%s: CMDQ Crypto init failed err %d\n", err);
+		pr_err("%d: CMDQ Crypto init failed\n", err);
 
 	init_completion(&cq_host->halt_comp);
 	return err;
