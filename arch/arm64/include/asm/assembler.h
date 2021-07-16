@@ -451,6 +451,7 @@ alternative_endif
 	.endm
 
 /*
+ * Deprecated! Use SYM_FUNC_{START,START_WEAK,END}_PI instead.
  * Annotate a function as position independent, i.e., safe to be called before
  * the kernel virtual mapping is activated.
  */
