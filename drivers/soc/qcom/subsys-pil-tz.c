@@ -630,7 +630,7 @@ static int pil_init_image_trusted(struct pil_desc *pil,
 		return -ENOMEM;
 	}
 
-	memcpy(mdata_buf, metadata, size);
+	memcpy_toio((void __iomem *)mdata_buf, metadata, size);
 	if (!is_scm_armv8()) {
 		request.proc = d->pas_id;
 		request.image_addr = mdata_phys;
