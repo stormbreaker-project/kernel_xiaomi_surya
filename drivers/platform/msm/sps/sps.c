@@ -2202,44 +2202,49 @@ int sps_register_bam_device(const struct sps_bam_props *bam_props,
 
 	snprintf(bam_name, sizeof(bam_name), "sps_bam_%pa_0",
 					&bam->props.phys_addr);
+#ifdef CONFIG_IPC_LOGGING
 	bam->ipc_log0 = ipc_log_context_create(SPS_IPC_LOGPAGES,
 							bam_name, 0);
 	if (!bam->ipc_log0)
 		SPS_ERR(sps, "%s : unable to create IPC Logging 0 for bam %pa",
 					__func__, &bam->props.phys_addr);
-
+#endif
 	snprintf(bam_name, sizeof(bam_name), "sps_bam_%pa_1",
 					&bam->props.phys_addr);
+#ifdef CONFIG_IPC_LOGGING
 	bam->ipc_log1 = ipc_log_context_create(SPS_IPC_LOGPAGES,
 							bam_name, 0);
 	if (!bam->ipc_log1)
 		SPS_ERR(sps, "%s : unable to create IPC Logging 1 for bam %pa",
 					__func__, &bam->props.phys_addr);
-
+#endif
 	snprintf(bam_name, sizeof(bam_name), "sps_bam_%pa_2",
 					&bam->props.phys_addr);
+#ifdef CONFIG_IPC_LOGGING
 	bam->ipc_log2 = ipc_log_context_create(SPS_IPC_LOGPAGES,
 							bam_name, 0);
 	if (!bam->ipc_log2)
 		SPS_ERR(sps, "%s : unable to create IPC Logging 2 for bam %pa",
 					__func__, &bam->props.phys_addr);
-
+#endif
 	snprintf(bam_name, sizeof(bam_name), "sps_bam_%pa_3",
 					&bam->props.phys_addr);
+#ifdef CONFIG_IPC_LOGGING
 	bam->ipc_log3 = ipc_log_context_create(SPS_IPC_LOGPAGES,
 							bam_name, 0);
 	if (!bam->ipc_log3)
 		SPS_ERR(sps, "%s : unable to create IPC Logging 3 for bam %pa",
 					__func__, &bam->props.phys_addr);
-
+#endif
 	snprintf(bam_name, sizeof(bam_name), "sps_bam_%pa_4",
 					&bam->props.phys_addr);
+#ifdef CONFIG_IPC_LOGGING
 	bam->ipc_log4 = ipc_log_context_create(SPS_IPC_LOGPAGES,
 							bam_name, 0);
 	if (!bam->ipc_log4)
 		SPS_ERR(sps, "%s : unable to create IPC Logging 4 for bam %pa",
 					__func__, &bam->props.phys_addr);
-
+#endif
 	if (bam_props->ipc_loglevel)
 		bam->ipc_loglevel = bam_props->ipc_loglevel;
 	else
@@ -3039,6 +3044,7 @@ static int __init sps_init(void)
 	if (sps == NULL)
 		return -ENOMEM;
 
+#ifdef CONFIG_IPC_LOGGING
 	sps->ipc_log0 = ipc_log_context_create(SPS_IPC_LOGPAGES,
 							"sps_ipc_log0", 0);
 	if (!sps->ipc_log0)
@@ -3059,6 +3065,7 @@ static int __init sps_init(void)
 				SPS_IPC_REG_DUMP_FACTOR, "sps_ipc_log4", 0);
 	if (!sps->ipc_log4)
 		pr_err("Failed to create IPC log4\n");
+#endif
 
 	ret = platform_driver_register(&msm_sps_driver);
 
