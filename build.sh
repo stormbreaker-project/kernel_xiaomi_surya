@@ -46,9 +46,8 @@ if [ -f "$kernel" ] && [ -f "$dtb" ] && [ -f "$dtbo" ]; then
 	fi
 	cp $kernel $dtbo AnyKernel3
 	cp $dtb AnyKernel3/dtb
-	rm -f *zip
-	cd AnyKernel3 || exit
 	rm -rf out/arch/arm64/boot
+	cd AnyKernel3 || exit
 	zip -r9 "../$ZIPNAME" * -x .git README.md *placeholder
 	cd ..
 	rm -rf AnyKernel3
