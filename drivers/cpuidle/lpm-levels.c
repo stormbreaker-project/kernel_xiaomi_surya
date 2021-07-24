@@ -69,6 +69,9 @@ struct lpm_cluster *lpm_root_node;
 static bool lpm_prediction = true;
 module_param_named(lpm_prediction, lpm_prediction, bool, 0664);
 
+static bool cluster_use_deepest_state;
+module_param(cluster_use_deepest_state, bool, 0664);
+
 static uint32_t bias_hyst;
 module_param_named(bias_hyst, bias_hyst, uint, 0664);
 static bool lpm_ipi_prediction = true;
@@ -130,6 +133,11 @@ uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops)
 	sys_pm_ops = pm_ops;
 
 	return 0;
+}
+
+void lpm_cluster_use_deepest_state(bool enable)
+{
+	cluster_use_deepest_state = enable;
 }
 
 static uint32_t least_cluster_latency(struct lpm_cluster *cluster,
@@ -963,6 +971,26 @@ static void clear_cl_predict_history(void)
 	}
 }
 
+static int cluster_select_deepest(struct lpm_cluster *cluster)
+{
+	int i;
+
+	for (i = cluster->nlevels - 1; i >= 0; i--) {
+		struct lpm_cluster_level *level = &cluster->levels[i];
+
+		if (level->notify_rpm) {
+			if (!(sys_pm_ops && sys_pm_ops->sleep_allowed))
+				continue;
+			if (!sys_pm_ops->sleep_allowed())
+				continue;
+		}
+
+		break;
+	}
+
+	return i;
+}
+
 static int cluster_select(struct lpm_cluster *cluster, bool from_idle,
 							int *ispred)
 {
@@ -976,6 +1004,9 @@ static int cluster_select(struct lpm_cluster *cluster, bool from_idle,
 
 	if (!cluster)
 		return -EINVAL;
+
+	if (cluster_use_deepest_state)
+		return cluster_select_deepest(cluster);
 
 	sleep_us = (uint32_t)get_cluster_sleep_time(cluster,
 						from_idle, &cpupred_us);
