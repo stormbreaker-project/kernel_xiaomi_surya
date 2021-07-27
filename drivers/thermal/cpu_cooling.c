@@ -301,7 +301,7 @@ static int cpufreq_thermal_notifier(struct notifier_block *nb,
 	unsigned long clipped_freq = ULONG_MAX, floor_freq = 0;
 	struct cpufreq_cooling_device *cpufreq_cdev;
 
-	if (event != CPUFREQ_INCOMPATIBLE || event != CPUFREQ_THERMAL)
+	if (event != CPUFREQ_INCOMPATIBLE)
 		return NOTIFY_DONE;
 
 	mutex_lock(&cooling_list_lock);
@@ -332,7 +332,7 @@ static int cpufreq_thermal_notifier(struct notifier_block *nb,
 	 * Similarly, if policy minimum set by the user is less than
 	 * the floor_frequency, then adjust the policy->min.
 	 */
-		cpufreq_verify_within_limits(policy, floor_freq, clipped_freq);
+	cpufreq_verify_within_limits(policy, floor_freq, clipped_freq);
 	mutex_unlock(&cooling_list_lock);
 
 	return NOTIFY_OK;
