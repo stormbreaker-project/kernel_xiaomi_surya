@@ -6,6 +6,7 @@
 #ifndef __GF_SPI_H
 #define __GF_SPI_H
 
+#include <linux/gpio.h>
 #include <linux/types.h>
 #include <linux/notifier.h>
 /**********************************************************/
@@ -143,10 +144,38 @@ struct gf_dev {
 };
 
 int gf_parse_dts(struct gf_dev *gf_dev);
-void gf_cleanup(struct gf_dev *gf_dev);
 
-int gf_power_on(struct gf_dev *gf_dev);
-int gf_power_off(struct gf_dev *gf_dev);
+static inline void gf_cleanup(struct gf_dev *gf_dev)
+{
+	pr_debug("[info] %s\n",__func__);
+	if (gpio_is_valid(gf_dev->irq_gpio))
+	{
+		gpio_free(gf_dev->irq_gpio);
+		pr_debug("remove irq_gpio success\n");
+	}
+	if (gpio_is_valid(gf_dev->reset_gpio))
+	{
+		gpio_free(gf_dev->reset_gpio);
+		pr_debug("remove reset_gpio success\n");
+	}
+}
+
+static inline int gf_power_on(struct gf_dev *gf_dev)
+{
+	int rc = 0;
+
+	pr_debug("---- power on ok ----\n");
+
+	return rc;
+}
+static inline int gf_power_off(struct gf_dev *gf_dev)
+{
+	int rc = 0;
+
+	pr_debug("---- power off ----\n");
+
+	return rc;
+}
 
 int gf_hw_reset(struct gf_dev *gf_dev, unsigned int delay_ms);
 int gf_irq_num(struct gf_dev *gf_dev);
