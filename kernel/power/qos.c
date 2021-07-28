@@ -321,7 +321,7 @@ static inline int pm_qos_set_value_for_cpus(struct pm_qos_constraints *c,
  * This function returns 1 if the aggregated constraint value has changed, 0
  *  otherwise.
  */
-int pm_qos_update_target(struct pm_qos_constraints *c, struct plist_node *node,
+int __always_inline pm_qos_update_target(struct pm_qos_constraints *c, struct plist_node *node,
 			 enum pm_qos_req_action action, int value)
 {
 	int prev_value, curr_value, new_value;
@@ -503,7 +503,7 @@ int pm_qos_request_for_cpumask(int pm_qos_class, struct cpumask *mask)
 }
 EXPORT_SYMBOL(pm_qos_request_for_cpumask);
 
-static void __pm_qos_update_request(struct pm_qos_request *req,
+static __always_inline void __pm_qos_update_request(struct pm_qos_request *req,
 			   s32 new_value)
 {
 	trace_pm_qos_update_request(req->pm_qos_class, new_value);
@@ -681,7 +681,7 @@ EXPORT_SYMBOL_GPL(pm_qos_add_request);
  *
  * Attempts are made to make this code callable on hot code paths.
  */
-void pm_qos_update_request(struct pm_qos_request *req,
+void __always_inline pm_qos_update_request(struct pm_qos_request *req,
 			   s32 new_value)
 {
 	if (!req) /*guard against callers passing in null */
