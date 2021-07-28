@@ -62,37 +62,6 @@ err_reset:
 	return rc;
 }
 
-void gf_cleanup(struct gf_dev *gf_dev)
-{
-	pr_info("[info] %s\n", __func__);
-
-	if (gpio_is_valid(gf_dev->irq_gpio)) {
-		gpio_free(gf_dev->irq_gpio);
-		pr_info("remove irq_gpio success\n");
-	}
-	if (gpio_is_valid(gf_dev->reset_gpio)) {
-		gpio_free(gf_dev->reset_gpio);
-		pr_info("remove reset_gpio success\n");
-	}
-}
-
-int gf_power_on(struct gf_dev *gf_dev)
-{
-	int rc = 0;
-
-	/* TODO: add your power control here */
-	return rc;
-}
-
-int gf_power_off(struct gf_dev *gf_dev)
-{
-	int rc = 0;
-
-	/* TODO: add your power control here */
-
-	return rc;
-}
-
 int gf_hw_reset(struct gf_dev *gf_dev, unsigned int delay_ms)
 {
 	if (gf_dev == NULL) {
