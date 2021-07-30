@@ -339,9 +339,7 @@ static unsigned long get_extent(enum pgt_entry entry, unsigned long old_addr,
 
 	next = (old_addr + size) & mask;
 	/* even if next overflowed, extent below will be ok */
-	extent = next - old_addr;
-	if (extent > old_end - old_addr)
-		extent = old_end - old_addr;
+	extent = (next > old_end) ? old_end - old_addr : next - old_addr;
 	next = (new_addr + size) & mask;
 	if (extent > next - new_addr)
 		extent = next - new_addr;
@@ -421,7 +419,7 @@ unsigned long move_page_tables(struct vm_area_struct *vma,
 			if (!new_pud)
 				break;
 			if (move_pgt_entry(NORMAL_PUD, vma, old_addr, new_addr,
-					   old_pud, new_pud, true))
+					   old_pud, new_pud, need_rmap_locks))
 				continue;
 		}
 
@@ -448,7 +446,7 @@ unsigned long move_page_tables(struct vm_area_struct *vma,
 			 * moving at the PMD level if possible.
 			 */
 			if (move_pgt_entry(NORMAL_PMD, vma, old_addr, new_addr,
-					   old_pmd, new_pmd, true))
+					   old_pmd, new_pmd, need_rmap_locks))
 				continue;
 		}
 
@@ -526,7 +524,7 @@ static unsigned long move_vma(struct vm_area_struct *vma,
 	if (moved_len < old_len) {
 		err = -ENOMEM;
 	} else if (vma->vm_ops && vma->vm_ops->mremap) {
-		err = vma->vm_ops->mremap(new_vma);
+		err = vma->vm_ops->mremap(new_vma, flags);
 	}
 
 	if (unlikely(err)) {
@@ -633,8 +631,8 @@ static struct vm_area_struct *vma_to_resize(unsigned long addr,
 		return ERR_PTR(-EINVAL);
 	}
 
-	if ((flags & MREMAP_DONTUNMAP) &&
-			(vma->vm_flags & (VM_DONTEXPAND | VM_PFNMAP)))
+	if (flags & MREMAP_DONTUNMAP && (!vma_is_anonymous(vma) ||
+			vma->vm_flags & VM_SHARED))
 		return ERR_PTR(-EINVAL);
 
 	if (is_vm_hugetlb_page(vma))
