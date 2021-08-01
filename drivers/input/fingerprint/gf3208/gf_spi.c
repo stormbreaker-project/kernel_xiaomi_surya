@@ -40,7 +40,6 @@
 #include <linux/pm_qos.h>
 #include <linux/cpufreq.h>
 #include <linux/mdss_io_util.h>
-//#include <linux/wakelock.h>
 #include <linux/proc_fs.h>
 #include "gf_spi.h"
 #include <linux/unistd.h>
@@ -60,8 +59,6 @@
 #define PATCH_LEVEL 10
 #define FAIL -1
 
-#define WAKELOCK_HOLD_TIME 2000 /* in ms */
-#define FP_UNLOCK_REJECTION_TIMEOUT (WAKELOCK_HOLD_TIME - 500)
 #define GF_SPIDEV_NAME     "goodix,fingerprint"
 /*device name after register in character*/
 #define GF_DEV_NAME            "goodix_fp"
@@ -349,8 +346,6 @@ static irqreturn_t gf_irq(int irq, void *handle)
 #if defined(GF_NETLINK_ENABLE)
 	char msg[2] =  { 0x0 };
 	struct gf_dev *gf_dev = &gf;
-	//wake_lock_timeout(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
-	__pm_wakeup_event(&fp_ws, WAKELOCK_HOLD_TIME);//for kernel 4.9
 	msg[0] = GF_NET_EVENT_IRQ;
 	sendnlmsg(msg);
 	if (gf_dev->device_available == 1) {
@@ -538,7 +533,6 @@ static long gf_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long a
  static void notification_work(struct work_struct *work)
 {
 	pr_debug("%s unblank\n", __func__);
-	//dsi_bridge_interface_enable(FP_UNLOCK_REJECTION_TIMEOUT);
 }
 
 static int gf_open(struct inode *inode, struct file *filp)
@@ -797,9 +791,6 @@ static int gf_probe(struct platform_device *pdev)
 	gf_dev->notifier = goodix_noti_block;
 	msm_drm_register_client(&gf_dev->notifier);
 
-	//wake_lock_init(&fp_wakelock, WAKE_LOCK_SUSPEND, "fp_wakelock");
-	wakeup_source_init(&fp_ws, "fp_ws");//for kernel 4.9
-
 	proc_entry = proc_create(PROC_NAME, 0644, NULL, &proc_file_ops);
 	if (NULL == proc_entry) {
 		pr_err("gf3258 Couldn't create proc entry!");
@@ -844,8 +835,6 @@ static int gf_remove(struct platform_device *pdev)
 {
 	struct gf_dev *gf_dev = &gf;
 
-	//wake_lock_destroy(&fp_wakelock);
-	wakeup_source_trash(&fp_ws);//for kernel 4.9
 	msm_drm_unregister_client(&gf_dev->notifier);
 	if (gf_dev->input)
 		input_unregister_device(gf_dev->input);
