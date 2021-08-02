@@ -18,6 +18,7 @@
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/err.h>
+#include <linux/sched.h>
 
 #include "msm_drv.h"
 #include "sde_connector.h"
@@ -6720,6 +6721,7 @@ int dsi_display_validate_mode_change(struct dsi_display *display,
 			dsi_panel_get_dfps_caps(display->panel, &dfps_caps);
 			if (cur_mode->timing.refresh_rate != adj_mode->timing.refresh_rate) {
 				WRITE_ONCE(cur_refresh_rate, adj_mode->timing.refresh_rate);
+				sched_set_refresh_rate(adj_mode->timing.refresh_rate);
 			}
 			if (dfps_caps.dfps_support ||
 			    dyn_clk_caps->maintain_const_fps) {
@@ -7689,6 +7691,7 @@ int dsi_display_enable(struct dsi_display *display)
 
 	mode = display->panel->cur_mode;
 	WRITE_ONCE(cur_refresh_rate, mode->timing.refresh_rate);
+	sched_set_refresh_rate(mode->timing.refresh_rate);
 
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
 		rc = dsi_panel_switch(display->panel);
@@ -7864,6 +7867,9 @@ int dsi_display_disable(struct dsi_display *display)
 	}
 
 	mutex_unlock(&display->display_lock);
+
+	sched_set_refresh_rate(60);
+
 	SDE_EVT32(SDE_EVTLOG_FUNC_EXIT);
 	return rc;
 }
