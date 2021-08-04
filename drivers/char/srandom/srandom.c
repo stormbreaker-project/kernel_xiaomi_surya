@@ -19,7 +19,7 @@
 #define sDEVICE_NAME "srandom"      /* Dev name as it appears in /proc/devices */
 #define AppVERSION "1.38.0"
 #define THREAD_SLEEP_VALUE 7        /* Amount of time worker thread should sleep between each operation. Recommended prime */
-#define PAID 0
+#define PAID 1
 // #define DEBUG 0
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
