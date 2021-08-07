@@ -1074,10 +1074,11 @@ static QDF_STATUS pe_drop_pending_rx_mgmt_frames(struct mac_context *mac_ctx,
 	qdf_spin_unlock(&mac_ctx->sys.bbt_mgmt_lock);
 	if (mac_ctx->sys.sys_bbt_pending_mgmt_count ==
 	    (MGMT_RX_PACKETS_THRESHOLD / 4)) {
-		if (!(mac_ctx->rx_packet_drop_counter % 100))
+		if (!(mac_ctx->rx_packet_drop_counter % 100)) {
 			pe_debug("No.of pending RX management frames reaches to 1/4th of threshold, rx_packet_drop_counter: %d",
 				mac_ctx->rx_packet_drop_counter);
 			mac_ctx->rx_packet_drop_counter++;
+		}
 	}
 	return QDF_STATUS_SUCCESS;
 }

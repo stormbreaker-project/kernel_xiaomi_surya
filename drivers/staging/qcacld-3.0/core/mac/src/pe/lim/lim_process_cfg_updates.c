@@ -127,9 +127,10 @@ void lim_handle_param_update(struct mac_context *mac, eUpdateIEsType cfgId)
 		msg.type = SIR_LIM_UPDATE_BEACON;
 		status = lim_post_msg_api(mac, &msg);
 
-		if (status != QDF_STATUS_SUCCESS)
+		if (status != QDF_STATUS_SUCCESS) {
 			pe_err("Failed lim_post_msg_api %u", status);
 			break;
+		}
 	}
 	default:
 		break;
