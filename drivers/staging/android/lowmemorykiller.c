@@ -446,7 +446,7 @@ static int get_minfree_scalefactor(gfp_t gfp_mask)
 	struct zoneref *z;
 	struct zone *zone;
 	unsigned long nr_usable = 0;
-	unsigned long nr_pages = totalram_pages;
+	unsigned long nr_pages = totalram_pages();
 
 	for_each_zone_zonelist(zone, z, zonelist, gfp_zone(gfp_mask))
 		nr_usable += zone_managed_pages(zone);
