@@ -5298,6 +5298,12 @@ CONFIG_ESOC_MDM_DBG_ENG=y
 # CONFIG_MDM_DBG_REQ_ENG is not set
 
 #
+# Qualcomm RmNet extensions
+#
+CONFIG_RMNET_PERF=m
+CONFIG_RMNET_SHS=m
+
+#
 # Firmware Drivers
 #
 CONFIG_ARM_PSCI_FW=y
