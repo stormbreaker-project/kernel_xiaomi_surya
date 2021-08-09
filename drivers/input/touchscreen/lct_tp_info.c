@@ -26,7 +26,6 @@
  */
 #define TP_INFO_NAME          "tp_info"
 #define TP_LOCKDOWN_INFO_NAME "tp_lockdown_info"
-#define TP_INFO_LOG_ENABLE
 #define TP_INFO_TAG           "LCT_TP_INFO"
 #define LCT_STRING_SIZE       128
 #define TP_CALLBACK_CMD_INFO      "CMD_INFO"
