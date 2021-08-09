@@ -40,7 +40,6 @@ enum lct_tp_selftest_cmd {
 
 // Debug log
 #define TP_INFO_TAG           "LCT_TP_SELFTEST"
-#define TP_INFO_LOG_ENABLE
 
 #ifdef TP_INFO_LOG_ENABLE
 #define TP_LOGW(log, ...) printk(KERN_WARNING "[%s] %s (line %d): " log, TP_INFO_TAG, __func__, __LINE__, ##__VA_ARGS__)

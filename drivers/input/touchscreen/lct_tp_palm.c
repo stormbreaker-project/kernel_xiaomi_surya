@@ -26,7 +26,6 @@
  ****************************************************************************************
  */
 #define TP_PALM_NAME          "tp_palm"
-#define TP_PALM_LOG_ENABLE
 #define TP_PALM_TAG           "LCT_TP_PALM"
 
 #ifdef TP_PALM_LOG_ENABLE
