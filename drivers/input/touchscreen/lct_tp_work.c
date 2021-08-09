@@ -26,7 +26,6 @@
  ****************************************************************************************
  */
 #define TP_WORK_NAME          "tp_work"
-#define TP_WORK_LOG_ENABLE
 #define TP_WORK_TAG           "LCT_TP_WORK"
 
 #ifdef TP_WORK_LOG_ENABLE

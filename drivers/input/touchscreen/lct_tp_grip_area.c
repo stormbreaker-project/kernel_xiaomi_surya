@@ -25,7 +25,6 @@
  ****************************************************************************************
  */
 #define TP_GRIP_AREA_NAME          "tp_grip_area"
-#define TP_GRIP_AREA_LOG_ENABLE
 #define TP_GRIP_AREA_TAG           "LCT_TP_GRIP_AREA"
 
 #ifdef TP_GRIP_AREA_LOG_ENABLE
