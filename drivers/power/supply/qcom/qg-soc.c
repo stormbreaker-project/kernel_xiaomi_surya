@@ -315,7 +315,7 @@ int qg_adjust_sys_soc(struct qpnp_qg *chip)
 		rc = qg_get_vbat_avg(chip, &vbat_uv);
 		if (!rc && (vbat_uv >= (vcutoff_uv + VBAT_LOW_HYST_UV))) {
 			soc = 1;
-			qg_dbg(chip, QG_DEBUG_SOC, "vbat_uv=%duV holding SOC to 1%\n",
+			qg_dbg(chip, QG_DEBUG_SOC, "vbat_uv=%duV holding SOC to 1 percent\n",
 						vbat_uv);
 		}
 	}
