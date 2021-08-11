@@ -622,8 +622,8 @@ int ipa3_conn_wdi3_pipes(struct ipa_wdi_conn_in_params *in,
 	iowrite32(db_val, db_addr);
 	gsi_query_evt_ring_db_addr(ep_tx->gsi_evt_ring_hdl,
 		&evt_ring_db_addr_low, &evt_ring_db_addr_high);
-	IPADBG("RX base_addr 0x%x evt wp val: 0x%x\n",
-		ep_rx->gsi_mem_info.evt_ring_base_addr, db_val);
+	IPADBG("RX base_addr 0x%llx evt wp val: 0x%llx\n",
+		(u64)ep_rx->gsi_mem_info.evt_ring_base_addr, (u64)db_val);
 
 	/* only 32 bit lsb is used */
 	db_addr = ioremap((phys_addr_t)(evt_ring_db_addr_low), 4);
@@ -640,9 +640,9 @@ int ipa3_conn_wdi3_pipes(struct ipa_wdi_conn_in_params *in,
 		in->u_tx.tx.event_ring_size);
 	db_val += GSI_EVT_RING_RE_SIZE_16B;
 	iowrite32(db_val, db_addr);
-	IPADBG("db_addr %u  TX base_addr 0x%x evt wp val: 0x%x\n",
+	IPADBG("db_addr %u  TX base_addr 0x%llx evt wp val: 0x%llx\n",
 		evt_ring_db_addr_low,
-		ep_tx->gsi_mem_info.evt_ring_base_addr, db_val);
+		(u64)ep_tx->gsi_mem_info.evt_ring_base_addr, (u64)db_val);
 fail:
 	IPA_ACTIVE_CLIENTS_DEC_SIMPLE();
 	return result;

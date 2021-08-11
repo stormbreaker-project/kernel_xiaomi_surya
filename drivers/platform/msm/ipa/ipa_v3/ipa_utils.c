@@ -9369,7 +9369,7 @@ int ipa3_del_ipv6_nat_uc_activation_entry(uint16_t index)
 
 	mutex_lock(&ipa3_ctx->act_tbl_lock);
 	if (uc_entry->cmd_id != IPA_IPv6_NAT_COM_ID) {
-		IPAERR_RL("entry %d wrong cmd id %d\n", uc_entry->cmd_id);
+		IPAERR_RL("entry %d wrong cmd id\n", uc_entry->cmd_id);
 		res = -EFAULT;
 		goto error;
 	}

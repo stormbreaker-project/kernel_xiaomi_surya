@@ -313,7 +313,7 @@ static int ipa3_smmu_map_uc_ntn_pipes(struct ipa_ntn_setup_info *params,
 		ipa3_ctx->uc_ntn_ctx.ntn_reg_base_ptr_pa_rd =
 			rounddown(params->ntn_reg_base_ptr_pa,
 			PAGE_SIZE);
-		IPADBG(" %s ntn_reg_base_ptr_pa regs 0X%0x smmu_mapped %d\n",
+		IPADBG(" %s ntn_reg_base_ptr_pa regs 0X%0llx smmu_mapped %d\n",
 			map ? "map" : "unmap",
 			(unsigned long long)
 			ipa3_ctx->uc_ntn_ctx.ntn_reg_base_ptr_pa_rd,
