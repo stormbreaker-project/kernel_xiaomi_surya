@@ -6,6 +6,7 @@
 SECONDS=0 # builtin bash timer
 ZIPNAME="QuicksilveR-surya-$(date '+%Y%m%d-%H%M').zip"
 TC_DIR="$HOME/tc/proton-clang"
+AK3_DIR="$HOME/android/AnyKernel3"
 DEFCONFIG="vendor/surya-perf_defconfig"
 
 export PATH="$TC_DIR/bin:$PATH"
@@ -41,14 +42,17 @@ dtbo="out/arch/arm64/boot/dtbo.img"
 
 if [ -f "$kernel" ] && [ -f "$dtb" ] && [ -f "$dtbo" ]; then
 	echo -e "\nKernel compiled succesfully! Zipping up...\n"
-	if ! git clone -q https://github.com/ghostrider-reborn/AnyKernel3 -b surya; then
-		echo -e "\nCloning AnyKernel3 repo failed! Aborting..."
+	if [ -d "$AK3_DIR" ]; then
+		cp -r $AK3_DIR AnyKernel3
+	elif ! git clone -q https://github.com/ghostrider-reborn/AnyKernel3 -b surya; then
+		echo -e "\nAnyKernel3 repo not found locally and couldn't clone from GitHub! Aborting..."
 		exit 1
 	fi
 	cp $kernel $dtbo AnyKernel3
 	cp $dtb AnyKernel3/dtb
 	rm -rf out/arch/arm64/boot
-	cd AnyKernel3 || exit
+	cd AnyKernel3
+	git checkout surya &> /dev/null
 	zip -r9 "../$ZIPNAME" * -x .git README.md *placeholder
 	cd ..
 	rm -rf AnyKernel3
@@ -58,4 +62,5 @@ if [ -f "$kernel" ] && [ -f "$dtb" ] && [ -f "$dtbo" ]; then
 	echo
 else
 	echo -e "\nCompilation failed!"
+	exit 1
 fi
