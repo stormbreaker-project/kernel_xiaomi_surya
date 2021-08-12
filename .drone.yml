@@ -16,3 +16,7 @@ steps:
         from_secret: token
     image: "archlinux:base-devel"
     name: setup&kramel
+
+trigger:
+  event:
+  - custom
