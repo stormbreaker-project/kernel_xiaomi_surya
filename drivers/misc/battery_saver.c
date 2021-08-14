@@ -7,7 +7,7 @@
 #include <linux/moduleparam.h>
 #include <linux/battery_saver.h>
 
-static bool enabled = false;
+static bool __read_mostly enabled = false;
 module_param(enabled, bool, 0644);
 
 // returns whether battery saver is enabled or disabled
