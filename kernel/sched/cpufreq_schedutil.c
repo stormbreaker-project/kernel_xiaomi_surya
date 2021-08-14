@@ -422,7 +422,7 @@ static void sugov_walt_adjust(struct sugov_cpu *sg_cpu, unsigned long *util,
 		*util = *max;
 
 	if (sg_policy->tunables->pl && pl > *util) {
-		if (conservative_pl())
+		if (conservative_pl() || is_battery_saver_on())
 			pl = mult_frac(pl, TARGET_LOAD, 100);
 		*util = (*util + pl) / 2;
 	}
