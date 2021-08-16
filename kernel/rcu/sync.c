@@ -44,15 +44,15 @@ static const struct {
 		__INIT_HELD(rcu_read_lock_held)
 	},
 	[RCU_SCHED_SYNC] = {
-		.sync = synchronize_rcu,
-		.call = call_rcu,
-		.wait = rcu_barrier,
+		.sync = synchronize_sched,
+		.call = call_rcu_sched,
+		.wait = rcu_barrier_sched,
 		__INIT_HELD(rcu_read_lock_sched_held)
 	},
 	[RCU_BH_SYNC] = {
-		.sync = synchronize_rcu,
-		.call = call_rcu,
-		.wait = rcu_barrier,
+		.sync = synchronize_rcu_bh,
+		.call = call_rcu_bh,
+		.wait = rcu_barrier_bh,
 		__INIT_HELD(rcu_read_lock_bh_held)
 	},
 };
@@ -125,7 +125,8 @@ void rcu_sync_enter(struct rcu_sync *rsp)
 		rsp->gp_state = GP_PENDING;
 	spin_unlock_irq(&rsp->rss_lock);
 
-	WARN_ON_ONCE(need_wait && need_sync);
+	BUG_ON(need_wait && need_sync);
+
 	if (need_sync) {
 		gp_ops[rsp->gp_type].sync();
 		rsp->gp_state = GP_PASSED;
@@ -138,7 +139,7 @@ void rcu_sync_enter(struct rcu_sync *rsp)
 		 * Nobody has yet been allowed the 'fast' path and thus we can
 		 * avoid doing any sync(). The callback will get 'dropped'.
 		 */
-		WARN_ON_ONCE(rsp->gp_state != GP_PASSED);
+		BUG_ON(rsp->gp_state != GP_PASSED);
 	}
 }
 
@@ -165,8 +166,8 @@ static void rcu_sync_func(struct rcu_head *rhp)
 	struct rcu_sync *rsp = container_of(rhp, struct rcu_sync, cb_head);
 	unsigned long flags;
 
-	WARN_ON_ONCE(rsp->gp_state != GP_PASSED);
-	WARN_ON_ONCE(rsp->cb_state == CB_IDLE);
+	BUG_ON(rsp->gp_state != GP_PASSED);
+	BUG_ON(rsp->cb_state == CB_IDLE);
 
 	spin_lock_irqsave(&rsp->rss_lock, flags);
 	if (rsp->gp_count) {
@@ -224,7 +225,7 @@ void rcu_sync_dtor(struct rcu_sync *rsp)
 {
 	int cb_state;
 
-	WARN_ON_ONCE(rsp->gp_count);
+	BUG_ON(rsp->gp_count);
 
 	spin_lock_irq(&rsp->rss_lock);
 	if (rsp->cb_state == CB_REPLAY)
@@ -234,6 +235,6 @@ void rcu_sync_dtor(struct rcu_sync *rsp)
 
 	if (cb_state != CB_IDLE) {
 		gp_ops[rsp->gp_type].wait();
-		WARN_ON_ONCE(rsp->cb_state != CB_IDLE);
+		BUG_ON(rsp->cb_state != CB_IDLE);
 	}
 }

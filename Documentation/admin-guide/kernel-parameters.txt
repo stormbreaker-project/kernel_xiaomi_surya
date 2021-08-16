@@ -2158,6 +2158,9 @@
 			This tests the locking primitive's ability to
 			transition abruptly to and from idle.
 
+	locktorture.torture_runnable= [BOOT]
+			Start locktorture running at boot time.
+
 	locktorture.torture_type= [KNL]
 			Specify the locking implementation to test.
 
@@ -3513,9 +3516,7 @@
 				see CONFIG_RAS_CEC help text.
 
 	rcu_nocbs=	[KNL]
-			The argument is a cpu list, as described above,
-			except that the string "all" can be used to
-			specify every CPU on the system.
+			The argument is a cpu list, as described above.
 
 			In kernels built with CONFIG_RCU_NOCB_CPU=y, set
 			the specified list of CPUs to be no-callback CPUs.
@@ -3580,14 +3581,7 @@
 			Set required age in jiffies for a
 			given grace period before RCU starts
 			soliciting quiescent-state help from
-			rcu_note_context_switch().  If not specified, the
-			kernel will calculate a value based on the most
-			recent settings of rcutree.jiffies_till_first_fqs
-			and rcutree.jiffies_till_next_fqs.
-			This calculated value may be viewed in
-			rcutree.jiffies_to_sched_qs.  Any attempt to
-			set rcutree.jiffies_to_sched_qs will be
-			cheerfully overwritten.
+			rcu_note_context_switch().
 
 	rcutree.jiffies_till_first_fqs= [KNL]
 			Set delay from grace-period initialization to
@@ -3643,11 +3637,6 @@
 			This wake_up() will be accompanied by a
 			WARN_ONCE() splat and an ftrace_dump().
 
-	rcutree.sysrq_rcu= [KNL]
-			Commandeer a sysrq key to dump out Tree RCU's
-			rcu_node tree with an eye towards determining
-			why a new grace period has not yet started.
-
 	rcuperf.gp_async= [KNL]
 			Measure performance of asynchronous
 			grace-period primitives such as call_rcu().
@@ -3683,6 +3672,9 @@
 			the same as for rcuperf.nreaders.
 			N, where N is the number of CPUs
 
+	rcuperf.perf_runnable= [BOOT]
+			Start rcuperf running at boot time.
+
 	rcuperf.perf_type= [KNL]
 			Specify the RCU implementation to test.
 
@@ -3698,6 +3690,24 @@
 			Write-side holdoff between grace periods,
 			in microseconds.  The default of zero says
 			no holdoff.
+
+	rcutorture.cbflood_inter_holdoff= [KNL]
+			Set holdoff time (jiffies) between successive
+			callback-flood tests.
+
+	rcutorture.cbflood_intra_holdoff= [KNL]
+			Set holdoff time (jiffies) between successive
+			bursts of callbacks within a given callback-flood
+			test.
+
+	rcutorture.cbflood_n_burst= [KNL]
+			Set the number of bursts making up a given
+			callback-flood test.  Set this to zero to
+			disable callback-flood testing.
+
+	rcutorture.cbflood_n_per_burst= [KNL]
+			Set the number of callbacks to be registered
+			in a given burst of a callback-flood test.
 
 	rcutorture.fqs_duration= [KNL]
 			Set duration of force_quiescent_state bursts
@@ -3752,8 +3762,8 @@
 			Set time (s) after boot for CPU-hotplug testing.
 
 	rcutorture.onoff_interval= [KNL]
-			Set time (jiffies) between CPU-hotplug operations,
-			or zero to disable CPU-hotplug testing.
+			Set time (s) between CPU-hotplug operations, or
+			zero to disable CPU-hotplug testing.
 
 	rcutorture.shuffle_interval= [KNL]
 			Set task-shuffle interval (s).  Shuffling tasks
@@ -3770,9 +3780,6 @@
 
 	rcutorture.stall_cpu_holdoff= [KNL]
 			Time to wait (s) after boot before inducing stall.
-
-	rcutorture.stall_cpu_irqsoff= [KNL]
-			Disable interrupts while stalling if set.
 
 	rcutorture.stat_interval= [KNL]
 			Time (s) between statistics printk()s.
@@ -3797,6 +3804,9 @@
 	rcutorture.test_no_idle_hz= [KNL]
 			Test RCU's dyntick-idle handling.  See also the
 			rcutorture.shuffle_interval parameter.
+
+	rcutorture.torture_runnable= [BOOT]
+			Start rcutorture running at boot time.
 
 	rcutorture.torture_type= [KNL]
 			Specify the RCU implementation to test.
@@ -3841,6 +3851,12 @@
 
 	rcupdate.rcu_self_test= [KNL]
 			Run the RCU early boot self tests
+
+	rcupdate.rcu_self_test_bh= [KNL]
+			Run the RCU bh early boot self tests
+
+	rcupdate.rcu_self_test_sched= [KNL]
+			Run the RCU sched early boot self tests
 
 	rdinit=		[KNL]
 			Format: <full_path>

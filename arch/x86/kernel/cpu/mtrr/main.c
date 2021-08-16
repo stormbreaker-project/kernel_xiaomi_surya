@@ -46,7 +46,6 @@
 #include <linux/pci.h>
 #include <linux/smp.h>
 #include <linux/syscore_ops.h>
-#include <linux/rcupdate.h>
 
 #include <asm/cpufeature.h>
 #include <asm/e820/api.h>
@@ -794,9 +793,6 @@ void mtrr_ap_init(void)
 
 	if (!use_intel() || mtrr_aps_delayed_init)
 		return;
-
-	rcu_cpu_starting(smp_processor_id());
-
 	/*
 	 * Ideally we should hold mtrr_mutex here to avoid mtrr entries
 	 * changed, but this routine will be called in cpu boot time,

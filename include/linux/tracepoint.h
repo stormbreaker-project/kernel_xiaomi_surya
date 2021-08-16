@@ -77,7 +77,7 @@ int unregister_tracepoint_module_notifier(struct notifier_block *nb)
  */
 static inline void tracepoint_synchronize_unregister(void)
 {
-	synchronize_rcu();
+	synchronize_sched();
 }
 
 #ifdef CONFIG_HAVE_SYSCALL_TRACEPOINTS
@@ -137,8 +137,11 @@ extern void syscall_unregfunc(void);
 									\
 		if (!(cond))						\
 			return;						\
-		if (rcucheck)						\
+		if (rcucheck) {						\
+			if (WARN_ON_ONCE(rcu_irq_enter_disabled()))	\
+				return;					\
 			rcu_irq_enter_irqson();				\
+		}							\
 		rcu_read_lock_sched_notrace();				\
 		it_func_ptr = rcu_dereference_sched((tp)->funcs);	\
 		if (it_func_ptr) {					\

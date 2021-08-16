@@ -948,11 +948,8 @@ static struct timer_base *lock_timer_base(struct timer_list *timer,
 	}
 }
 
-#define MOD_TIMER_PENDING_ONLY		0x01
-#define MOD_TIMER_REDUCE		0x02
-
 static inline int
-__mod_timer(struct timer_list *timer, unsigned long expires, unsigned int options)
+__mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
 {
 	struct timer_base *base, *new_base;
 	unsigned int idx = UINT_MAX;
@@ -972,11 +969,7 @@ __mod_timer(struct timer_list *timer, unsigned long expires, unsigned int option
 		 * larger granularity than you would get from adding a new
 		 * timer with this expiry.
 		 */
-		long diff = timer->expires - expires;
-
-		if (!diff)
-			return 1;
-		if (options & MOD_TIMER_REDUCE && diff <= 0)
+		if (timer->expires == expires)
 			return 1;
 
 		/*
@@ -988,12 +981,6 @@ __mod_timer(struct timer_list *timer, unsigned long expires, unsigned int option
 		base = lock_timer_base(timer, &flags);
 		forward_timer_base(base);
 
-		if (timer_pending(timer) && (options & MOD_TIMER_REDUCE) &&
-		    time_before_eq(timer->expires, expires)) {
-			ret = 1;
-			goto out_unlock;
-		}
-
 		clk = base->clk;
 		idx = calc_wheel_index(expires, clk);
 
@@ -1003,10 +990,7 @@ __mod_timer(struct timer_list *timer, unsigned long expires, unsigned int option
 		 * subsequent call will exit in the expires check above.
 		 */
 		if (idx == timer_get_idx(timer)) {
-			if (!(options & MOD_TIMER_REDUCE))
-				timer->expires = expires;
-			else if (time_after(timer->expires, expires))
-				timer->expires = expires;
+			timer->expires = expires;
 			ret = 1;
 			goto out_unlock;
 		}
@@ -1016,7 +1000,7 @@ __mod_timer(struct timer_list *timer, unsigned long expires, unsigned int option
 	}
 
 	ret = detach_if_pending(timer, base, false);
-	if (!ret && (options & MOD_TIMER_PENDING_ONLY))
+	if (!ret && pending_only)
 		goto out_unlock;
 
 	new_base = get_target_base(base, timer->flags);
@@ -1077,7 +1061,7 @@ out_unlock:
  */
 int mod_timer_pending(struct timer_list *timer, unsigned long expires)
 {
-	return __mod_timer(timer, expires, MOD_TIMER_PENDING_ONLY);
+	return __mod_timer(timer, expires, true);
 }
 EXPORT_SYMBOL(mod_timer_pending);
 
@@ -1103,24 +1087,9 @@ EXPORT_SYMBOL(mod_timer_pending);
  */
 int mod_timer(struct timer_list *timer, unsigned long expires)
 {
-	return __mod_timer(timer, expires, 0);
+	return __mod_timer(timer, expires, false);
 }
 EXPORT_SYMBOL(mod_timer);
-
-/**
- * timer_reduce - Modify a timer's timeout if it would reduce the timeout
- * @timer:	The timer to be modified
- * @expires:	New timeout in jiffies
- *
- * timer_reduce() is very similar to mod_timer(), except that it will only
- * modify a running timer if that would reduce the expiration time (it will
- * start a timer that isn't running).
- */
-int timer_reduce(struct timer_list *timer, unsigned long expires)
-{
-	return __mod_timer(timer, expires, MOD_TIMER_REDUCE);
-}
-EXPORT_SYMBOL(timer_reduce);
 
 /**
  * add_timer - start a timer
@@ -1671,7 +1640,7 @@ void update_process_times(int user_tick)
 	/* Note: this timer irq context must be accounted for as well. */
 	account_process_tick(p, user_tick);
 	run_local_timers();
-	rcu_sched_clock_irq(user_tick);
+	rcu_check_callbacks(user_tick);
 #ifdef CONFIG_IRQ_WORK
 	if (in_irq())
 		irq_work_tick();
@@ -1761,20 +1730,9 @@ void run_local_timers(void)
 	raise_softirq(TIMER_SOFTIRQ);
 }
 
-/*
- * Since schedule_timeout()'s timer is defined on the stack, it must store
- * the target task on the stack as well.
- */
-struct process_timer {
-	struct timer_list timer;
-	struct task_struct *task;
-};
-
-static void process_timeout(struct timer_list *t)
+static void process_timeout(unsigned long __data)
 {
-	struct process_timer *timeout = from_timer(timeout, t, timer);
-
-	wake_up_process(timeout->task);
+	wake_up_process((struct task_struct *)__data);
 }
 
 /**
@@ -1808,7 +1766,7 @@ static void process_timeout(struct timer_list *t)
  */
 signed long __sched schedule_timeout(signed long timeout)
 {
-	struct process_timer timer;
+	struct timer_list timer;
 	unsigned long expire;
 
 	switch (timeout)
@@ -1842,14 +1800,13 @@ signed long __sched schedule_timeout(signed long timeout)
 
 	expire = timeout + jiffies;
 
-	timer.task = current;
-	timer_setup_on_stack(&timer.timer, process_timeout, 0);
-	__mod_timer(&timer.timer, expire, 0);
+	setup_timer_on_stack(&timer, process_timeout, (unsigned long)current);
+	__mod_timer(&timer, expire, false);
 	schedule();
-	del_singleshot_timer_sync(&timer.timer);
+	del_singleshot_timer_sync(&timer);
 
 	/* Remove the timer from the object tracker */
-	destroy_timer_on_stack(&timer.timer);
+	destroy_timer_on_stack(&timer);
 
 	timeout = expire - jiffies;
 

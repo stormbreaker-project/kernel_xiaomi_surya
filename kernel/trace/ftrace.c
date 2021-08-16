@@ -233,7 +233,7 @@ static void ftrace_sync(struct work_struct *work)
 {
 	/*
 	 * This function is just a stub to implement a hard force
-	 * of synchronize_rcu(). This requires synchronizing
+	 * of synchronize_sched(). This requires synchronizing
 	 * tasks even in userspace and idle.
 	 *
 	 * Yes, function tracing is rude.
@@ -1004,7 +1004,7 @@ ftrace_profile_write(struct file *filp, const char __user *ubuf,
 			ftrace_profile_enabled = 0;
 			/*
 			 * unregister_ftrace_profiler calls stop_machine
-			 * so this acts like an synchronize_rcu.
+			 * so this acts like an synchronize_sched.
 			 */
 			unregister_ftrace_profiler();
 		}
@@ -1162,7 +1162,7 @@ bool is_ftrace_trampoline(unsigned long addr)
 
 	/*
 	 * Some of the ops may be dynamically allocated,
-	 * they are freed after a synchronize_rcu().
+	 * they are freed after a synchronize_sched().
 	 */
 	preempt_disable_notrace();
 
@@ -1353,7 +1353,7 @@ static void free_ftrace_hash_rcu(struct ftrace_hash *hash)
 {
 	if (!hash || hash == EMPTY_HASH)
 		return;
-	call_rcu(&hash->rcu, __free_ftrace_hash_rcu);
+	call_rcu_sched(&hash->rcu, __free_ftrace_hash_rcu);
 }
 
 void ftrace_free_filter(struct ftrace_ops *ops)
@@ -1568,7 +1568,7 @@ static bool hash_contains_ip(unsigned long ip,
  * the ip is not in the ops->notrace_hash.
  *
  * This needs to be called with preemption disabled as
- * the hashes are freed with call_rcu().
+ * the hashes are freed with call_rcu_sched().
  */
 static int
 ftrace_ops_test(struct ftrace_ops *ops, unsigned long ip, void *regs)
@@ -4599,7 +4599,7 @@ unregister_ftrace_function_probe_func(char *glob, struct trace_array *tr,
 	if (ftrace_enabled && !ftrace_hash_empty(hash))
 		ftrace_run_modify_code(&probe->ops, FTRACE_UPDATE_CALLS,
 				       &old_hash_ops);
-	synchronize_rcu();
+	synchronize_sched();
 
 	hlist_for_each_entry_safe(entry, tmp, &hhd, hlist) {
 		hlist_del(&entry->hlist);
@@ -5420,8 +5420,15 @@ ftrace_graph_release(struct inode *inode, struct file *file)
 
 		mutex_unlock(&graph_lock);
 
-		/* Wait till all users are no longer using the old hash */
-		synchronize_rcu();
+		/*
+		 * We need to do a hard force of sched synchronization.
+		 * This is because we use preempt_disable() to do RCU, but
+		 * the function tracers can be called where RCU is not watching
+		 * (like before user_exit()). We can not rely on the RCU
+		 * infrastructure to do the synchronization, thus we must do it
+		 * ourselves.
+		 */
+		schedule_on_each_cpu(ftrace_sync);
 
 		free_ftrace_hash(old_hash);
 	}
@@ -6081,7 +6088,7 @@ __ftrace_ops_list_func(unsigned long ip, unsigned long parent_ip,
 
 	/*
 	 * Some of the ops may be dynamically allocated,
-	 * they must be freed after a synchronize_rcu().
+	 * they must be freed after a synchronize_sched().
 	 */
 	preempt_disable_notrace();
 
@@ -6262,7 +6269,7 @@ static void clear_ftrace_pids(struct trace_array *tr)
 	rcu_assign_pointer(tr->function_pids, NULL);
 
 	/* Wait till all users are no longer using pid filtering */
-	synchronize_rcu();
+	synchronize_sched();
 
 	trace_free_pid_list(pid_list);
 }
@@ -6410,7 +6417,7 @@ ftrace_pid_write(struct file *filp, const char __user *ubuf,
 	rcu_assign_pointer(tr->function_pids, pid_list);
 
 	if (filtered_pids) {
-		synchronize_rcu();
+		synchronize_sched();
 		trace_free_pid_list(filtered_pids);
 	} else if (pid_list) {
 		/* Register a probe to set whether to ignore the tracing of a task */
