@@ -10006,6 +10006,7 @@ void hdd_adapter_feature_update_work_deinit(struct hdd_adapter *adapter)
 	hdd_exit();
 }
 
+#ifdef WLAN_DEBUG
 static uint8_t *convert_level_to_string(uint32_t level)
 {
 	switch (level) {
@@ -10077,6 +10078,7 @@ void wlan_hdd_display_tx_rx_histogram(struct hdd_context *hdd_ctx)
 				"HIGH" : "LOW");
 	}
 }
+#endif
 
 /**
  * wlan_hdd_clear_tx_rx_histogram() - clear tx rx histogram
@@ -10194,6 +10196,7 @@ hdd_display_netif_queue_history_compact(struct hdd_context *hdd_ctx)
 static void
 wlan_hdd_display_adapter_netif_queue_stats(struct hdd_adapter *adapter)
 {
+#ifdef WLAN_DEBUG
 	int i;
 	qdf_time_t total, pause, unpause, curr_time, delta;
 	struct hdd_netif_queue_history *q_hist_ptr;
@@ -10265,6 +10268,7 @@ wlan_hdd_display_adapter_netif_queue_stats(struct hdd_adapter *adapter)
 				   adapter->queue_oper_history[i].pause_map,
 				   q_status_buf);
 	}
+#endif
 }
 
 void
