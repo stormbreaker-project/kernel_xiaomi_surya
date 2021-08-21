@@ -354,7 +354,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	msg[0] = GF_NET_EVENT_IRQ;
 	sendnlmsg(msg);
 	if (gf_dev->device_available == 1) {
-		pr_info("%s:shedule_work\n", __func__);
+		pr_debug("%s:shedule_work\n", __func__);
 		gf_dev->wait_finger_down = false;
 		schedule_work(&gf_dev->work);
 	}
@@ -672,7 +672,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 
 	if (val != MSM_DRM_EVENT_BLANK && val != MSM_DRM_EARLY_EVENT_BLANK)
 		return 0;
-	pr_info("[info] %s go to the goodix_fb_state_chg_callbacking value = %d\n",
+	pr_debug("[info] %s go to the goodix_fb_state_chg_callbacking value = %d\n",
 			__func__, (int)val);
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 	if (evdata && evdata->data && val == MSM_DRM_EVENT_BLANK && gf_dev) {
