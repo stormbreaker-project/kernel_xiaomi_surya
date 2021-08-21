@@ -124,7 +124,7 @@ struct gf_key_map maps[] = {
 static void gf_enable_irq(struct gf_dev *gf_dev)
 {
 	if (gf_dev->irq_enabled) {
-		pr_warn("IRQ has been enabled.\n");
+		pr_info("IRQ has been enabled.\n");
 	} else {
 		enable_irq(gf_dev->irq);
 		gf_dev->irq_enabled = 1;
@@ -137,7 +137,7 @@ static void gf_disable_irq(struct gf_dev *gf_dev)
 		gf_dev->irq_enabled = 0;
 		disable_irq(gf_dev->irq);
 	} else {
-		pr_warn("IRQ has been disabled.\n");
+		pr_info("IRQ has been disabled.\n");
 	}
 }
 
@@ -331,7 +331,7 @@ static void nav_event_input(struct gf_dev *gf_dev, gf_nav_event_t nav_event)
 		break;
 
 	default:
-		pr_warn("%s unknown nav event: %d\n", __func__, nav_event);
+		pr_debug("%s unknown nav event: %d\n", __func__, nav_event);
 		break;
 	}
 
@@ -354,7 +354,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	msg[0] = GF_NET_EVENT_IRQ;
 	sendnlmsg(msg);
 	if (gf_dev->device_available == 1) {
-		pr_info("%s:shedule_work\n", __func__);
+		pr_debug("%s:shedule_work\n", __func__);
 		gf_dev->wait_finger_down = false;
 		schedule_work(&gf_dev->work);
 	}
@@ -521,7 +521,7 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		break;
 
 	default:
-		pr_warn("unsupport cmd:0x%x\n", cmd);
+		pr_debug("unsupport cmd:0x%x\n", cmd);
 		break;
 	}
 
@@ -550,7 +550,7 @@ static int gf_open(struct inode *inode, struct file *filp)
 
 	list_for_each_entry(gf_dev, &device_list, device_entry) {
 		if (gf_dev->devt == inode->i_rdev) {
-			pr_info("Found\n");
+			pr_debug("Found\n");
 			status = 0;
 			break;
 		}
@@ -561,7 +561,7 @@ static int gf_open(struct inode *inode, struct file *filp)
 			gf_dev->users++;
 			filp->private_data = gf_dev;
 			nonseekable_open(inode, filp);
-			pr_info("Succeed to open device. irq = %d\n",
+			pr_debug("Succeed to open device. irq = %d\n",
 					gf_dev->irq);
 			if (gf_dev->users == 1) {
 				status = gf_parse_dts(gf_dev);
@@ -596,7 +596,7 @@ static int proc_show_ver(struct seq_file *file, void *v)
 
 static int proc_open(struct inode *inode, struct file *file)
 {
-	pr_info("gf3258 proc_opening\n");
+	pr_debug("gf3258 proc_opening\n");
 	single_open(file, proc_show_ver, NULL);
 	return 0;
 }
@@ -608,7 +608,7 @@ static int gf_fasync(int fd, struct file *filp, int mode)
 	int ret;
 
 	ret = fasync_helper(fd, filp, mode, &gf_dev->async);
-	pr_info("ret = %d\n", ret);
+	pr_debug("ret = %d\n", ret);
 	return ret;
 }
 #endif
@@ -626,7 +626,7 @@ static int gf_release(struct inode *inode, struct file *filp)
 	gf_dev->users--;
 	if (!gf_dev->users) {
 
-		pr_info("disable_irq. irq = %d\n", gf_dev->irq);
+		pr_debug("disable_irq. irq = %d\n", gf_dev->irq);
 		//gf_disable_irq(gf_dev);
 		irq_cleanup(gf_dev);
 		gf_cleanup(gf_dev);
@@ -672,7 +672,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 
 	if (val != MSM_DRM_EVENT_BLANK && val != MSM_DRM_EARLY_EVENT_BLANK)
 		return 0;
-	pr_info("[info] %s go to the goodix_fb_state_chg_callbacking value = %d\n",
+	pr_debug("[info] %s go to the goodix_fb_state_chg_callbacking value = %d\n",
 			__func__, (int)val);
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 	if (evdata && evdata->data && val == MSM_DRM_EVENT_BLANK && gf_dev) {
@@ -783,7 +783,7 @@ static int gf_probe(struct platform_device *pdev)
 
 
 #ifdef AP_CONTROL_CLK
-	pr_info("Get the clk resource.\n");
+	pr_debug("Get the clk resource.\n");
 	/* Enable spi clock */
 	if (gfspi_ioctl_clk_init(gf_dev))
 		goto gfspi_probe_clk_init_failed;
@@ -805,7 +805,7 @@ static int gf_probe(struct platform_device *pdev)
 		pr_err("gf3258 Couldn't create proc entry!");
 		return -ENOMEM;
 	} else {
-		pr_err("gf3258 Create proc entry success!");
+		pr_info("gf3258 Create proc entry success!");
 	}
 
 	pr_info("version V%d.%d.%02d\n", VER_MAJOR, VER_MINOR, PATCH_LEVEL);
@@ -823,7 +823,7 @@ error_input:
 		input_free_device(gf_dev->input);
 error_dev:
 	if (gf_dev->devt != 0) {
-		pr_info("Err: status = %d\n", status);
+		pr_err("Err: status = %d\n", status);
 		mutex_lock(&device_list_lock);
 		list_del(&gf_dev->device_entry);
 		device_destroy(gf_class, gf_dev->devt);
@@ -921,7 +921,7 @@ static int __init gf_init(void)
 #ifdef GF_NETLINK_ENABLE
 	netlink_init();
 #endif
-	pr_info("status = 0x%x\n", status);
+	pr_debug("status = 0x%x\n", status);
 	return 0;
 }
 module_init(gf_init);
