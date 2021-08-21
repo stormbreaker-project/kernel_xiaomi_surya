@@ -77,7 +77,7 @@ static struct onewire_gpio_data *g_onewire_data;
 
 void Delay_us(unsigned int T)
 {
-	udelay(T);
+	mdelay(T / 100);
 }
 EXPORT_SYMBOL(Delay_us);
 
