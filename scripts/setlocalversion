@@ -45,7 +45,7 @@ scm_version()
 
 	# Check for git and a git repo.
 	if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
-	   head=`git rev-parse --verify --short HEAD 2>/dev/null`; then
+	   head=$(git rev-parse --verify HEAD 2>/dev/null); then
 
 		# Get branch name, get commit sha, leave.
 		if test "$CONFIG_LOCALVERSION_BRANCH_SHA" = "y"; then
@@ -65,6 +65,7 @@ scm_version()
 				echo "+"
 				return
 			fi
+
 			# Avoid asking git for tag as it could be extremely slow.
 			# We print -g{commitish}.
 			printf '%s%s' -g $head
