@@ -1,1 +1,0 @@
-../../../../../kernel/msm-4.14/drivers/pinctrl/core.h
