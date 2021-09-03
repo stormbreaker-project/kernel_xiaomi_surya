@@ -197,6 +197,7 @@ exports() {
 	then
 		KBUILD_COMPILER_STRING=$("$GCC64_DIR"/bin/aarch64-elf-gcc --version | head -n 1)
 		PATH=$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH
+		LD=aarch64-elf-ld.lld
 	fi
 
 	BOT_MSG_URL="https://api.telegram.org/bot$TOKEN/sendMessage"
@@ -205,7 +206,7 @@ exports() {
 
 	export KBUILD_BUILD_USER ARCH SUBARCH PATH \
 		KBUILD_COMPILER_STRING BOT_MSG_URL \
-		BOT_BUILD_URL PROCS
+		BOT_BUILD_URL PROCS LD
 }
 
 ##---------------------------------------------------------##
