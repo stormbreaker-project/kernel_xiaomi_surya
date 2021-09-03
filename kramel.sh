@@ -275,7 +275,8 @@ build_kernel() {
 	then
 		MAKE+=(
 			CROSS_COMPILE_ARM32=arm-eabi- \
-			CROSS_COMPILE=aarch64-elf-
+			CROSS_COMPILE=aarch64-elf- \
+			LD=aarch64-elf-ld.lld
 		)
 	fi
 	
