@@ -1,25 +1,24 @@
 git clone --depth=1 https://github.com/mvaisakh/gcc-arm64.git -b gcc-master gcc64
 git clone --depth=1 https://github.com/mvaisakh/gcc-arm.git -b gcc-master gcc32
-
-GCC64_DIR=$(pwd)/gcc64
-GCC32_DIR=$(pwd)/gcc32
-
 git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3.git -b surya
 
-export PATH=$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH
-export KBUILD_COMPILER_STRING=$("$GCC64_DIR"/bin/aarch64-elf-gcc --version | head -n 1)
-		PATH=$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH
 export TZ=Asia/Kolkata 
 IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz
 DTBO=$(pwd)/out/arch/arm64/boot/dtbo.img
 VERSION=X7-BETA
 TANGGAL=${VERSION}-$(date +"%d%m%H%M")
-START=$(date +"%s")BRANCH=$(git rev-parse --abbrev-ref HEAD)
+START=$(date +"%s")
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export ARCH=arm64
+export SUBARCH=arm64
 export KBUILD_BUILD_HOST="Forenche"
 export KBUILD_BUILD_USER="StormBreakerCI"
 export chat_id="-1001458890694"
 export DEF="surya-perf_defconfig"
+TC_DIR=${PWD}
+GCC64_DIR="${PWD}/gcc64"
+GCC32_DIR="${PWD}/gcc32"
+export PATH="$TC_DIR/bin/:$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH"
 BUILD_DTBO=1
 SIGN_BUILD=0
 
@@ -27,9 +26,11 @@ curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Buckle
 
    make O=out ARCH=arm64 $DEF
        make -j$(nproc --all) O=out \
-                        CROSS_COMPILE_ARM32=arm-eabi- \
-			CROSS_COMPILE=aarch64-elf- \
-			LD=aarch64-elf-ld.lld 2>&1 | tee build.log
+				ARCH=arm64 \
+				CROSS_COMPILE_ARM32=arm-eabi- \
+				CROSS_COMPILE=aarch64-elf- \
+				LD=aarch64-elf-ld.lld 2>&1 | tee build.log
+
 END=$(date +"%s")
 DIFF=$((END - START))
 
