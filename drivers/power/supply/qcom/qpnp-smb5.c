@@ -4271,7 +4271,6 @@ static int smb5_probe(struct platform_device *pdev)
 	#endif
 
 	device_init_wakeup(chg->dev, true);
-	schedule_delayed_work(&chg->reg_work, 30 * HZ);
 	lct_therm_lvl_reserved.intval= 0;
 	lct_therm_level.intval= 0;
 	lct_backlight_off = false;
