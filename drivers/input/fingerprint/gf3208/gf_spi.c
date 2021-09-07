@@ -70,6 +70,8 @@ static struct gf_dev gf;
 static int pid = -1;
 static struct sock *nl_sk = NULL;
 
+extern int fpsensor;
+
 static inline void sendnlmsg(char *message) {
 	struct sk_buff *skb_1;
 	struct nlmsghdr *nlh;
@@ -329,6 +331,8 @@ static struct platform_driver gf_driver = {
 };
 
 static inline int __init gf_init(void) {
+	if(fpsensor != 2)
+		return -1;
 	int status;
 	BUILD_BUG_ON(N_SPI_MINORS > 256);
 	status = register_chrdev(SPIDEV_MAJOR, CHRD_DRIVER_NAME, &gf_fops);
