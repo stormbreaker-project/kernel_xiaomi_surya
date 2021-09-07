@@ -400,7 +400,9 @@ static const struct clk_ops clk_rpmh_bcm_ops = {
 	.set_rate	= clk_rpmh_bcm_set_rate,
 	.round_rate	= clk_rpmh_round_rate,
 	.recalc_rate	= clk_rpmh_bcm_recalc_rate,
+#ifdef CONFIG_DEBUG_FS
 	.debug_init	= clk_debug_measure_add,
+#endif
 };
 
 /* Use awake state instead of active-only on RSCs that do not have an AMC. */

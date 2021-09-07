@@ -178,7 +178,9 @@ static int clk_osm_search_table(struct osm_entry *table, int entries, long rate)
 const struct clk_ops clk_ops_cpu_osm = {
 	.round_rate = clk_osm_round_rate,
 	.list_rate = clk_osm_list_rate,
+#ifdef CONFIG_DEBUG_FS
 	.debug_init = clk_debug_measure_add,
+#endif
 };
 
 static int clk_core_set_rate(struct clk_hw *hw, unsigned long rate,
@@ -274,7 +276,9 @@ const static struct clk_ops clk_ops_l3_osm = {
 	.list_rate = clk_osm_list_rate,
 	.recalc_rate = l3_clk_recalc_rate,
 	.set_rate = l3_clk_set_rate,
+#ifdef CONFIG_DEBUG_FS
 	.debug_init = clk_debug_measure_add,
+#endif
 };
 
 static struct clk_init_data osm_clks_init[] = {
