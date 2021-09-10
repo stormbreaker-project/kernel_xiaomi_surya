@@ -16,7 +16,7 @@
 #define arr_RND_SIZE 67             /* Size of Array.  Must be >= 64. (actual size used will be 64, anything greater is thrown away). Recommended prime.*/
 #define num_arr_RND  16             /* Number of 512b Array (Must be power of 2) */
 #define sDEVICE_NAME "srandom"      /* Dev name as it appears in /proc/devices */
-#define AppVERSION "1.38.0"
+#define AppVERSION "1.39.0"
 #define THREAD_SLEEP_VALUE 7        /* Amount of time worker thread should sleep between each operation. Recommended prime */
 #define PAID 0
 // #define DEBUG 0
@@ -676,4 +676,3 @@ module_exit(mod_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
-MODULE_SUPPORTED_DEVICE("/dev/srandom");
