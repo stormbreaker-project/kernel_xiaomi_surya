@@ -26,7 +26,6 @@
 #include <linux/hrtimer.h>
 #include <linux/ktime.h>
 #include <linux/tick.h>
-#include <linux/wakeup_reason.h>
 #include <linux/suspend.h>
 #include <linux/pm_qos.h>
 #include <linux/of_platform.h>
@@ -1441,7 +1440,6 @@ static void lpm_cpuidle_s2idle(struct cpuidle_device *dev,
 
 	if (s2idle_aborted) {
 		pr_err("Aborting s2idle suspend: too many iterations\n");
-		log_bad_wake_reason("s2idle soft watchdog");
 		pm_system_wakeup();
 		goto exit;
 	}
