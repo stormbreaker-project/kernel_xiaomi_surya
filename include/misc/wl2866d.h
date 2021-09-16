@@ -18,7 +18,7 @@
 #include <linux/atomic.h>
 #include <linux/regulator/consumer.h>
 
-#define WL2866D_DEBUG 1
+#define WL2866D_DEBUG 0
 
 #define VIN1_1P35_VOL_MIN   1350000
 #define VIN1_1P35_VOL_MAX   1350000
