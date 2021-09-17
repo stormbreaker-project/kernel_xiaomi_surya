@@ -1729,20 +1729,9 @@ void run_local_timers(void)
 	raise_softirq(TIMER_SOFTIRQ);
 }
 
-/*
- * Since schedule_timeout()'s timer is defined on the stack, it must store
- * the target task on the stack as well.
- */
-struct process_timer {
-	struct timer_list timer;
-	struct task_struct *task;
-};
-
-static void process_timeout(struct timer_list *t)
+static void process_timeout(unsigned long __data)
 {
-	struct process_timer *timeout = from_timer(timeout, t, timer);
-
-	wake_up_process(timeout->task);
+	wake_up_process((struct task_struct *)__data);
 }
 
 /**
@@ -1776,7 +1765,7 @@ static void process_timeout(struct timer_list *t)
  */
 signed long __sched schedule_timeout(signed long timeout)
 {
-	struct process_timer timer;
+	struct timer_list timer;
 	unsigned long expire;
 
 	switch (timeout)
@@ -1810,14 +1799,13 @@ signed long __sched schedule_timeout(signed long timeout)
 
 	expire = timeout + jiffies;
 
-	timer.task = current;
-	timer_setup_on_stack(&timer.timer, process_timeout, 0);
-	__mod_timer(&timer.timer, expire, false);
+	setup_timer_on_stack(&timer, process_timeout, (unsigned long)current);
+	__mod_timer(&timer, expire, false);
 	schedule();
-	del_singleshot_timer_sync(&timer.timer);
+	del_singleshot_timer_sync(&timer);
 
 	/* Remove the timer from the object tracker */
-	destroy_timer_on_stack(&timer.timer);
+	destroy_timer_on_stack(&timer);
 
 	timeout = expire - jiffies;
 
