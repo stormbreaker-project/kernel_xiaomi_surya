@@ -2519,12 +2519,8 @@ static void __qseecom_reentrancy_check_if_no_app_blocked(uint32_t smc_id)
 		/* thread sleep until this app unblocked */
 		while (qseecom.app_block_ref_cnt > 0) {
 			mutex_unlock(&app_access_lock);
-			do {
-				if (!wait_event_interruptible(
-					qseecom.app_block_wq,
-					(qseecom.app_block_ref_cnt == 0)))
-					break;
-			} while (1);
+			wait_event_interruptible(qseecom.app_block_wq,
+				(!qseecom.app_block_ref_cnt));
 			mutex_lock(&app_access_lock);
 		}
 	}
@@ -2543,13 +2539,9 @@ static void __qseecom_reentrancy_check_if_this_app_blocked(
 		while (ptr_app->app_blocked || qseecom.app_block_ref_cnt > 1) {
 			/* thread sleep until this app unblocked */
 			mutex_unlock(&app_access_lock);
-			do {
-				if (!wait_event_interruptible(
-					qseecom.app_block_wq,
-					(!ptr_app->app_blocked &&
-					qseecom.app_block_ref_cnt <= 1)))
-					break;
-			} while (1);
+			wait_event_interruptible(qseecom.app_block_wq,
+				(!ptr_app->app_blocked &&
+				qseecom.app_block_ref_cnt <= 1));
 			mutex_lock(&app_access_lock);
 		}
 		ptr_app->check_block--;
