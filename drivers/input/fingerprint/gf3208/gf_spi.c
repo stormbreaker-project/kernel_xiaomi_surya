@@ -25,6 +25,7 @@
 #include <linux/ioctl.h>
 #include <linux/irq.h>
 #include <linux/list.h>
+#include <linux/mutex.h>
 #include <linux/module.h>
 #include <linux/msm_drm_notify.h>
 #include <linux/notifier.h>
@@ -68,6 +69,7 @@ struct gf_dev {
 static int SPIDEV_MAJOR;
 static DECLARE_BITMAP(minors, N_SPI_MINORS);
 static LIST_HEAD(device_list);
+static DEFINE_MUTEX(device_list_lock);
 static struct gf_dev gf;
 
 static int pid = -1;
@@ -214,6 +216,7 @@ static inline long gf_ioctl(struct file *filp, unsigned int cmd,
 static inline int gf_open(struct inode *inode, struct file *filp) {
 	struct gf_dev *gf_dev = &gf;
 	int status = -ENXIO;
+	mutex_lock(&device_list_lock);
 	list_for_each_entry(gf_dev, &device_list, device_entry) {
 		if (gf_dev->devt == inode->i_rdev) {
 			status = 0;
@@ -226,8 +229,10 @@ static inline int gf_open(struct inode *inode, struct file *filp) {
 		nonseekable_open(inode, filp);
 		if (gf_dev->users == 1) {
 			status = gf_parse_dts(gf_dev);
-			if (status)
+			if (status) {
+				mutex_unlock(&device_list_lock);
 				return status;
+			}
 			status = irq_setup(gf_dev);
 			if (status)
 				gf_cleanup(gf_dev);
@@ -238,12 +243,14 @@ static inline int gf_open(struct inode *inode, struct file *filp) {
 		gpio_set_value(gf_dev->reset_gpio, 1);
 		mdelay(3);
 	}
+	mutex_unlock(&device_list_lock);
 	return status;
 }
 
 static inline int gf_release(struct inode *inode, struct file *filp) {
 	struct gf_dev *gf_dev = &gf;
 	int status = 0;
+	mutex_lock(&device_list_lock);
 	gf_dev = filp->private_data;
 	filp->private_data = NULL;
 	gf_dev->users--;
@@ -251,6 +258,7 @@ static inline int gf_release(struct inode *inode, struct file *filp) {
 		irq_cleanup(gf_dev);
 		gf_cleanup(gf_dev);
 	}
+	mutex_unlock(&device_list_lock);
 	return status;
 }
 
@@ -305,6 +313,7 @@ static inline int gf_probe(struct platform_device *pdev) {
 	gf_dev->spi = pdev;
 	gf_dev->irq_gpio = -EINVAL;
 	gf_dev->reset_gpio = -EINVAL;
+	mutex_lock(&device_list_lock);
 	minor = find_first_zero_bit(minors, N_SPI_MINORS);
 	if (minor < N_SPI_MINORS) {
 		struct device *dev;
@@ -314,6 +323,7 @@ static inline int gf_probe(struct platform_device *pdev) {
 		status = IS_ERR(dev) ? PTR_ERR(dev) : 0;
 	} else {
 		status = -ENODEV;
+		mutex_unlock(&device_list_lock);
 		return status;
 	}
 	if (status == 0) {
@@ -323,6 +333,7 @@ static inline int gf_probe(struct platform_device *pdev) {
 		gf_dev->devt = 0;
 		return status;
 	}
+	mutex_unlock(&device_list_lock);
 	gf_dev->input = input_allocate_device();
 	if (gf_dev->input == NULL) {
 		status = -ENOMEM;
@@ -333,9 +344,11 @@ static inline int gf_probe(struct platform_device *pdev) {
 	status = input_register_device(gf_dev->input);
 	if (status) {
 		if (gf_dev->devt != 0) {
+			mutex_lock(&device_list_lock);
 			list_del(&gf_dev->device_entry);
 			device_destroy(gf_class, gf_dev->devt);
 			clear_bit(MINOR(gf_dev->devt), minors);
+			mutex_unlock(&device_list_lock);
 		}
 	}
 	msm_drm_register_client(&gf_notifier);
@@ -347,10 +360,12 @@ static inline int gf_remove(struct platform_device *pdev) {
 	if (gf_dev->input)
 		input_unregister_device(gf_dev->input);
 	input_free_device(gf_dev->input);
+	mutex_lock(&device_list_lock);
 	list_del(&gf_dev->device_entry);
 	device_destroy(gf_class, gf_dev->devt);
 	clear_bit(MINOR(gf_dev->devt), minors);
 	msm_drm_unregister_client(&gf_notifier);
+	mutex_unlock(&device_list_lock);
 	return 0;
 }
 
