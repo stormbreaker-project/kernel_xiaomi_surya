@@ -132,7 +132,7 @@ short Read_RomID(unsigned char *RomID)
 
 	//ds_dbg("Ready to write 0x33 to maxim IC!\n");
 	write_byte(CMD_READ_ROM);
-	Delay_us(10);
+	udelay(10);
 	for (i = 0; i < 8; i++)
 		RomID[i] = read_byte();
 
@@ -235,7 +235,7 @@ unsigned char *read_buf, int *read_len, int write_len)
 	// check for strong pull-up
 	if (delay_ms > 0) {
 		write_byte(CMD_RELEASE_BYTE);
-		Delay_us(1000*delay_ms);
+		mdelay(delay_ms);
 	}
 
 	read_byte();
@@ -358,7 +358,7 @@ void DS28E16_cmd_romid_pre(void)
 		read_byte();
 
 	write_byte(CMD_RELEASE_BYTE);
-		Delay_us(1000*DELAY_DS28E16_EE_READ*tm);
+		mdelay(DELAY_DS28E16_EE_READ*tm);
 
 	//discard 11 bytes to get romid
 	for (i = 0; i < 11; i++)
@@ -1389,7 +1389,7 @@ struct device_attribute *attr, char *buf)
 		} else {
 			ds_log("Read_RomID fail!\n");
 		}
-		Delay_us(1000);
+		mdelay(1);
 	}
 
 	/*ds_dbg("RomID = %02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x\n",
@@ -1447,7 +1447,7 @@ struct device_attribute *attr, char *buf)
 		pagedata[4], pagedata[5], pagedata[6], pagedata[7],
 		pagedata[8], pagedata[9], pagedata[10], pagedata[11],
 		pagedata[12], pagedata[13], pagedata[14], pagedata[15]);
-		Delay_us(1000);
+		mdelay(1);
 	}
 	ds_log("test done\nsuccess time : %d\n", count);
 	return scnprintf(buf, PAGE_SIZE,
@@ -1668,7 +1668,7 @@ struct device_attribute *attr, char *buf)
 		status[4], status[5], status[6], status[7],
 		status[8], status[9], status[10], status[11],
 		status[12], status[13], status[14], status[15]);
-		Delay_us(1000);
+		mdelay(1);
 	}
 	ds_log("test done\nsuccess time : %d\n", count);
 	return scnprintf(buf, PAGE_SIZE,
