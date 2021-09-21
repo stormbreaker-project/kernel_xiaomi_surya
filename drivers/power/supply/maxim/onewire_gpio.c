@@ -113,22 +113,19 @@ unsigned char read_bit(void)
 
 	ONE_WIRE_CONFIG_OUT;
 	ONE_WIRE_OUT_LOW;
-	//Delay_us(1);////
-	//Delay_ns(400);
+	Delay_us(1);
 	ONE_WIRE_CONFIG_IN;
-	//Delay_ns(500);//
+	Delay_ns(500);
 	vamm = readl_relaxed(g_onewire_data->gpio_in_out_reg); // Read
-	Delay_us(15);
-	//ONE_WIRE_OUT_HIGH;
-	//ONE_WIRE_CONFIG_OUT;
-        //ONE_WIRE_OUT_HIGH;
-	//Delay_us(6);
+	Delay_us(5);
+	ONE_WIRE_OUT_HIGH;
+	ONE_WIRE_CONFIG_OUT;
+	Delay_us(6);
 	return((unsigned char)vamm & 0x01);
 }
 
 void write_bit(char bitval)
 {
-	ONE_WIRE_CONFIG_OUT;
 	ONE_WIRE_OUT_LOW;
 	Delay_us(1);//
 	if (bitval != 0)
