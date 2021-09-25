@@ -10,6 +10,9 @@
  * GNU General Public License for more details.
  *
  */
+#ifndef CONFIG_DEBUG_FS
+#define CREATE_TRACE_POINTS
+#endif
 
 #include <linux/debugfs.h>
 #include <linux/dma-mapping.h>
