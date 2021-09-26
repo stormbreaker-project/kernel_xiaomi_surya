@@ -1,0 +1,20 @@
+version: 2.1
+jobs:
+  compile:
+   docker:
+      - image: archlinux:base-devel
+   steps:
+      - run:
+          command: |
+           pacman -Syu --needed --noconfirm wget base-devel xmlto inetutils bc cpio python-sphinx python-sphinx_rtd_theme graphviz imagemagick git python2 python zip xxd
+           git clone --depth=1 https://github.com/stormbreaker-project/kernel_xiaomi_surya -b staging/main .
+           git config --global user.name "Forenche"
+           git config --global user.email "prahul2003@gmail.com"
+           git config --global color.ui false
+           curl -fsSL "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" | bsdtar -C / -xvf -
+           bash kramel.sh
+workflows:
+  version: 2.1
+  cooking:
+    jobs:
+      - compile
