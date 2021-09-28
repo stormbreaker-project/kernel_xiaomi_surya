@@ -551,6 +551,18 @@ static int fpc1020_request_named_gpio(struct fpc1020_data *fpc1020,
 	return 0;
 }
 
+static void set_fingerprintd_nice(int nice)
+{
+	struct task_struct *p;
+
+	read_lock(&tasklist_lock);
+	for_each_process(p) {
+		if (strstr(p->comm, "erprint"))
+			set_user_nice(p, nice);
+	}
+	read_unlock(&tasklist_lock);
+}
+
 static int fpc_fb_notif_callback(struct notifier_block *nb,
 		unsigned long val, void *data)
 {
@@ -571,11 +583,13 @@ static int fpc_fb_notif_callback(struct notifier_block *nb,
     if (evdata && evdata->data && val == MSM_DRM_EVENT_BLANK) {
 		blank = evdata->data;
 		if (*blank == MSM_DRM_BLANK_UNBLANK) {
+			set_fingerprintd_nice(0);
 			fpc1020->fb_black = false;
 		}
 	} else if (evdata && evdata->data && val == MSM_DRM_EARLY_EVENT_BLANK) {
 		blank = evdata->data;
 		if (*blank == MSM_DRM_BLANK_POWERDOWN) {
+			set_fingerprintd_nice(MIN_NICE);
 			fpc1020->fb_black = true;
 		}
 	}
