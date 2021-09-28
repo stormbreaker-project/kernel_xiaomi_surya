@@ -22,7 +22,6 @@ struct system_pm_ops {
 
 #if defined(CONFIG_MSM_PM) || defined(CONFIG_MSM_PM_LEGACY)
 uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops);
-void lpm_cluster_use_deepest_state(bool enable);
 #else
 static inline uint32_t register_system_pm_ops(struct system_pm_ops *pm_ops)
 { return -ENODEV; }
