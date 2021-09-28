@@ -3715,7 +3715,7 @@ static int fastrpc_internal_control(struct fastrpc_file *fl,
 		for (i = 0; i < len; i++)
 			cpumask_set_cpu(me->silvercores.coreno[i], &mask);
 		fl->pm_qos_req.type = PM_QOS_REQ_AFFINE_CORES;
-		cpumask_copy(&fl->pm_qos_req.cpus_affine, &mask);
+		atomic_set(&fl->pm_qos_req.cpus_affine, *cpumask_bits(&mask));
 
 		mutex_lock(&fl->pm_qos_mutex);
 		if (!fl->qos_request) {
