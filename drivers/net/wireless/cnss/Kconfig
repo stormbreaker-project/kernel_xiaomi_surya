@@ -86,7 +86,6 @@ config CLD_HL_SDIO_CORE
 
 config CLD_LL_CORE
 	tristate "Qualcomm Technologies Inc. Core wlan driver"
-	select NL80211_TESTMODE
 	select WEXT_CORE
 	select WEXT_PRIV
 	select WEXT_SPY
