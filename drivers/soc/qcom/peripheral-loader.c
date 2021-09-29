@@ -41,8 +41,6 @@
 
 #include <linux/uaccess.h>
 #include <asm/setup.h>
-#define CREATE_TRACE_POINTS
-#include <trace/events/trace_msm_pil_event.h>
 
 #include "peripheral-loader.h"
 
@@ -64,10 +62,6 @@
 
 #define pil_log(msg, desc)	\
 	do {			\
-		if (pil_ipc_log)		\
-			pil_ipc("[%s]: %s", desc->name, msg); \
-		else		\
-			trace_pil_event(msg, desc);	\
 	} while (0)
 
 

@@ -20,7 +20,6 @@
 #include <soc/qcom/cmd-db.h>
 #include <soc/qcom/rpmh.h>
 #include <soc/qcom/tcs.h>
-#include <trace/events/trace_msm_bus.h>
 #include <dt-bindings/msm/msm-bus-ids.h>
 #include "msm_bus_core.h"
 #include "msm_bus_rpmh.h"
