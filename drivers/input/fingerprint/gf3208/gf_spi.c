@@ -477,12 +477,10 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	case GF_IOC_ENABLE_POWER:
 		pr_debug("%s GF_IOC_ENABLE_POWER\n", __func__);
-		gf_power_on(gf_dev);
 		break;
 
 	case GF_IOC_DISABLE_POWER:
 		pr_debug("%s GF_IOC_DISABLE_POWER\n", __func__);
-		gf_power_off(gf_dev);
 		break;
 
 	case GF_IOC_ENTER_SLEEP_MODE:
@@ -632,7 +630,6 @@ static int gf_release(struct inode *inode, struct file *filp)
 		gf_cleanup(gf_dev);
 		/*power off the sensor*/
 		gf_dev->device_available = 0;
-		gf_power_off(gf_dev);
 	}
 	mutex_unlock(&device_list_lock);
 	return status;
