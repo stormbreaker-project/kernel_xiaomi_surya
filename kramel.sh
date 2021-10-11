@@ -52,7 +52,7 @@ Latest Commit: <code>$(git log --pretty=format:'%h : %s' -1)</code>
 #curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Flash now else bun" -d chat_id=${chat_id} -d parse_mode=HTML
 
 cp $(pwd)/out/arch/arm64/boot/Image.gz $(pwd)/AnyKernel3
-cp $(pwd)/out/arch/arm64/boot/dts/qcom/*.dtb $(pwd)/AnyKernel3/dtb
+cp $(pwd)/out/arch/arm64/boot/dtb.img $(pwd)/AnyKernel3/dtb.img
 
         if [ -f ${DTBO} ]
         then
