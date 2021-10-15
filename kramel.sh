@@ -5,10 +5,10 @@ git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3.git -b su
 export TZ=Asia/Kolkata 
 IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz
 DTBO=$(pwd)/out/arch/arm64/boot/dtbo.img
-VERSION=X9-BETA
 TANGGAL=${VERSION}-$(date +"%d%m%H%M")
 START=$(date +"%s")
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+export VERSION=X9-BETA
 export ARCH=arm64
 export SUBARCH=arm64
 export KBUILD_BUILD_HOST="Forenche"
@@ -60,7 +60,7 @@ cp $(pwd)/out/arch/arm64/boot/dtb.img $(pwd)/AnyKernel3/dtb.img
         fi
 
         cd AnyKernel3
-        zip -r9 StormBreaker-surya-${TANGGAL}.zip * --exclude *.jar
+        make normal
 
         if [ SIGN_BUILD = 1 ]
         then
