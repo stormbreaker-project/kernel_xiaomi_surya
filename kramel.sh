@@ -61,6 +61,7 @@ cp $(pwd)/out/arch/arm64/boot/dtb.img $(pwd)/AnyKernel3/dtb.img
 
         cd AnyKernel3
         make normal
+        ZIP_FINAL=$(echo *.zip)
 
         if [ SIGN_BUILD = 1 ]
         then
@@ -76,7 +77,7 @@ cp $(pwd)/out/arch/arm64/boot/dtb.img $(pwd)/AnyKernel3/dtb.img
 
         curl -F chat_id="${chat_id}"  \
                     -F caption="sha1sum: $(sha1sum Storm*.zip | awk '{ print $1 }')" \
-                    -F document=@"$(pwd)/StormBreaker-surya-${TANGGAL}.zip" \
+                    -F document=@"$ZIP_FINAL" \
                     https://api.telegram.org/bot${TOKEN}/sendDocument
 	fi
 
