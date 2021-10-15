@@ -37,7 +37,6 @@
 		qcom,mdss-pan-physical-height-dimension = <154>;
 		qcom,cont-splash-enabled;
 		qcom,mdss-dsi-tx-eot-append;
-		qcom,dispparam-enabled;
 		qcom,mdss-dsi-panel-hdr-enabled;
 		qcom,mdss-dsi-panel-hdr-color-primaries = <14500 15500 32000
 			17000 15500 30000 8000 3000>;
@@ -263,23 +262,6 @@
 				qcom,mdss-dsi-hbm1-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-hbm2-on-command-state = "dsi_lp_mode";
 				qcom,mdss-dsi-dispparam-hbm-off-command-state = "dsi_lp_mode";
-
-
-
-
-				//delay dimming on
-				qcom,mdss-dsi-dispparam-dimmingon-command = [15 01 00 00 01 00 02 53 2C];
-				qcom,mdss-dsi-dispparam-dimmingon-command-state = "dsi_lp_mode";
-				qcom,mdss-dsi-dispparam-dimmingoff-command = [15 01 00 00 01 00 02 53 24];
-				qcom,mdss-dsi-dispparam-dimmingoff-command-state = "dsi_lp_mode";
-
-				//coordinate
-				qcom,mdss-dsi-panel-xy-coordinate = <0x0F 0x18>;
-				qcom,mdss-dsi-dispparam-xy-coordinate-command = [
-					15 01 00 00 00 00 02 FF 10
-					06 01 00 01 00 00 01 A1
-				];
-				qcom,mdss-dsi-dispparam-xy-coordinate-command-state = "dsi_hs_mode";
 
 				qcom,compression-mode = "dsc";
 				qcom,mdss-dsc-version = <0x11>;
