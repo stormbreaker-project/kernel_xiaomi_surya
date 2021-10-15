@@ -538,7 +538,7 @@ static long gf_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long a
  static void notification_work(struct work_struct *work)
 {
 	pr_debug("%s unblank\n", __func__);
-	//dsi_bridge_interface_enable(FP_UNLOCK_REJECTION_TIMEOUT);
+	dsi_bridge_interface_enable(FP_UNLOCK_REJECTION_TIMEOUT);
 }
 
 static int gf_open(struct inode *inode, struct file *filp)
@@ -689,7 +689,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 	if (evdata && evdata->data && val == MSM_DRM_EVENT_BLANK && gf_dev) {
 		blank = evdata->data;
-		if (gf_dev->device_available == 1 && *blank == MSM_DRM_BLANK_UNBLANK) {
+		if (*blank == MSM_DRM_BLANK_UNBLANK) {
 				set_fingerprintd_nice(0);
 				gf_dev->fb_black = 0;
 #if defined(GF_NETLINK_ENABLE)
@@ -703,7 +703,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 
 	}else if(evdata && evdata->data && val == MSM_DRM_EARLY_EVENT_BLANK && gf_dev){
 		blank = evdata->data;
-			if (gf_dev->device_available == 1 && *blank == MSM_DRM_BLANK_POWERDOWN) {
+			if (*blank == MSM_DRM_BLANK_POWERDOWN) {
 				set_fingerprintd_nice(MIN_NICE);
 				gf_dev->fb_black = 1;
 				gf_dev->wait_finger_down = true;
