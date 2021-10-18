@@ -1322,7 +1322,7 @@ void sde_rotator_pm_qos_add(struct sde_rot_data_type *rot_mdata)
 
 	req = &rot_mdata->pm_qos_rot_cpu_req;
 	req->type = PM_QOS_REQ_AFFINE_CORES;
-	atomic_set(&req->cpus_affine, cpu_mask);
+	req->cpus_affine = cpu_mask;
 	pm_qos_add_request(req, PM_QOS_CPU_DMA_LATENCY,
 		PM_QOS_DEFAULT_VALUE);
 
