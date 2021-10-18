@@ -57,7 +57,10 @@
 };
 
 &pm6150l_wled {
+	qcom,fs-current-limit = <25000>;
 	qcom,string-cfg=<7>;
+	qcom,en-cabc;
+	qcom,cabc-sel = <1>;
 	status = "ok";
 };
 
@@ -109,8 +112,7 @@
                 In the code, GPIO22 is used to replace GPIO94
                 qcom,nq-esepwr = <&tlmm 94 0x00>;
                 */
-                qcom,nq-esepwr = <&tlmm 22 0x00>;
-		interrupt-parent = <&tlmm>;
+                interrupt-parent = <&tlmm>;
 		interrupts = <37 0>;
 		interrupt-names = "nfc_irq";
 		pinctrl-names = "nfc_active", "nfc_suspend";

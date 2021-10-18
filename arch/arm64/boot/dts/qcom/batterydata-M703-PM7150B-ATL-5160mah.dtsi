@@ -22,6 +22,7 @@
 	qcom,battery-therm-kohm = <100>;
 	qcom,battery-type = "m703-pm7150b-atl-5160mah";
 	qcom,qg-batt-profile-ver = <100>;
+	qcom,oem-batt-profile-ver = <5>;
 	mi,six-pin-battery;
 
 	qcom,jeita-fcc-ranges = <(-100)  0   450000

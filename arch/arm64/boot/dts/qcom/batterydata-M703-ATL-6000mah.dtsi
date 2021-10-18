@@ -21,6 +21,7 @@ qcom,m703-atl-6000mah {
 	qcom,battery-therm-kohm = <100>;
 	qcom,battery-type = "m703-atl-6000mah";
 	qcom,qg-batt-profile-ver = <100>;
+	qcom,oem-batt-profile-ver = <6>;
 	mi,six-pin-battery;
 
 	qcom,jeita-fcc-ranges = <(-100)  0   580000
