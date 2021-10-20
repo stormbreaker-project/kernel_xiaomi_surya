@@ -31,6 +31,9 @@ curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Buckle
 				ARCH=arm64 \
 				CROSS_COMPILE_ARM32=arm-eabi- \
 				CROSS_COMPILE=aarch64-elf- \
+				AR=llvm-ar \
+				NM=llvm-nm \
+				OBJCOPY=llvm-objcopy \
 				LD=aarch64-elf-ld.lld 2>&1 | tee build.log
 
 END=$(date +"%s")
