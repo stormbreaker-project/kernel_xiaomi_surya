@@ -3390,6 +3390,9 @@ else
 	ccflags-y += -DWLAN_HOST_ARCH_ARM=1
 endif
 
+ccflags-y += $(call cc-option, -g0)
+ccflags-y += $(call cc-option, -O2)
+
 # inject some build related information
 ifeq ($(CONFIG_BUILD_TAG), y)
 CLD_CHECKOUT = $(shell cd "$(WLAN_ROOT)" && \
