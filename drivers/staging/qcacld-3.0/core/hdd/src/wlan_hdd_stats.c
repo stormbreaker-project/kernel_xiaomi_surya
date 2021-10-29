@@ -175,6 +175,61 @@ static int rssi_mcs_tbl[][12] = {
 	{-76, -73, -71, -68, -64, -60, -59, -58, -53, -51, -46, -42}   /* 80 */
 };
 
+#ifdef WLAN_FEATURE_WMI_SEND_RECV_QMI
+/**
+ * wlan_hdd_qmi_get_sync_resume() - Get operation to trigger RTPM
+ * sync resume without WoW exit
+ * @hdd_ctx: hdd context
+ * @dev: device context
+ *
+ * Returns: 0 for success, non-zero for failure
+ */
+static inline
+int wlan_hdd_qmi_get_sync_resume(struct hdd_context *hdd_ctx,
+				 struct device *dev)
+{
+	if (!hdd_ctx->config->is_qmi_stats_enabled) {
+		hdd_debug("periodic stats over qmi is disabled");
+		return 0;
+	}
+
+	return pld_qmi_send_get(dev);
+}
+
+/**
+ * wlan_hdd_qmi_put_suspend() - Put operation to trigger RTPM suspend
+ * without WoW entry
+ * @hdd_ctx: hdd context
+ * @dev: device context
+ *
+ * Returns: 0 for success, non-zero for failure
+ */
+static inline
+int wlan_hdd_qmi_put_suspend(struct hdd_context *hdd_ctx,
+			     struct device *dev)
+{
+	if (!hdd_ctx->config->is_qmi_stats_enabled) {
+		hdd_debug("periodic stats over qmi is disabled");
+		return 0;
+	}
+
+	return pld_qmi_send_put(dev);
+}
+#else
+static inline
+int wlan_hdd_qmi_get_sync_resume(struct hdd_context *hdd_ctx,
+				 struct device *dev)
+{
+	return 0;
+}
+
+static inline int wlan_hdd_qmi_put_suspend(struct hdd_context *hdd_ctx,
+					   struct device *dev)
+{
+	return 0;
+}
+#endif /* end if of WLAN_FEATURE_WMI_SEND_RECV_QMI */
+
 #ifdef WLAN_FEATURE_LINK_LAYER_STATS
 
 /**
@@ -1746,61 +1801,6 @@ __wlan_hdd_cfg80211_ll_stats_get(struct wiphy *wiphy,
 	hdd_exit();
 	return 0;
 }
-
-#ifdef WLAN_FEATURE_WMI_SEND_RECV_QMI
-/**
- * wlan_hdd_qmi_get_sync_resume() - Get operation to trigger RTPM
- * sync resume without WoW exit
- * @hdd_ctx: hdd context
- * @dev: device context
- *
- * Returns: 0 for success, non-zero for failure
- */
-static inline
-int wlan_hdd_qmi_get_sync_resume(struct hdd_context *hdd_ctx,
-				 struct device *dev)
-{
-	if (!hdd_ctx->config->is_qmi_stats_enabled) {
-		hdd_debug("periodic stats over qmi is disabled");
-		return 0;
-	}
-
-	return pld_qmi_send_get(dev);
-}
-
-/**
- * wlan_hdd_qmi_put_suspend() - Put operation to trigger RTPM suspend
- * without WoW entry
- * @hdd_ctx: hdd context
- * @dev: device context
- *
- * Returns: 0 for success, non-zero for failure
- */
-static inline
-int wlan_hdd_qmi_put_suspend(struct hdd_context *hdd_ctx,
-			     struct device *dev)
-{
-	if (!hdd_ctx->config->is_qmi_stats_enabled) {
-		hdd_debug("periodic stats over qmi is disabled");
-		return 0;
-	}
-
-	return pld_qmi_send_put(dev);
-}
-#else
-static inline
-int wlan_hdd_qmi_get_sync_resume(struct hdd_context *hdd_ctx,
-				 struct device *dev)
-{
-	return 0;
-}
-
-static inline int wlan_hdd_qmi_put_suspend(struct hdd_context *hdd_ctx,
-					   struct device *dev)
-{
-	return 0;
-}
-#endif /* end if of WLAN_FEATURE_WMI_SEND_RECV_QMI */
 
 /**
  * wlan_hdd_cfg80211_ll_stats_get() - get ll stats

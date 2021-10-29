@@ -285,5 +285,19 @@ static inline QDF_STATUS ucfg_mc_cp_stats_get_vdev_wake_lock_stats(
 {
 	return QDF_STATUS_SUCCESS;
 }
+
+static inline QDF_STATUS ucfg_mc_cp_stats_write_wow_stats(
+				struct wlan_objmgr_psoc *psoc,
+				char *buffer, uint16_t max_len, int *ret)
+{
+	return QDF_STATUS_SUCCESS;
+}
+
+static inline QDF_STATUS ucfg_mc_cp_stats_cca_stats_get(struct wlan_objmgr_vdev *vdev,
+					  struct cca_stats *cca_stats)
+{
+	return QDF_STATUS_SUCCESS;
+}
+
 #endif /* QCA_SUPPORT_CP_STATS */
 #endif /* __WLAN_CP_STATS_MC_UCFG_API_H__ */
