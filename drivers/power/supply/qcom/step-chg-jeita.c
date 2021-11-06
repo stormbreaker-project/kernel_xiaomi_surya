@@ -276,7 +276,7 @@ static int get_step_chg_jeita_setting_from_profile(struct step_chg_info *chip)
 		return -EBUSY;
 	}
 
-	pr_err("longcheer get battery type: %s\n", prop.strval);
+	pr_info("longcheer get battery type: %s\n", prop.strval);
 
 	if ((strcmp(prop.strval, DEFAULT_BATT_TYPE) == 0)
 		|| (strcmp(prop.strval, MISSING_BATT_TYPE) == 0)
