@@ -150,22 +150,6 @@ static int dma_buf_file_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static int dma_buf_file_release(struct inode *inode, struct file *file)
-{
-	struct dma_buf *dmabuf;
-
-	if (!is_dma_buf_file(file))
-		return -EINVAL;
-
-	dmabuf = file->private_data;
-
-	mutex_lock(&db_list.lock);
-	list_del(&dmabuf->list_node);
-	mutex_unlock(&db_list.lock);
-
-	return 0;
-}
-
 static const struct dentry_operations dma_buf_dentry_ops = {
 	.d_dname = dmabuffs_dname,
 	.d_release = dma_buf_release,
