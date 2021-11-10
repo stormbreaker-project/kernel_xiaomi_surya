@@ -1,0 +1,22 @@
+--- 
+clone: 
+  depth: 1
+kind: pipeline
+name: Surya_kramel
+steps: 
+  - 
+    commands: 
+      - "curl -fsSL \"https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst\" | bsdtar -C / -xvf -"
+      - "pacman -Syu --needed --noconfirm wget base-devel xmlto inetutils bc cpio python-sphinx python-sphinx_rtd_theme graphviz imagemagick git python2 python zip unzip dpkg"
+      - "wget http://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libtinfo6_6.2+20201114-2build1_amd64.deb -O libtinfo6.deb && dpkg-deb -R libtinfo6.deb libtinfo && cp libtinfo/lib/x86_64-linux-gnu/libtinfo.so.6.2 /usr/lib/libtinfo.so.6"
+      - "export token=$TOKEN"
+      - "bash kramel.sh"
+    environment: 
+      TOKEN: 
+        from_secret: token
+    image: "archlinux:base-devel"
+    name: setup&kramel
+
+trigger:
+  event:
+  - custom
