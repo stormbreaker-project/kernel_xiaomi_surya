@@ -1463,7 +1463,9 @@ const struct clk_ops clk_pll_sleep_vote_ops = {
 	.enable = clk_enable_regmap,
 	.disable = clk_disable_regmap,
 	.list_registers = clk_alpha_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL(clk_pll_sleep_vote_ops);
 
@@ -1475,7 +1477,9 @@ const struct clk_ops clk_alpha_pll_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_alpha_pll_set_rate,
 	.list_registers = clk_alpha_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_alpha_pll_ops);
 
@@ -1487,7 +1491,9 @@ const struct clk_ops clk_alpha_pll_hwfsm_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_alpha_pll_set_rate,
 	.list_registers = clk_alpha_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_alpha_pll_hwfsm_ops);
 
@@ -1500,7 +1506,9 @@ const struct clk_ops clk_trion_pll_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_trion_pll_set_rate,
 	.list_registers = clk_trion_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_trion_pll_ops);
 
@@ -1511,7 +1519,9 @@ const struct clk_ops clk_trion_fixed_pll_ops = {
 	.recalc_rate = clk_trion_pll_recalc_rate,
 	.round_rate = clk_alpha_pll_round_rate,
 	.list_registers = clk_trion_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_trion_fixed_pll_ops);
 
@@ -1523,7 +1533,9 @@ const struct clk_ops clk_regera_pll_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_regera_pll_set_rate,
 	.list_registers = clk_regera_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_regera_pll_ops);
 
@@ -1631,7 +1643,9 @@ const struct clk_ops clk_alpha_pll_postdiv_ops = {
 	.recalc_rate = clk_alpha_pll_postdiv_recalc_rate,
 	.round_rate = clk_alpha_pll_postdiv_round_rate,
 	.set_rate = clk_alpha_pll_postdiv_set_rate,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_alpha_pll_postdiv_ops);
 
@@ -1713,7 +1727,9 @@ const struct clk_ops clk_trion_pll_postdiv_ops = {
 	.recalc_rate = clk_trion_pll_postdiv_recalc_rate,
 	.round_rate = clk_trion_pll_postdiv_round_rate,
 	.set_rate = clk_trion_pll_postdiv_set_rate,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL_GPL(clk_trion_pll_postdiv_ops);
 
@@ -2000,7 +2016,9 @@ const struct clk_ops clk_alpha_pll_slew_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_alpha_pll_slew_set_rate,
 	.list_registers = clk_alpha_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL(clk_alpha_pll_slew_ops);
 
@@ -2406,7 +2424,9 @@ const struct clk_ops clk_fabia_pll_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_fabia_pll_set_rate,
 	.list_registers = clk_fabia_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL(clk_fabia_pll_ops);
 
@@ -2417,7 +2437,9 @@ const struct clk_ops clk_fabia_fixed_pll_ops = {
 	.recalc_rate = clk_fabia_pll_recalc_rate,
 	.round_rate = clk_alpha_pll_round_rate,
 	.list_registers = clk_fabia_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL(clk_fabia_fixed_pll_ops);
 
@@ -2499,7 +2521,9 @@ const struct clk_ops clk_generic_pll_postdiv_ops = {
 	.recalc_rate = clk_generic_pll_postdiv_recalc_rate,
 	.round_rate = clk_generic_pll_postdiv_round_rate,
 	.set_rate = clk_generic_pll_postdiv_set_rate,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL(clk_generic_pll_postdiv_ops);
 
@@ -2644,7 +2668,9 @@ const struct clk_ops clk_agera_pll_ops = {
 	.round_rate = clk_alpha_pll_round_rate,
 	.set_rate = clk_agera_pll_set_rate,
 	.list_registers = clk_agera_pll_list_registers,
+#ifdef CONFIG_DEBUG_KERNEL
 	.bus_vote = clk_debug_bus_vote,
+#endif
 };
 EXPORT_SYMBOL(clk_agera_pll_ops);
 
