@@ -10,6 +10,21 @@
  * GNU General Public License for more details.
  */
 
+#define trace_sde_perf_set_qos_luts(...) {}
+#define trace_sde_perf_set_danger_luts(...) {}
+#define trace_sde_perf_set_ot(...) {}
+#define trace_sde_perf_update_bus(...) {}
+#define trace_sde_cmd_release_bw(...) {}
+#define trace_tracing_mark_write(...) {}
+#define trace_sde_perf_crtc_update(...) {}
+#define trace_sde_perf_calc_crtc(...) {}
+#define trace_sde_encoder_underrun(...) {}
+#define SDE_ATRACE_END(...) {}
+#define SDE_ATRACE_BEGIN(...) {}
+#define SDE_ATRACE_FUNC(...) {}
+#define SDE_ATRACE_INT(...) {}
+
+#if 0
 #if !defined(_SDE_TRACE_H_) || defined(TRACE_HEADER_MULTI_READ)
 #define _SDE_TRACE_H_
 
@@ -319,3 +334,4 @@ TRACE_EVENT(sde_perf_calc_crtc,
 #undef TRACE_INCLUDE_PATH
 #define TRACE_INCLUDE_PATH .
 #include <trace/define_trace.h>
+#endif

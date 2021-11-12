@@ -5520,7 +5520,6 @@ int sde_encoder_wait_for_event(struct drm_encoder *drm_enc,
 	int (*fn_wait)(struct sde_encoder_phys *phys_enc) = NULL;
 	struct sde_encoder_virt *sde_enc = NULL;
 	int i, ret = 0;
-	char atrace_buf[32];
 
 	if (!drm_enc) {
 		SDE_ERROR("invalid encoder\n");
@@ -5552,11 +5551,7 @@ int sde_encoder_wait_for_event(struct drm_encoder *drm_enc,
 		};
 
 		if (phys && fn_wait) {
-			snprintf(atrace_buf, sizeof(atrace_buf),
-				"wait_completion_event_%d", event);
-			SDE_ATRACE_BEGIN(atrace_buf);
 			ret = fn_wait(phys);
-			SDE_ATRACE_END(atrace_buf);
 			if (ret)
 				return ret;
 		}
