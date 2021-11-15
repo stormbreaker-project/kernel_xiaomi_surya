@@ -1602,14 +1602,34 @@ static void tcp_cleanup_rbuf(struct sock *sk, int copied)
 		tcp_send_ack(sk);
 }
 
+void __sk_defer_free_flush(struct sock *sk)
+{
+	struct llist_node *head;
+	struct sk_buff *skb, *n;
+
+	head = llist_del_all(&sk->defer_list);
+	llist_for_each_entry_safe(skb, n, head, ll_node) {
+		prefetch(n);
+		skb_mark_not_on_list(skb);
+		__kfree_skb(skb);
+	}
+}
+EXPORT_SYMBOL(__sk_defer_free_flush);
+
 static void tcp_eat_recv_skb(struct sock *sk, struct sk_buff *skb)
 {
+        __skb_unlink(skb, &sk->sk_receive_queue);
 	if (likely(skb->destructor == sock_rfree)) {
 		sock_rfree(skb);
 		skb->destructor = NULL;
 		skb->sk = NULL;
+		if (!skb_queue_empty(&sk->sk_receive_queue) ||
+		    !llist_empty(&sk->defer_list)) {
+			llist_add(&skb->ll_node, &sk->defer_list);
+			return;
+		}
 	}
-	sk_eat_skb(sk, skb);
+	__kfree_skb(skb);
 }
 
 static struct sk_buff *tcp_recv_skb(struct sock *sk, u32 seq, u32 *off)
@@ -1812,6 +1832,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 		sk_busy_loop(sk, nonblock);
 
 	lock_sock(sk);
+	sk_defer_free_flush(sk);
 
 	err = -ENOTCONN;
 	if (sk->sk_state == TCP_LISTEN)
@@ -1939,6 +1960,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 			/* Do not sleep, just process backlog. */
 			__sk_flush_backlog(sk);
 		} else {
+		        sk_defer_free_flush(sk);
 			sk_wait_data(sk, &timeo, last);
 		}
 
@@ -2421,6 +2443,7 @@ int tcp_disconnect(struct sock *sk, int flags)
 		sk->sk_frag.offset = 0;
 	}
 
+	sk_defer_free_flush(sk);
 	sk->sk_error_report(sk);
 	return err;
 }
@@ -2542,6 +2565,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 		name[val] = 0;
 
 		lock_sock(sk);
+		sk_defer_free_flush(sk);
 		err = tcp_set_congestion_control(sk, name, true, true,
 						 ns_capable(sock_net(sk)->user_ns,
 							    CAP_NET_ADMIN));
