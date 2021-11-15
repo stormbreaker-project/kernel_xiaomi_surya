@@ -541,10 +541,11 @@ unsigned int tcp_poll(struct file *file, struct socket *sock, poll_table *wait)
 	if (state != TCP_SYN_SENT &&
 	    (state != TCP_SYN_RECV || tp->fastopen_rsk)) {
 		int target = sock_rcvlowat(sk, 0, INT_MAX);
+		u16 urg_data = READ_ONCE(tp->urg_data);
 
-		if (tp->urg_seq == tp->copied_seq &&
-		    !sock_flag(sk, SOCK_URGINLINE) &&
-		    tp->urg_data)
+	        if (urg_data &&
+		    READ_ONCE(tp->urg_seq) == READ_ONCE(tp->copied_seq) &&
+		    !sock_flag(sk, SOCK_URGINLINE))
 			target++;
 
 		if (tp->rcv_nxt - tp->copied_seq >= target)
@@ -569,7 +570,7 @@ unsigned int tcp_poll(struct file *file, struct socket *sock, poll_table *wait)
 		} else
 			mask |= POLLOUT | POLLWRNORM;
 
-		if (tp->urg_data & TCP_URG_VALID)
+		if (urg_data & TCP_URG_VALID)
 			mask |= POLLPRI;
 	} else if (state == TCP_SYN_SENT && inet_sk(sk)->defer_connect) {
 		/* Active TCP fastopen socket with defer_connect
@@ -603,7 +604,7 @@ int tcp_ioctl(struct sock *sk, int cmd, unsigned long arg)
 		unlock_sock_fast(sk, slow);
 		break;
 	case SIOCATMARK:
-		answ = tp->urg_data && tp->urg_seq == tp->copied_seq;
+	        answ = READ_ONCE(tp->urg_data) && READ_ONCE(tp->urg_seq) == READ_ONCE(tp->copied_seq);
 		break;
 	case SIOCOUTQ:
 		if (sk->sk_state == TCP_LISTEN)
@@ -1489,7 +1490,7 @@ static int tcp_recv_urg(struct sock *sk, struct msghdr *msg, int len, int flags)
 		char c = tp->urg_data;
 
 		if (!(flags & MSG_PEEK))
-			tp->urg_data = TCP_URG_READ;
+		        WRITE_ONCE(tp->urg_data, TCP_URG_READ);
 
 		/* Read urgent data. */
 		msg->msg_flags |= MSG_OOB;
@@ -1982,7 +1983,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 
 skip_copy:
 		if (tp->urg_data && after(tp->copied_seq, tp->urg_seq)) {
-			tp->urg_data = 0;
+		        WRITE_ONCE(tp->urg_data, 0);
 			tcp_fast_path_check(sk);
 		}
 
