@@ -543,7 +543,7 @@ unsigned int tcp_poll(struct file *file, struct socket *sock, poll_table *wait)
 		int target = sock_rcvlowat(sk, 0, INT_MAX);
 		u16 urg_data = READ_ONCE(tp->urg_data);
 
-	        if (urg_data &&
+	        if (unlikely(urg_data) &&
 		    READ_ONCE(tp->urg_seq) == READ_ONCE(tp->copied_seq) &&
 		    !sock_flag(sk, SOCK_URGINLINE))
 			target++;
@@ -1655,7 +1655,7 @@ int tcp_read_sock(struct sock *sk, read_descriptor_t *desc,
 
 			len = skb->len - offset;
 			/* Stop reading if we hit a patch of urgent data */
-			if (tp->urg_data) {
+			if (unlikely(tp->urg_data)) {
 				u32 urg_offset = tp->urg_seq - seq;
 				if (urg_offset < len)
 					len = urg_offset;
@@ -1840,7 +1840,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 		u32 offset;
 
 		/* Are we at urgent data? Stop if we have read anything or have SIGURG pending. */
-		if (tp->urg_data && tp->urg_seq == *seq) {
+		if (unlikely(tp->urg_data) && tp->urg_seq == *seq) {
 			if (copied)
 				break;
 			if (signal_pending(current)) {
@@ -1948,7 +1948,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 			used = len;
 
 		/* Do we have urgent data here? */
-		if (tp->urg_data) {
+		if (unlikely(tp->urg_data)) {
 			u32 urg_offset = tp->urg_seq - *seq;
 			if (urg_offset < used) {
 				if (!urg_offset) {
@@ -1982,7 +1982,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nonblock,
 		tcp_rcv_space_adjust(sk);
 
 skip_copy:
-		if (tp->urg_data && after(tp->copied_seq, tp->urg_seq)) {
+		if (unlikely(tp->urg_data) && after(tp->copied_seq, tp->urg_seq)) {
 		        WRITE_ONCE(tp->urg_data, 0);
 			tcp_fast_path_check(sk);
 		}
