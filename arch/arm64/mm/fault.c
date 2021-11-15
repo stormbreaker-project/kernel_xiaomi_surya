@@ -565,7 +565,9 @@ done:
 		 * userspace (which will retry the fault, or kill us if we got
 		 * oom-killed).
 		 */
+#if !defined(CONFIG_DISABLE_OOM_KILLER)
 		pagefault_out_of_memory();
+#endif
 		return 0;
 	}
 

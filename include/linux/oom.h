@@ -44,8 +44,10 @@ struct oom_control {
 	unsigned long chosen_points;
 };
 
+#if !defined(CONFIG_DISABLE_OOM_KILLER)
 extern struct mutex oom_lock;
 extern struct mutex oom_adj_mutex;
+#endif
 
 static inline void set_current_oom_origin(void)
 {
@@ -100,6 +102,8 @@ static inline int check_stable_address_space(struct mm_struct *mm)
 	return 0;
 }
 
+#if !defined(CONFIG_DISABLE_OOM_KILLER)
+
 void __oom_reap_task_mm(struct mm_struct *mm);
 
 extern unsigned long oom_badness(struct task_struct *p,
@@ -131,4 +135,92 @@ extern int sysctl_reap_mem_on_sigkill;
 
 /* calls for LMK reaper */
 extern void add_to_oom_reaper(struct task_struct *p);
+
+#else /* defined(CONFIG_DISABLE_OOM_KILLER) */
+
+static struct mutex oom_lock;
+static struct mutex oom_adj_mutex;
+
+static inline void __oom_reap_task_mm(struct mm_struct *mm)
+{
+	return;
+}
+
+static inline unsigned long oom_badness(struct task_struct *p,
+		struct mem_cgroup *memcg, const nodemask_t *nodemask,
+		unsigned long totalpages)
+{
+	return 0;
+}
+
+static inline bool out_of_memory(struct oom_control *oc)
+{
+	return false;
+}
+
+static inline void exit_oom_victim(void)
+{
+	return;
+}
+
+static inline int register_oom_notifier(struct notifier_block *nb)
+{
+	return 0;
+}
+
+static inline int unregister_oom_notifier(struct notifier_block *nb)
+{
+	return 0;
+}
+
+static inline bool oom_killer_disable(signed long timeout)
+{
+	return true;
+}
+
+static inline void oom_killer_enable(void)
+{
+	return;
+}
+
+#include <linux/rcupdate.h>
+#include <linux/sched/task.h>
+static inline struct task_struct *find_lock_task_mm(struct task_struct *p)
+{
+	struct task_struct *t;
+
+	rcu_read_lock();
+
+	for_each_thread(p, t) {
+		task_lock(t);
+		if (likely(t->mm))
+			goto found;
+		task_unlock(t);
+	}
+	t = NULL;
+found:
+	rcu_read_unlock();
+
+	return t;
+}
+
+static inline void dump_tasks(struct mem_cgroup *memcg,
+		const nodemask_t *nodemask)
+{
+	return;
+}
+
+static inline void wake_oom_reaper(struct task_struct *tsk)
+{
+	return;
+}
+
+/* calls for LMK reaper */
+static inline void add_to_oom_reaper(struct task_struct *p)
+{
+	return;
+}
+
+#endif /* !defined(CONFIG_DISABLE_OOM_KILLER) */
+
 #endif /* _INCLUDE_LINUX_OOM_H */
