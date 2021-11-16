@@ -618,7 +618,6 @@ static int qpnp_rtc_probe(struct platform_device *pdev)
 	}
 
 	device_init_wakeup(&pdev->dev, 1);
-	enable_irq_wake(rtc_dd->rtc_alarm_irq);
 
 	dev_dbg(&pdev->dev, "Probe success !!\n");
 
@@ -689,6 +688,33 @@ fail_alarm_disable:
 	}
 }
 
+#ifdef CONFIG_PM_SLEEP
+static int qpnp_rtc_resume(struct device *dev)
+{
+	struct qpnp_rtc *rtc_dd = dev_get_drvdata(dev);
+
+	if (device_may_wakeup(dev))
+		disable_irq_wake(rtc_dd->rtc_alarm_irq);
+
+	return 0;
+}
+
+static int qpnp_rtc_suspend(struct device *dev)
+{
+	struct qpnp_rtc *rtc_dd = dev_get_drvdata(dev);
+
+	if (device_may_wakeup(dev))
+		enable_irq_wake(rtc_dd->rtc_alarm_irq);
+
+	return 0;
+}
+#endif
+
+static const struct dev_pm_ops qpnp_rtc_pm_ops = {
+	.resume = qpnp_rtc_resume,
+	.suspend = qpnp_rtc_suspend,
+};
+
 static const struct of_device_id spmi_match_table[] = {
 	{
 		.compatible = "qcom,qpnp-rtc",
@@ -704,6 +730,7 @@ static struct platform_driver qpnp_rtc_driver = {
 		.name		= "qcom,qpnp-rtc",
 		.owner		= THIS_MODULE,
 		.of_match_table	= spmi_match_table,
+		.pm		= &qpnp_rtc_pm_ops,
 	},
 };
 
