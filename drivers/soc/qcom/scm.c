@@ -26,8 +26,6 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/scm.h>
-#undef CREATE_TRACE_POINTS
-#include <trace/events/systrace.h>
 
 #define SCM_ENOMEM		-5
 #define SCM_EOPNOTSUPP		-4
@@ -394,7 +392,6 @@ static int ___scm_call_armv8_64(u64 x0, u64 x1, u64 x2, u64 x3, u64 x4, u64 x5,
 	register u64 r5 asm("x5") = x5;
 	register u64 r6 asm("x6") = 0;
 
-	ATRACE_BEGIN(__func__);
 	do {
 		asm volatile(
 			__asmeq("%0", R0_STR)
@@ -422,7 +419,6 @@ static int ___scm_call_armv8_64(u64 x0, u64 x1, u64 x2, u64 x3, u64 x4, u64 x5,
 			: "x7", "x8", "x9", "x10", "x11", "x12", "x13",
 			  "x14", "x15", "x16", "x17");
 	} while (r0 == SCM_INTERRUPTED);
-	ATRACE_END();
 
 	if (ret1)
 		*ret1 = r1;
@@ -458,7 +454,6 @@ static int ___scm_call_armv8_32(u32 w0, u32 w1, u32 w2, u32 w3, u32 w4, u32 w5,
 	register u32 r5 asm("w5") = w5;
 	register u32 r6 asm("w6") = 0;
 
-	ATRACE_BEGIN(__func__);
 	do {
 		asm volatile(
 			__asmeq("%0", R0_STR)
@@ -487,7 +482,6 @@ static int ___scm_call_armv8_32(u32 w0, u32 w1, u32 w2, u32 w3, u32 w4, u32 w5,
 			"x14", "x15", "x16", "x17");
 
 	} while (r0 == SCM_INTERRUPTED);
-	ATRACE_END();
 
 	if (ret1)
 		*ret1 = r1;
@@ -525,7 +519,6 @@ static int ___scm_call_armv8_32(u32 w0, u32 w1, u32 w2, u32 w3, u32 w4, u32 w5,
 	register u32 r5 asm("r5") = w5;
 	register u32 r6 asm("r6") = 0;
 
-	ATRACE_BEGIN(__func__);
 	do {
 		asm volatile(
 			__asmeq("%0", R0_STR)
@@ -552,7 +545,6 @@ static int ___scm_call_armv8_32(u32 w0, u32 w1, u32 w2, u32 w3, u32 w4, u32 w5,
 			 "r" (r5), "r" (r6));
 
 	} while (r0 == SCM_INTERRUPTED);
-	ATRACE_END();
 
 	if (ret1)
 		*ret1 = r1;
@@ -1131,8 +1123,6 @@ u32 scm_get_version(void)
 
 	r0 = 0x1 << 8;
 	r1 = (uintptr_t)&context_id;
-
-	ATRACE_BEGIN(__func__);
 	do {
 		asm volatile(
 			__asmeq("%0", R0_STR)
@@ -1147,7 +1137,6 @@ u32 scm_get_version(void)
 			: "r" (r0), "r" (r1)
 			: R2_STR, R3_STR);
 	} while (r0 == SCM_INTERRUPTED);
-	ATRACE_END();
 
 	version = r1;
 	mutex_unlock(&scm_lock);
