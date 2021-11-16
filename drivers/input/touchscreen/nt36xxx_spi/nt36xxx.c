@@ -2271,19 +2271,16 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	case TP_VENDOR_HUAXING:
 		memcpy(ts->boot_update_firmware_name, BOOT_UPDATE_HUAXING_FIRMWARE_NAME,
 				sizeof(BOOT_UPDATE_HUAXING_FIRMWARE_NAME));
-		memcpy(ts->mp_update_firmware_name, MP_UPDATE_HUAXING_FIRMWARE_NAME, sizeof(MP_UPDATE_HUAXING_FIRMWARE_NAME));
 		break;
 	case TP_VENDOR_TIANMA:
 		memcpy(ts->boot_update_firmware_name, BOOT_UPDATE_TIANMA_FIRMWARE_NAME,
 				sizeof(BOOT_UPDATE_TIANMA_FIRMWARE_NAME));
-		memcpy(ts->mp_update_firmware_name, MP_UPDATE_TIANMA_FIRMWARE_NAME, sizeof(MP_UPDATE_TIANMA_FIRMWARE_NAME));
 		break;
 	default:
 		goto err_vendor_check;
 	}
 #else
 	memcpy(ts->boot_update_firmware_name, BOOT_UPDATE_FIRMWARE_NAME, sizeof(BOOT_UPDATE_FIRMWARE_NAME));
-	memcpy(ts->mp_update_firmware_name, MP_UPDATE_FIRMWARE_NAME, sizeof(MP_UPDATE_FIRMWARE_NAME));
 #endif
 
 	ts->client = client;
