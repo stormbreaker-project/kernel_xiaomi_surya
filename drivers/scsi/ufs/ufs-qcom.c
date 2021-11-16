@@ -1281,6 +1281,9 @@ static int ufs_qcom_pwr_change_notify(struct ufs_hba *hba,
 	int ret = 0;
 	int res = 0;
 
+	hba->ufs_stats.clk_hold.ctx = PWR_CHG_NOTIFY;
+	ufshcd_hold(hba, false);
+
 	if (!dev_req_params) {
 		pr_err("%s: incoming dev_req_params is NULL\n", __func__);
 		ret = -EINVAL;
@@ -1371,6 +1374,8 @@ static int ufs_qcom_pwr_change_notify(struct ufs_hba *hba,
 		break;
 	}
 out:
+	hba->ufs_stats.clk_rel.ctx = PWR_CHG_NOTIFY;
+	ufshcd_release(hba, false);
 	return ret;
 }
 
