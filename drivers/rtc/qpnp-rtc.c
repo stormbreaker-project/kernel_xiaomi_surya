@@ -46,7 +46,7 @@
 #define NUM_8_BIT_RTC_REGS	0x4
 
 #define TO_SECS(arr)		(arr[0] | (arr[1] << 8) | (arr[2] << 16) | \
-							(arr[3] << 24))
+							((unsigned long)arr[3] << 24))
 
 /* Module parameter to control power-on-alarm */
 bool poweron_alarm;
