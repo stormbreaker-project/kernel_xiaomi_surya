@@ -267,12 +267,6 @@ qpnp_rtc_read_time(struct device *dev, struct rtc_time *tm)
 
 	rtc_time_to_tm(secs, tm);
 
-	rc = rtc_valid_tm(tm);
-	if (rc) {
-		dev_err(dev, "Invalid time read from RTC\n");
-		return rc;
-	}
-
 	dev_dbg(dev, "secs = %lu, h:m:s == %d:%d:%d, d/m/y = %d/%d/%d\n",
 			secs, tm->tm_hour, tm->tm_min, tm->tm_sec,
 			tm->tm_mday, tm->tm_mon, tm->tm_year);
