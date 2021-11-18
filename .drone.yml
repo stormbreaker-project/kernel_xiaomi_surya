@@ -1,0 +1,21 @@
+kind: pipeline
+name: Surya_kramel
+
+clone:
+  depth: 1
+
+steps:
+  - name: setup&kramel
+    image: archlinux:base-devel
+    environment:
+      TOKEN:
+        from_secret: token
+    commands:
+      - curl -fsSL "https://repo.archlinuxcn.org/x86_64/glibc-linux4-2.33-4-x86_64.pkg.tar.zst" | bsdtar -C / -xvf -
+      - pacman -Syu --needed --noconfirm wget base-devel xmlto inetutils bc cpio python-sphinx python-sphinx_rtd_theme graphviz imagemagick git python2 python zip
+      - "export token=$TOKEN"
+      - bash kramel.sh
+
+trigger:
+  event:
+  - custom
