@@ -422,7 +422,7 @@ static int cpu_boost_init(void)
 
 	/* Hardcode the cpumask to bind the kthread to it */
 	cpumask_clear(&sys_bg_mask);
-	for (i = 0; i <= 3; i++) {
+	for (i = 0; i <= 5; i++) {
 		cpumask_set_cpu(i, &sys_bg_mask);
 	}
 
