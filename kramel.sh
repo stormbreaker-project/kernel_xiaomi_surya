@@ -36,6 +36,8 @@ fi
 
 curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Buckle up bois ${BRANCH} build has started" -d chat_id=${chat_id} -d parse_mode=HTML
 
+echo "CONFIG_PATCH_INITRAMFS=y" >> arch/arm64/configs/surya_defconfig
+
    make O=out ARCH=arm64 $DEF
        make -j$(nproc --all) O=out \
                       CC=clang \
