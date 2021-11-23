@@ -517,7 +517,7 @@
 
 				qcom,speed-bin = <167>;
 
-				qcom,initial-pwrlevel = <6>;
+				qcom,initial-pwrlevel = <7>;
 				qcom,ca-target-pwrlevel = <4>;
 
 				/* TURBO */
@@ -583,9 +583,18 @@
 					qcom,bus-max = <4>;
 				};
 
-				/* XO */
+				/* RETENTION SVS */
 				qcom,gpu-pwrlevel@7 {
 					reg = <7>;
+					qcom,gpu-freq = <140000000>;
+					qcom,bus-freq = <2>;
+					qcom,bus-min = <1>;
+					qcom,bus-max = <2>;
+				};
+
+				/* XO */
+				qcom,gpu-pwrlevel@8 {
+					reg = <8>;
 					qcom,gpu-freq = <0>;
 					qcom,bus-freq = <0>;
 					qcom,bus-min = <0>;

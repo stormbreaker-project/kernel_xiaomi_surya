@@ -39,6 +39,7 @@
 
 enum vdd_gx_levels {
 	VDD_GX_NONE,
+	VDD_GX_RETENTION,	/* RETENTION SVS */
 	VDD_GX_MIN,		/* MIN SVS */
 	VDD_GX_LOWER,		/* SVS2 */
 	VDD_GX_LOW,		/* SVS */
@@ -52,6 +53,7 @@ enum vdd_gx_levels {
 
 static int vdd_gx_corner[] = {
 	RPMH_REGULATOR_LEVEL_OFF,		/* VDD_GX_NONE */
+	RPMH_REGULATOR_LEVEL_RETENTION + 4,	/* VDD_GX_RETENTION */
 	RPMH_REGULATOR_LEVEL_MIN_SVS,		/* VDD_GX_MIN */
 	RPMH_REGULATOR_LEVEL_LOW_SVS,		/* VDD_GX_LOWER */
 	RPMH_REGULATOR_LEVEL_SVS,		/* VDD_GX_LOW */
@@ -277,6 +279,7 @@ static struct clk_rcg2 gpu_cc_gmu_clk_src = {
 };
 
 static const struct freq_tbl ftbl_gpu_cc_gx_gfx3d_clk_src[] = {
+	F(140000000, P_CRC_DIV, 1, 0, 0),
 	F(180000000, P_CRC_DIV, 1, 0, 0),
 	F(267000000, P_CRC_DIV, 1, 0, 0),
 	F(355000000, P_CRC_DIV, 1, 0, 0),
@@ -308,6 +311,7 @@ static struct clk_rcg2 gpu_cc_gx_gfx3d_clk_src = {
 		.vdd_class = &vdd_gx,
 		.num_rate_max = VDD_GX_NUM,
 		.rate_max = (unsigned long[VDD_GX_NUM]) {
+			[VDD_GX_RETENTION] = 140000000,
 			[VDD_GX_MIN] = 180000000,
 			[VDD_GX_LOWER] = 267000000,
 			[VDD_GX_LOW] = 355000000,
