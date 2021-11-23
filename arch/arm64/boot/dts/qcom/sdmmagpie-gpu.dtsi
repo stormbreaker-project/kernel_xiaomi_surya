@@ -575,13 +575,13 @@
 					qcom,bus-max = <7>;
 				};
 
-				/* CUSTOM SVS */
+				/* LOW SVS */
 				qcom,gpu-pwrlevel@6 {
 					reg = <6>;
-					qcom,gpu-freq = <140000000>;
-					qcom,bus-freq = <2>;
-					qcom,bus-min = <1>;
-					qcom,bus-max = <2>;
+					qcom,gpu-freq = <180000000>;
+					qcom,bus-freq = <4>;
+					qcom,bus-min = <3>;
+					qcom,bus-max = <4>;
 				};
 
 				/* XO */
