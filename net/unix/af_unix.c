@@ -235,7 +235,8 @@ static int unix_mkname(struct sockaddr_un *sunaddr, int len, unsigned int *hashp
 {
 	*hashp = 0;
 
-	if (len <= sizeof(short) || len > sizeof(*sunaddr))
+	if (len <= offsetof(struct sockaddr_un, sun_path) ||
+	    len > sizeof(*sunaddr))
 		return -EINVAL;
 	if (!sunaddr || sunaddr->sun_family != AF_UNIX)
 		return -EINVAL;
@@ -248,7 +249,8 @@ static int unix_mkname(struct sockaddr_un *sunaddr, int len, unsigned int *hashp
 		 * kernel address buffer.
 		 */
 		((char *)sunaddr)[len] = 0;
-		len = strlen(sunaddr->sun_path)+1+sizeof(short);
+		len = strlen(sunaddr->sun_path) +
+			offsetof(struct sockaddr_un, sun_path) + 1;
 		return len;
 	}
 
@@ -940,7 +942,8 @@ static int unix_autobind(struct socket *sock)
 		goto out;
 
 	err = -ENOMEM;
-	addr = kzalloc(sizeof(*addr) + sizeof(short) + 16, GFP_KERNEL);
+	addr = kzalloc(sizeof(*addr) +
+		       offsetof(struct sockaddr_un, sun_path) + 16, GFP_KERNEL);
 	if (!addr)
 		goto out;
 
@@ -948,7 +951,8 @@ static int unix_autobind(struct socket *sock)
 	refcount_set(&addr->refcnt, 1);
 
 retry:
-	addr->len = sprintf(addr->name->sun_path+1, "%05x", ordernum) + 1 + sizeof(short);
+	addr->len = sprintf(addr->name->sun_path + 1, "%05x", ordernum) +
+		offsetof(struct sockaddr_un, sun_path) + 1;
 	addr->hash = unix_hash_fold(csum_partial(addr->name, addr->len, 0));
 	addr->hash ^= sk->sk_type;
 
@@ -1138,7 +1142,7 @@ static int unix_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	    sunaddr->sun_family != AF_UNIX)
 		return -EINVAL;
 
-	if (addr_len == sizeof(short))
+	if (addr_len == offsetof(struct sockaddr_un, sun_path))
 		return unix_autobind(sock);
 
 	err = unix_mkname(sunaddr, addr_len, &hash);
@@ -1579,7 +1583,7 @@ static int unix_getname(struct socket *sock, struct sockaddr *uaddr, int *uaddr_
 	if (!addr) {
 		sunaddr->sun_family = AF_UNIX;
 		sunaddr->sun_path[0] = 0;
-		*uaddr_len = sizeof(short);
+	        *uaddr_len = offsetof(struct sockaddr_un, sun_path);
 	} else {
 		*uaddr_len = addr->len;
 		memcpy(sunaddr, addr->name, *uaddr_len);
@@ -2987,7 +2991,8 @@ static int unix_seq_show(struct seq_file *seq, void *v)
 			seq_putc(seq, ' ');
 
 			i = 0;
-			len = u->addr->len - sizeof(short);
+			len = u->addr->len -
+				offsetof(struct sockaddr_un, sun_path);
 			if (!UNIX_ABSTRACT(s))
 				len--;
 			else {
