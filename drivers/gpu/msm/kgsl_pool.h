@@ -38,7 +38,7 @@ void kgsl_pool_free_pages(struct page **pages, unsigned int page_count);
 void kgsl_init_page_pools(struct platform_device *pdev);
 void kgsl_exit_page_pools(void);
 int kgsl_pool_alloc_page(int *page_size, struct page **pages,
-			unsigned int pages_len, unsigned int *align);
+			unsigned int pages_len, unsigned int *align, struct device *dev);
 void kgsl_pool_free_page(struct page *p);
 bool kgsl_pool_avaialable(int size);
 #endif /* __KGSL_POOL_H */

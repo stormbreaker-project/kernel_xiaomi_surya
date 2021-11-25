@@ -931,7 +931,7 @@ kgsl_sharedmem_page_alloc_user(struct kgsl_memdesc *memdesc,
 		page_count = kgsl_pool_alloc_page(&page_size,
 					memdesc->pages + pcount,
 					len_alloc - pcount,
-					&align);
+					&align, memdesc->dev);
 		if (page_count <= 0) {
 			if (page_count == -EAGAIN)
 				continue;
