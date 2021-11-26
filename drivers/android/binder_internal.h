@@ -392,6 +392,9 @@ struct binder_priority {
  *                        (invariant after initialized)
  * @tsk                   task_struct for group_leader of process
  *                        (invariant after initialized)
+ * @cred                  struct cred associated with the `struct file`
+ *                        in binder_open()
+ *                        (invariant after initialized)
  * @deferred_work_node:   element for binder_deferred_list
  *                        (protected by binder_deferred_lock)
  * @deferred_work:        bitmap of deferred work to perform
@@ -455,6 +458,7 @@ struct binder_proc {
 	int pid;
 	struct task_struct *tsk;
 	struct hlist_node deferred_work_node;
+	const struct cred *cred;
 	int deferred_work;
 	int outstanding_txns;
 	bool is_dead;
