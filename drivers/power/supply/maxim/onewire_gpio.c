@@ -67,6 +67,8 @@ struct onewire_gpio_data {
 	unsigned int onewire_gpio_level_addr;
 	unsigned int gpio_offset;
 	unsigned int gpio_reg[2];
+
+	bool gpio_requested
 };
 
 static struct class *onewire_class;
@@ -423,8 +425,7 @@ static int onewire_gpio_probe(struct platform_device *pdev)
 		goto onewire_pinctrl_err;
 
 	// request onewire gpio
-	gpio_free(onewire_data->ow_gpio);
-	if (gpio_is_valid(onewire_data->ow_gpio)) {
+	if (gpio_is_valid(onewire_data->ow_gpio) && !onewire_data->gpio_requested) {
 		retval = gpio_request(onewire_data->ow_gpio,
 						"onewire gpio");
 	} else {
@@ -435,6 +436,8 @@ static int onewire_gpio_probe(struct platform_device *pdev)
 				retval);
 		goto onewire_ow_gpio_err;
 	}
+
+	onewire_data->gpio_requested = true;
 
 	// gpio output 1
 	gpio_direction_output(onewire_data->ow_gpio, 1);
@@ -480,8 +483,10 @@ onewire_syfs_create_link_err:
 onewire_sysfs_ow_gpio_err:
 	device_destroy(onewire_class, onewire_major);
 onewire_interface_dev_create_err:
-	if (gpio_is_valid(onewire_data->ow_gpio))
+	if (gpio_is_valid(onewire_data->ow_gpio) && onewire_data->gpio_requested) {
 		gpio_free(onewire_data->ow_gpio);
+		onewire_data->gpio_requested = false;
+	}
 onewire_ow_gpio_err:
 onewire_pinctrl_err:
 onewire_parse_dt_err:
@@ -493,9 +498,10 @@ static int onewire_gpio_remove(struct platform_device *pdev)
 {
 	struct onewire_gpio_data *onewire_data = platform_get_drvdata(pdev);
 
-	if (gpio_is_valid(onewire_data->ow_gpio)) {
+	if (gpio_is_valid(onewire_data->ow_gpio) && onewire_data->gpio_requested) {
 		sysfs_remove_file(&pdev->dev.kobj, &dev_attr_ow_gpio.attr);
 		gpio_free(onewire_data->ow_gpio);
+		onewire_data->gpio_requested = false;
 	}
 	kfree(onewire_data);
 
