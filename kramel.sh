@@ -1,5 +1,7 @@
+git clone https://github.com/SreekanthPalakurthi/Clang-dumpyard.git --depth=1 clang
+git clone https://github.com/SreekanthPalakurthi/Clang-dumpyard.git -b gcc64 --depth=1 gcc
+git clone https://github.com/SreekanthPalakurthi/Clang-dumpyard.git -b gcc32  --depth=1 gcc32
 git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3.git -b surya
-git clone --depth=1 https://github.com/GhostMaster69-dev/Cosmic-Clang clang
 export TZ=Asia/Kolkata 
 IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz
 DTBO=$(pwd)/out/arch/arm64/boot/dtbo.img
@@ -7,8 +9,10 @@ TANGGAL=${VERSION}-$(date +"%d%m%H%M")
 START=$(date +"%s")
 CLANG_VERSION=$(clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-export PATH=$PWD/clang/bin:$PATH
+KERNEL_DIR=$(pwd)
+PATH="${KERNEL_DIR}/clang/bin:${KERNEL_DIR}/gcc/bin:${KERNEL_DIR}/gcc32/bin:${PATH}"
 export ARCH=arm64
+export SUBARCH=arm64
 export KBUILD_BUILD_HOST="Forenche"
 export KBUILD_BUILD_USER="StormBreakerCI"
 export chat_id="-1001683587045"
@@ -38,11 +42,12 @@ curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Buckle
 
 echo "CONFIG_PATCH_INITRAMFS=y" >> arch/arm64/configs/surya_defconfig
 
-   make O=out ARCH=arm64 $DEF
-       make -j$(nproc --all) O=out \
+make O=out ARCH=arm64 $DEF
+	make -j$(nproc --all) O=out \
                       CC=clang \
-                      CROSS_COMPILE=aarch64-linux-gnu- \
-                      CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+		      CLANG_TRIPLE=aarch64-linux-gnu- \
+                      CROSS_COMPILE=aarch64-linux-android- \
+                      CROSS_COMPILE_ARM32=arm-linux-androideabi- \
 		      LD=ld.lld \
 		      AS=llvm-as \
 		      AR=llvm-ar \
@@ -50,6 +55,7 @@ echo "CONFIG_PATCH_INITRAMFS=y" >> arch/arm64/configs/surya_defconfig
                       OBJCOPY=llvm-objcopy \
                       OBJDUMP=llvm-objdump \
                       STRIP=llvm-strip 2>&1 | tee build.log
+		      
 END=$(date +"%s")
 DIFF=$((END - START))
 if [ -f $(pwd)/out/arch/arm64/boot/Image.gz ]
