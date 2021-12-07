@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
- *
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
  * only version 2 as published by the Free Software Foundation.
@@ -17,6 +17,7 @@
 #include <linux/netdevice.h>
 #include <linux/skbuff.h>
 #include <linux/timer.h>
+#include <linux/pm_wakeup.h>
 
 #define MAX_MQ_NUM 16
 #define MAX_CLIENT_NUM 2
@@ -105,6 +106,8 @@ struct qmi_info {
 	bool ps_enabled;
 	bool dl_msg_active;
 	bool ps_ignore_grant;
+	bool wakelock_active;
+	struct wakeup_source *ws;
 };
 
 enum data_ep_type_enum_v01 {
