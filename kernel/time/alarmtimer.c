@@ -58,6 +58,8 @@ static DEFINE_SPINLOCK(freezer_delta_lock);
 #endif
 
 #ifdef CONFIG_RTC_CLASS
+static struct wakeup_source *ws;
+
 /* rtc timer and device for setting alarm wakeups at suspend */
 static struct rtc_timer		rtctimer;
 static struct rtc_device	*rtcdev;
@@ -69,7 +71,7 @@ static void alarmtimer_triggered_func(void *p)
 
 	if (!(rtc->irq_data & RTC_AF))
 		return;
-	pm_wakeup_event(&rtc->dev, 2 * MSEC_PER_SEC);
+	__pm_wakeup_event(ws, 2 * MSEC_PER_SEC);
 }
 
 static struct rtc_task alarmtimer_rtc_task = {
@@ -101,7 +103,7 @@ static int alarmtimer_rtc_add_device(struct device *dev,
 {
 	unsigned long flags;
 	struct rtc_device *rtc = to_rtc_device(dev);
-	struct platform_device *pdev;
+	struct wakeup_source *__ws;
 	int ret = 0;
 
 	if (rtcdev)
@@ -110,13 +112,10 @@ static int alarmtimer_rtc_add_device(struct device *dev,
 	if (!rtc->ops->set_alarm)
 		return -1;
 
-	pdev = platform_device_register_data(dev, "alarmtimer",
-					     PLATFORM_DEVID_AUTO, NULL, 0);
-	if (!IS_ERR(pdev))
-		device_init_wakeup(&pdev->dev, true);
+	__ws = wakeup_source_register(dev, "alarmtimer");
 
 	spin_lock_irqsave(&rtcdev_lock, flags);
-	if (!IS_ERR(pdev) && !rtcdev) {
+	if (!rtcdev) {
 		if (!try_module_get(rtc->owner)) {
 			ret = -1;
 			goto unlock;
@@ -129,16 +128,14 @@ static int alarmtimer_rtc_add_device(struct device *dev,
 		rtcdev = rtc;
 		/* hold a reference so it doesn't go away */
 		get_device(dev);
-		pdev = NULL;
-	} else {
-		ret = -1;
+		ws = __ws;
+		__ws = NULL;
 	}
 
 unlock:
 	spin_unlock_irqrestore(&rtcdev_lock, flags);
 
-	platform_device_unregister(pdev);
-
+	wakeup_source_unregister(__ws);
 	return ret;
 }
 
@@ -315,7 +312,7 @@ static int alarmtimer_suspend(struct device *dev)
 		return 0;
 
 	if (ktime_to_ns(min) < 2 * NSEC_PER_SEC) {
-		pm_wakeup_event(dev, 2 * MSEC_PER_SEC);
+		__pm_wakeup_event(ws, 2 * MSEC_PER_SEC);
 		return -EBUSY;
 	}
 
@@ -330,7 +327,7 @@ static int alarmtimer_suspend(struct device *dev)
 	/* Set alarm, if in the past reject suspend briefly to handle */
 	ret = rtc_timer_start(rtc, &rtctimer, now, 0);
 	if (ret < 0)
-		pm_wakeup_event(dev, MSEC_PER_SEC);
+		__pm_wakeup_event(ws, MSEC_PER_SEC);
 	return ret;
 }
 
@@ -894,7 +891,8 @@ static struct platform_driver alarmtimer_driver = {
  */
 static int __init alarmtimer_init(void)
 {
-	int error;
+	struct platform_device *pdev;
+	int error = 0;
 	int i;
 
 	alarmtimer_rtc_timer_init();
@@ -917,7 +915,15 @@ static int __init alarmtimer_init(void)
 	if (error)
 		goto out_if;
 
+	pdev = platform_device_register_simple("alarmtimer", -1, NULL, 0);
+	if (IS_ERR(pdev)) {
+		error = PTR_ERR(pdev);
+		goto out_drv;
+	}
 	return 0;
+
+out_drv:
+	platform_driver_unregister(&alarmtimer_driver);
 out_if:
 	alarmtimer_rtc_interface_remove();
 	return error;
