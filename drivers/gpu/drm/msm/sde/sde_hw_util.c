@@ -76,8 +76,7 @@ typedef void (*scaler_lut_type)(struct sde_hw_blk_reg_map *,
 
 void sde_reg_write(struct sde_hw_blk_reg_map *c,
 		u32 reg_off,
-		u32 val,
-		const char *name)
+		u32 val)
 {
 	writel_relaxed(val, c->base_off + c->blk_off + reg_off);
 }
