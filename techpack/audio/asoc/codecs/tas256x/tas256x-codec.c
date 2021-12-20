@@ -88,7 +88,7 @@ void failsafe(struct tas256x_priv  *p_tas256x)
 		p_tas256x->mnRestart++;
 		msleep(100);
 		dev_err(p_tas256x->dev, "I2C COMM error, restart SmartAmp.\n");
-		schedule_delayed_work(&p_tas256x->irq_work,
+		queue_delayed_work(system_power_efficient_wq, &p_tas256x->irq_work,
 			msecs_to_jiffies(100));
 		return;
 	}
@@ -419,7 +419,7 @@ static int tas256x_set_power_state(struct tas256x_priv *p_tas256x,
 
 		p_tas256x->mb_power_up = true;
 		p_tas256x->mn_power_state = TAS256X_POWER_ACTIVE;
-		schedule_delayed_work(&p_tas256x->irq_work,
+		queue_delayed_work(system_power_efficient_wq, &p_tas256x->irq_work,
 				msecs_to_jiffies(40));
 		break;
 
