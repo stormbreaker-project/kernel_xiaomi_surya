@@ -17,7 +17,8 @@ export KBUILD_BUILD_HOST="Forenche"
 export KBUILD_BUILD_USER="StormBreakerCI"
 export chat_id="-1001683587045"
 export DEF="surya_defconfig"
-export VERSION=X10-BETA
+export VERSION="Idk"
+LNXVER=$(make O=out kernelversion  --no-print-directory)
 DEF_REG=0
 BUILD_DTBO=1
 SIGN_BUILD=0
@@ -25,7 +26,7 @@ INCREMENTAL=1
 
 if [ $INCREMENTAL = 0 ]
 then
-	make clean && make mrproper && rm -rf out && cd AnyKernel3/ && rm -rf * && git reset --hard && cd ..
+	make O=out clean && make O=out mrproper && rm -rf out && cd AnyKernel3/ && rm -rf * && git reset --hard && cd ..
 fi
 
 
@@ -70,6 +71,7 @@ if [ -f $(pwd)/out/arch/arm64/boot/Image.gz ]
 curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Branch: <code>$(git rev-parse --abbrev-ref HEAD)</code>
 Compiler Used : <code>${CLANG_VERSION} </code>
 Latest Commit: <code>$(git log --pretty=format:'%h : %s' -1)</code>
+Linux Version : <code>${LNXVER}</code>
 <i>Build compiled successfully in $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</i>" -d chat_id=${chat_id} -d parse_mode=HTML
 #curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Flash now else bun" -d chat_id=${chat_id} -d parse_mode=HTML
 
@@ -81,8 +83,7 @@ cp $(pwd)/out/arch/arm64/boot/dtb.img $(pwd)/AnyKernel3
                 cp ${DTBO} $(pwd)/AnyKernel3
         fi
 
-        cd AnyKernel3
-        zip -r9 StormBreaker-surya-${TANGGAL}.zip * --exclude *.jar
+        cd AnyKernel3 && make normal
 
         if [ SIGN_BUILD = 1 ]
         then
