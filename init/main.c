@@ -88,7 +88,6 @@
 #include <linux/io.h>
 #include <linux/cache.h>
 #include <linux/rodata_test.h>
-#include <linux/jump_label.h>
 
 #include <asm/io.h>
 #include <asm/bugs.h>
