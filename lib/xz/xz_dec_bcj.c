@@ -422,7 +422,7 @@ XZ_EXTERN enum xz_ret xz_dec_bcj_run(struct xz_dec_bcj *s,
 
 	/*
 	 * Flush pending already filtered data to the output buffer. Return
-	 * immediately if we couldn't flush everything, or if the next
+	 * immediatelly if we couldn't flush everything, or if the next
 	 * filter in the chain had already returned XZ_STREAM_END.
 	 */
 	if (s->temp.filtered > 0) {
