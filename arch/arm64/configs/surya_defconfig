@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.14.260 Kernel Configuration
+# Linux/arm64 4.14.261 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -2815,6 +2815,7 @@ CONFIG_DRM=y
 CONFIG_DRM_MIPI_DSI=y
 # CONFIG_DRM_DP_AUX_CHARDEV is not set
 # CONFIG_DRM_DEBUG_MM is not set
+# CONFIG_DRM_CLIENT_BOOTSPLASH is not set
 CONFIG_DRM_KMS_HELPER=y
 # CONFIG_DRM_FBDEV_EMULATION is not set
 # CONFIG_DRM_LOAD_EDID_FIRMWARE is not set
