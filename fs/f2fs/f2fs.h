@@ -1143,6 +1143,7 @@ enum cp_reason_type {
 	CP_FASTBOOT_MODE,
 	CP_SPEC_LOG_NUM,
 	CP_RECOVER_DIR,
+	CP_PINNED_FILE,
 };
 
 enum iostat_type {
