@@ -5122,9 +5122,25 @@ static ssize_t sysfs_cabc_write(struct device *dev,
 	if (!dsi_panel_initialized(display->panel))
 		goto error;
 
+	ret = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				   DSI_CLK_ON);
+	if (ret) {
+		pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
+		       display->name, ret);
+		goto error;
+	}
+
 	ret = dsi_panel_apply_cabc_mode(display->panel);
 	if (ret)
 		pr_err("unable to set cabc mode\n");
+
+	ret = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				   DSI_CLK_OFF);
+	if (ret) {
+		pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
+		       display->name, ret);
+		goto error;
+	}
 
 error:
 	mutex_unlock(&display->display_lock);
