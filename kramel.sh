@@ -18,6 +18,7 @@ export KBUILD_BUILD_USER="StormBreakerCI"
 export chat_id="-1001683587045"
 export DEF="surya_defconfig"
 export VERSION="Idk"
+export KBUILD_COMPILER_STRING=$("$KERNEL_DIR"/clang/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
 LNXVER=$(make O=out kernelversion  --no-print-directory)
 DEF_REG=0
 BUILD_DTBO=1
