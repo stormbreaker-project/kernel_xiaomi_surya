@@ -32,7 +32,6 @@ bool msm_vidc_thermal_mitigation_disabled = !true;
 int msm_vidc_clock_voting = !1;
 bool msm_vidc_syscache_disable = !true;
 
-#if 0
 #define MAX_DBG_BUF_SIZE 4096
 
 #define DYNAMIC_BUF_OWNER(__binfo) ({ \
@@ -604,4 +603,3 @@ int msm_vidc_check_ratelimit(void)
 	return __ratelimit(&_rs);
 }
 
-#endif
