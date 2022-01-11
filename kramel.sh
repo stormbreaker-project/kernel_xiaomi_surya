@@ -3,7 +3,7 @@ git clone https://github.com/SreekanthPalakurthi/Clang-dumpyard.git -b gcc64 --d
 git clone https://github.com/SreekanthPalakurthi/Clang-dumpyard.git -b gcc32  --depth=1 gcc32
 git clone --depth=1 https://github.com/stormbreaker-project/AnyKernel3.git -b surya
 export TZ=Asia/Kolkata 
-IMAGE=$(pwd)/out/arch/arm64/boot/Image.gz
+IMAGE=$(pwd)/out/arch/arm64/boot/Image
 DTBO=$(pwd)/out/arch/arm64/boot/dtbo.img
 TANGGAL=${VERSION}-$(date +"%d%m%H%M")
 START=$(date +"%s")
@@ -60,7 +60,7 @@ make O=out ARCH=arm64 $DEF
 		      
 END=$(date +"%s")
 DIFF=$((END - START))
-if [ -f $(pwd)/out/arch/arm64/boot/Image.gz ]
+if [ -f $(pwd)/out/arch/arm64/boot/Image ]
 	then
         if [ BUILD_DTBO = 1 ]
         then
@@ -76,7 +76,7 @@ Linux Version : <code>${LNXVER}</code>
 <i>Build compiled successfully in $((DIFF / 60)) minute(s) and $((DIFF % 60)) seconds</i>" -d chat_id=${chat_id} -d parse_mode=HTML
 #curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage -d text="Flash now else bun" -d chat_id=${chat_id} -d parse_mode=HTML
 
-cp $(pwd)/out/arch/arm64/boot/Image.gz $(pwd)/AnyKernel3
+cp $(pwd)/out/arch/arm64/boot/Image $(pwd)/AnyKernel3
 cp $(pwd)/out/arch/arm64/boot/dtb.img $(pwd)/AnyKernel3
 
         if [ -f ${DTBO} ]
