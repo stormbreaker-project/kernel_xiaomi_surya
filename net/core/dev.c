@@ -3047,16 +3047,9 @@ static struct sk_buff *validate_xmit_vlan(struct sk_buff *skb,
 	return skb;
 }
 
-int skb_csum_hwoffload_help(struct sk_buff *skb,
-			    const netdev_features_t features)
+int __skb_csum_hwoffload_help(struct sk_buff *skb,
+			      const netdev_features_t features)
 {
-	if (unlikely(skb_csum_is_sctp(skb)))
-		return !!(features & NETIF_F_SCTP_CRC) ? 0 :
-			skb_crc32c_csum_help(skb);
-
-	if (features & NETIF_F_HW_CSUM)
-		return 0;
-
 	if (features & (NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM)) {
 		switch (skb->csum_offset) {
 		case offsetof(struct tcphdr, check):
@@ -3067,7 +3060,7 @@ int skb_csum_hwoffload_help(struct sk_buff *skb,
 
 	return skb_checksum_help(skb);
 }
-EXPORT_SYMBOL(skb_csum_hwoffload_help);
+EXPORT_SYMBOL(__skb_csum_hwoffload_help);
 
 static struct sk_buff *validate_xmit_skb(struct sk_buff *skb, struct net_device *dev)
 {

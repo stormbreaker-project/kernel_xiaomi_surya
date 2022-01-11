@@ -4013,8 +4013,20 @@ void netdev_rss_key_fill(void *buffer, size_t len);
 int dev_get_nest_level(struct net_device *dev);
 int skb_checksum_help(struct sk_buff *skb);
 int skb_crc32c_csum_help(struct sk_buff *skb);
-int skb_csum_hwoffload_help(struct sk_buff *skb,
-			    const netdev_features_t features);
+int __skb_csum_hwoffload_help(struct sk_buff *skb,
+			      const netdev_features_t features);
+
+static inline int skb_csum_hwoffload_help(struct sk_buff *skb,
+					  const netdev_features_t features)
+{
+	if (unlikely(skb_csum_is_sctp(skb)))
+		return !!(features & NETIF_F_SCTP_CRC) ? 0 :
+			skb_crc32c_csum_help(skb);
+
+	if (features & NETIF_F_HW_CSUM)
+		return 0;
+	return __skb_csum_hwoffload_help(skb, features);
+}
 
 struct sk_buff *__skb_gso_segment(struct sk_buff *skb,
 				  netdev_features_t features, bool tx_path);
