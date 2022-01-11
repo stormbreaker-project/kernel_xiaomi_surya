@@ -1208,7 +1208,10 @@ int tcp_sendmsg_locked(struct sock *sk, struct msghdr *msg, size_t size)
 		}
 
 		skb = tcp_send_head(sk) ? tcp_write_queue_tail(sk) : NULL;
-		uarg = sock_zerocopy_realloc(sk, size, skb_zcopy(skb));
+		if (skb)
+			uarg = skb_zcopy(skb);
+
+		uarg = sock_zerocopy_realloc(sk, size, uarg);
 		if (!uarg) {
 			err = -ENOBUFS;
 			goto out_err;

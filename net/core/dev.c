@@ -1969,7 +1969,7 @@ again:
 	}
 out_unlock:
 	if (pt_prev) {
-		if (!skb_orphan_frags_rx(skb2, GFP_ATOMIC))
+		if (!skb2 || !skb_orphan_frags_rx(skb2, GFP_ATOMIC))
 			pt_prev->func(skb2, skb->dev, pt_prev, skb->dev);
 		else
 			kfree_skb(skb2);
