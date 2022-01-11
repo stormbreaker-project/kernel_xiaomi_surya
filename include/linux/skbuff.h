@@ -988,11 +988,42 @@ static inline struct sk_buff *alloc_skb(unsigned int size,
 	return __alloc_skb(size, priority, 0, NUMA_NO_NODE);
 }
 
-struct sk_buff *alloc_skb_with_frags(unsigned long header_len,
-				     unsigned long data_len,
-				     int max_page_order,
-				     int *errcode,
-				     gfp_t gfp_mask);
+struct sk_buff *alloc_skb_frags(struct sk_buff *skb,
+				unsigned long data_len,
+				int max_page_order,
+				int *errcode,
+				gfp_t gfp_mask);
+
+/**
+ * alloc_skb_with_frags - allocate skb with page frags
+ *
+ * @header_len: size of linear part
+ * @data_len: needed length in frags
+ * @max_page_order: max page order desired.
+ * @errcode: pointer to error code if any
+ * @gfp_mask: allocation mask
+ *
+ * This can be used to allocate a paged skb, given a maximal order for frags.
+ */
+static inline struct sk_buff *alloc_skb_with_frags(unsigned long header_len,
+						   unsigned long data_len,
+						   int max_page_order,
+						   int *errcode,
+						   gfp_t gfp_mask)
+{
+	struct sk_buff *skb;
+
+	skb = alloc_skb(header_len, gfp_mask);
+	if (unlikely(!skb)) {
+		*errcode = -ENOBUFS;
+		return NULL;
+	}
+
+	if (!data_len)
+		return skb;
+	return alloc_skb_frags(skb, data_len, max_page_order, errcode, gfp_mask);
+}
+
 
 /* Layout of fast clones : [skb1][skb2][fclone_ref] */
 struct sk_buff_fclones {

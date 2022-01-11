@@ -5241,40 +5241,32 @@ int skb_vlan_push(struct sk_buff *skb, __be16 vlan_proto, u16 vlan_tci)
 EXPORT_SYMBOL(skb_vlan_push);
 
 /**
- * alloc_skb_with_frags - allocate skb with page frags
+ * alloc_skb_frags - allocate page frags for skb
  *
- * @header_len: size of linear part
+ * @skb: buffer
  * @data_len: needed length in frags
  * @max_page_order: max page order desired.
  * @errcode: pointer to error code if any
  * @gfp_mask: allocation mask
  *
- * This can be used to allocate a paged skb, given a maximal order for frags.
+ * This can be used to allocate pages for skb, given a maximal order for frags.
  */
-struct sk_buff *alloc_skb_with_frags(unsigned long header_len,
-				     unsigned long data_len,
-				     int max_page_order,
-				     int *errcode,
-				     gfp_t gfp_mask)
+struct sk_buff *alloc_skb_frags(struct sk_buff *skb,
+				unsigned long data_len,
+				int max_page_order,
+				int *errcode,
+				gfp_t gfp_mask)
 {
 	int npages = (data_len + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 	unsigned long chunk;
-	struct sk_buff *skb;
 	struct page *page;
 	int i;
 
-	*errcode = -EMSGSIZE;
 	/* Note this test could be relaxed, if we succeed to allocate
 	 * high order pages...
 	 */
-	if (npages > MAX_SKB_FRAGS)
-		return NULL;
-
-	*errcode = -ENOBUFS;
-	skb = alloc_skb(header_len, gfp_mask);
-	if (!skb)
-		return NULL;
-
+	if (unlikely(npages > MAX_SKB_FRAGS))
+		goto failure;
 	skb->truesize += npages << PAGE_SHIFT;
 
 	for (i = 0; npages > 0; i++) {
@@ -5309,9 +5301,10 @@ fill_page:
 
 failure:
 	kfree_skb(skb);
+	*errcode = -EMSGSIZE;
 	return NULL;
 }
-EXPORT_SYMBOL(alloc_skb_with_frags);
+EXPORT_SYMBOL(alloc_skb_frags);
 
 /* carve out the first off bytes from skb when off < headlen */
 static int pskb_carve_inside_header(struct sk_buff *skb, const u32 off,
