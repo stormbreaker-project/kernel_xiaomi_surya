@@ -381,7 +381,7 @@ config PROFILE_ANNOTATED_BRANCHES
 	  on if you need to profile the system's use of these macros.
 
 config PROFILE_ALL_BRANCHES
-	bool "Profile all if conditionals" if !FORTIFY_SOURCE
+	bool "Profile all if conditionals"
 	select TRACE_BRANCH_PROFILING
 	help
 	  This tracer profiles all branch conditions. Every if ()
@@ -753,4 +753,3 @@ config MINIMAL_TRACING_FOR_IORAP
 endif # FTRACE
 
 endif # TRACING_SUPPORT
-
