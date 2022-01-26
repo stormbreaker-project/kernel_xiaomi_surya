@@ -4650,6 +4650,16 @@ static unsigned long get_svm_unmapped_area(struct file *file,
 			ret = set_svm_area(file, entry, iova, len, flags);
 			if (!IS_ERR_VALUE(ret))
 				return ret;
+
+			/*
+			 * set_svm_area will return -EBUSY if we tried to set up
+			 * SVM on an object that already has a GPU address. If
+			 * that happens don't bother walking the rest of the
+			 * region
+			 */
+			if ((long) ret == -EBUSY)
+				return -EBUSY;
+
 		}
 
 		iova = kgsl_mmu_find_svm_region(private->pagetable,
