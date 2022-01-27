@@ -1426,6 +1426,7 @@ do_append_data:
 	release_sock(sk);
 out:
 	dst_release(dst);
+out_no_dst:
 	fl6_sock_release(flowlabel);
 	txopt_put(opt_to_free);
 	if (!err)
