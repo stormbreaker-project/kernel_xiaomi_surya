@@ -134,6 +134,18 @@
 
 		qcom,gpu-speed-bin = <0x41a0 0x1fe00000 21>;
 
+		qcom,gpu-models {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible="qcom,gpu-models";
+
+			qcom,gpu-model@0 {
+				qcom,gpu-model-id = <0>;
+				qcom,gpu-model = "Adreno642Lv1";
+				qcom,vk-device-id= <0x06030500>;
+			};
+		};		
+
 		/* GPU Mempools */
 		qcom,gpu-mempools {
 			#address-cells = <1>;
