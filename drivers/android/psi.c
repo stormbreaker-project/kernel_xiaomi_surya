@@ -6,6 +6,8 @@
 #include <linux/module.h>
 #include <linux/poll.h>
 
+typedef unsigned int __poll_t;
+
 static bool psi_enable = true;
 
 static int __init setup_psi(char *str)
