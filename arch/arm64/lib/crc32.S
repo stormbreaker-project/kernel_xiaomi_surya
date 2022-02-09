@@ -150,8 +150,5 @@ ENDPROC(__crc32c_le)
 
 	.align		5
 ENTRY(crc32_be)
-alternative_if_not ARM64_HAS_CRC32
-	b		crc32_be_base
-alternative_else_nop_endif
 	__crc32		be=1
 ENDPROC(crc32_be)
