@@ -732,6 +732,7 @@ TRACE_EVENT(sched_pi_setprio,
 #define trace_sched_stat_runtime(...) {}
 #define trace_sched_stat_runtime_enabled(...) false
 #define trace_sched_pi_setprio(...) {}
+#define trace_sched_set_preferred_cluster_enabled(...) false
 #endif /* CONFIG_MINIMAL_TRACING_FOR_IORAP */
 
 #ifdef CONFIG_DETECT_HUNG_TASK
@@ -1662,6 +1663,7 @@ TRACE_EVENT(sched_isolate,
 #define trace_core_ctl_eval_need(...) {}
 #define trace_core_ctl_set_busy(...) {}
 #define trace_core_ctl_set_boost(...) {}
+#define trace_core_ctl_notif_data(...) {}
 #define trace_core_ctl_update_nr_need(...) {}
 #define trace_sched_tune_tasks_update(...) {}
 #define trace_sched_tune_boostgroup_update(...) {}
