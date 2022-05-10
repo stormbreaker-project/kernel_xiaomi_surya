@@ -18,10 +18,9 @@
 	model = "Qualcomm Technologies, Inc. SDMMAGPIE SoC";
 	compatible = "qcom,sdmmagpie";
 	qcom,pmic-name = "PM6150";
-	qcom,board-id = <0 0>;
+	qcom,board-id = <1 1>;
 };
 &ufshc_mem {
 	spm-level = <3>;
 	rpm-level = <3>;
 };
-
