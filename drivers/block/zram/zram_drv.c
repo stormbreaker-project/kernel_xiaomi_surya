@@ -2062,7 +2062,9 @@ static int zram_add(void)
 
 	zram->disk->major = zram_major;
 	zram->disk->first_minor = device_id;
+#ifdef CONFIG_ZRAM_WRITEBACK
 	zram->disk->fops = &zram_devops;
+#endif
 	zram->disk->queue = queue;
 	zram->disk->private_data = zram;
 	snprintf(zram->disk->disk_name, 16, "zram%d", device_id);
