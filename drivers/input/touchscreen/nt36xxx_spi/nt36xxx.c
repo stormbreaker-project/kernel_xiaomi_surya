@@ -1355,6 +1355,7 @@ int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
 /*2020.2.28 longcheer taocheng add for pocket mode end*/
 #endif
 
+#define POINT_DATA_LEN 65
 /*******************************************************
 Description:
 	Novatek touchscreen work function.
@@ -1362,11 +1363,8 @@ Description:
 return:
 	n.a.
 *******************************************************/
-#define POINT_DATA_LEN 65
-static void nvt_ts_worker(struct work_struct *work)
+static irqreturn_t nvt_ts_work_func(int irq, void *data)
 {
-	struct nvt_ts_data *ts = container_of(work, struct nvt_ts_data, irq_work);
-
 	int32_t ret = -1;
 	uint8_t point_data[POINT_DATA_LEN + 1 + DUMMY_BYTES] = {0};
 	uint32_t position = 0;
@@ -1387,7 +1385,7 @@ static void nvt_ts_worker(struct work_struct *work)
 		ret = wait_for_completion_timeout(&ts->dev_pm_suspend_completion, msecs_to_jiffies(700));
 		if (!ret) {
 			NVT_ERR("system(spi bus) can't finished resuming procedure, skip it");
-			return;
+			return IRQ_HANDLED;
 		}
 	}
 #endif
@@ -1518,6 +1516,7 @@ static void nvt_ts_worker(struct work_struct *work)
 
 #if LCT_TP_PALM_EN
 	//nvt_check_palm(input_id, point_data);
+	//mutex_unlock(&ts->lock);
 	//return IRQ_HANDLED;
 #endif
 
@@ -1536,25 +1535,13 @@ static void nvt_ts_worker(struct work_struct *work)
 		}
 	}
 #endif
+
 	input_sync(ts->input_dev);
 
 XFER_ERROR:
 	mutex_unlock(&ts->lock);
 	nvt_pm_qos(false);
-	return;
-}
 
-/*******************************************************
-Description:
-	Novatek touchscreen irq handler.
-
-return:
-	n.a.
-*******************************************************/
-static irqreturn_t nvt_ts_work_func(int irq, void *data)
-{
-	struct nvt_ts_data *ts = data;
-	queue_work(ts->coord_workqueue, &ts->irq_work);
 	return IRQ_HANDLED;
 }
 
@@ -2602,20 +2589,14 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 		NVT_LOG("init_lct_tp_palm Succeeded!");
 	}
 #endif
-	ts->coord_workqueue = alloc_workqueue("nvt_ts_workqueue", WQ_HIGHPRI, 0);
-	if (!ts->coord_workqueue) {
-		NVT_ERR("create nvt_ts_workqueue fail");
-		ret = -ENOMEM;
-		goto err_create_nvt_ts_workqueue_failed;
-	}
-	INIT_WORK(&ts->irq_work, nvt_ts_worker);
+
+#if defined(CONFIG_FB)
 	ts->workqueue = create_singlethread_workqueue("nvt_ts_workqueue");
 	if (!ts->workqueue) {
 		NVT_ERR("create nvt_ts_workqueue fail");
 		ret = -ENOMEM;
 		goto err_create_nvt_ts_workqueue_failed;
 	}
-#if defined(CONFIG_FB)
 	INIT_WORK(&ts->resume_work, nvt_ts_resume_work);
 #ifdef _MSM_DRM_NOTIFY_H_
 	ts->drm_notif.notifier_call = nvt_drm_notifier_callback;
@@ -2704,10 +2685,8 @@ err_class_create:
 	class_destroy(ts->nvt_tp_class);
 	ts->nvt_tp_class = NULL;
 
-err_create_nvt_ts_workqueue_failed:
-	if (ts->coord_workqueue)
-		destroy_workqueue(ts->coord_workqueue);
 #if defined(CONFIG_FB)
+err_create_nvt_ts_workqueue_failed:
 	if (ts->workqueue)
 		destroy_workqueue(ts->workqueue);
 #ifdef _MSM_DRM_NOTIFY_H_
@@ -2825,8 +2804,6 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 
 	pm_qos_remove_request(&ts->pm_touch_req);
 	pm_qos_remove_request(&ts->pm_spi_req);
-	if (ts->coord_workqueue)
-		destroy_workqueue(ts->coord_workqueue);
 #if defined(CONFIG_FB)
 	if (ts->workqueue)
 		destroy_workqueue(ts->workqueue);
