@@ -313,17 +313,13 @@ static inline int32_t spi_read_write(struct spi_device *client, uint8_t *buf, si
 
 static void nvt_pm_qos(bool enable)
 {
-	if (unlikely(!pm_qos_request_active(&ts->pm_touch_req)) || 
-		unlikely(!pm_qos_request_active(&ts->pm_spi_req)))
+	if (unlikely(!pm_qos_request_active(&ts->pm_qos_req)))
 		return;
 
-	if (enable) {
-		pm_qos_update_request(&ts->pm_touch_req, 100);
-		pm_qos_update_request(&ts->pm_spi_req, 100);
-	} else {
-		pm_qos_update_request(&ts->pm_touch_req, PM_QOS_DEFAULT_VALUE);
-		pm_qos_update_request(&ts->pm_spi_req, PM_QOS_DEFAULT_VALUE);
-	}
+	if (enable)
+		pm_qos_update_request(&ts->pm_qos_req, 100);
+	else
+		pm_qos_update_request(&ts->pm_qos_req, PM_QOS_DEFAULT_VALUE);
 }
 
 /*******************************************************
@@ -342,6 +338,7 @@ int32_t CTP_SPI_READ(struct spi_device *client, uint8_t *buf, uint16_t len)
 
 	buf[0] = SPI_READ_MASK(buf[0]);
 
+	nvt_pm_qos(true);
 	while (retries < 5) {
 		ret = spi_read_write(client, buf, len, NVTREAD);
 		if (ret == 0)
@@ -355,6 +352,7 @@ int32_t CTP_SPI_READ(struct spi_device *client, uint8_t *buf, uint16_t len)
 	} else {
 		memcpy((buf+1), (ts->rbuf+2), (len-1));
 	}
+	nvt_pm_qos(false);
 
 	mutex_unlock(&ts->xbuf_lock);
 
@@ -377,6 +375,7 @@ int32_t CTP_SPI_WRITE(struct spi_device *client, uint8_t *buf, uint16_t len)
 
 	buf[0] = SPI_WRITE_MASK(buf[0]);
 
+	nvt_pm_qos(true);
 	while (retries < 5) {
 		ret = spi_read_write(client, buf, len, NVTWRITE);
 		if (ret == 0)
@@ -388,6 +387,7 @@ int32_t CTP_SPI_WRITE(struct spi_device *client, uint8_t *buf, uint16_t len)
 		NVT_ERR("error, ret=%d\n", ret);
 		ret = -EIO;
 	}
+	nvt_pm_qos(false);
 
 	mutex_unlock(&ts->xbuf_lock);
 
@@ -1391,7 +1391,6 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 #endif
 #endif
 
-	nvt_pm_qos(true);
 	mutex_lock(&ts->lock);
 
 	ret = CTP_SPI_READ(ts->client, point_data, POINT_DATA_LEN + 1);
@@ -1437,11 +1436,13 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 	if (unlikely(!bTouchIsAwake)) {
 		//input_id = (uint8_t)(point_data[1] >> 3);
 		nvt_ts_wakeup_gesture_report(input_id, point_data);
-		goto XFER_ERROR;
+		mutex_unlock(&ts->lock);
+		return IRQ_HANDLED;
 	}
 #endif
 	finger_cnt = 0;
 
+	nvt_pm_qos(true);
 	for (i = 0; i < ts->max_touch_num; i++) {
 		position = 1 + 6 * i;
 		input_id = (uint8_t)(point_data[position + 0] >> 3);
@@ -1539,8 +1540,8 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 	input_sync(ts->input_dev);
 
 XFER_ERROR:
-	mutex_unlock(&ts->lock);
 	nvt_pm_qos(false);
+	mutex_unlock(&ts->lock);
 
 	return IRQ_HANDLED;
 }
@@ -2477,15 +2478,11 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 		}
 	}
 
-	ts->pm_spi_req.type = PM_QOS_REQ_AFFINE_IRQ;
-	ts->pm_spi_req.irq = geni_spi_get_master_irq(client);
-	pm_qos_add_request(&ts->pm_spi_req, PM_QOS_CPU_DMA_LATENCY,
-		PM_QOS_DEFAULT_VALUE);
+	ts->pm_qos_req.type = PM_QOS_REQ_AFFINE_IRQ;
+	ts->pm_qos_req.irq = client->irq;
 
-	ts->pm_touch_req.type = PM_QOS_REQ_AFFINE_IRQ;
-	ts->pm_touch_req.irq = client->irq;
-	pm_qos_add_request(&ts->pm_touch_req, PM_QOS_CPU_DMA_LATENCY,
-		PM_QOS_DEFAULT_VALUE);
+	pm_qos_add_request(&ts->pm_qos_req, PM_QOS_CPU_DMA_LATENCY,
+			PM_QOS_DEFAULT_VALUE);
 
 #if WAKEUP_GESTURE
 	device_init_wakeup(&ts->input_dev->dev, 1);
@@ -2802,8 +2799,7 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 {
 	NVT_LOG("Removing driver...\n");
 
-	pm_qos_remove_request(&ts->pm_touch_req);
-	pm_qos_remove_request(&ts->pm_spi_req);
+	pm_qos_remove_request(&ts->pm_qos_req);
 #if defined(CONFIG_FB)
 	if (ts->workqueue)
 		destroy_workqueue(ts->workqueue);

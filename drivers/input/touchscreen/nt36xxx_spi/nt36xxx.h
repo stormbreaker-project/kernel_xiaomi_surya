@@ -25,7 +25,6 @@
 #include <linux/uaccess.h>
 #include <linux/regulator/consumer.h>
 #include <linux/pm_qos.h>
-#include <linux/spi/spi-geni-qcom.h>
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
@@ -202,8 +201,7 @@ struct nvt_ts_data {
 	struct regulator *pwr_ibb; /* VSN -5V */
 #endif
 
-	struct pm_qos_request pm_spi_req;
-	struct pm_qos_request pm_touch_req;
+	struct pm_qos_request pm_qos_req;
 /*2019.12.16 longcheer taocheng add (xiaomi game mode) start*/
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 	u8 palm_sensor_switch;
