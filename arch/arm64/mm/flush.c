@@ -61,6 +61,13 @@ void copy_to_user_page(struct vm_area_struct *vma, struct page *page,
 void __sync_icache_dcache(pte_t pte)
 {
 	struct page *page = pte_page(pte);
+	
+	/*
+	 * HugeTLB pages are always fully mapped, so only setting head page's
+	 * PG_dcache_clean flag is enough.
+	 */
+	if (PageHuge(page))
+		page = compound_head(page);
 
 	if (!test_and_set_bit(PG_dcache_clean, &page->flags))
 		sync_icache_aliases(page_address(page),
