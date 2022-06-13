@@ -1591,13 +1591,6 @@ static int wcd_mbhc_non_usb_c_event_changed(struct notifier_block *nb,
 
 	switch (mode.intval) {
 	case POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER:
-		dev_err(mbhc->codec->component.dev, "%s: report Type-C usb headphone\n", __func__);
-		if (mbhc->usbc_mode == mode.intval)
-			break; /* filter notifications received before */
-		wcd_mbhc_jack_report(mbhc, &mbhc->usb_3_5_jack,
-					(SND_JACK_HEADSET | SND_JACK_UNSUPPORTED),
-					WCD_MBHC_JACK_USB_3_5_MASK);
-		mbhc->usbc_mode = mode.intval;
 		break;
 	case POWER_SUPPLY_TYPEC_NONE:
 		if (mbhc->usbc_mode == mode.intval)
