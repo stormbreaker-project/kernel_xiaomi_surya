@@ -1684,10 +1684,13 @@ static int __cam_req_mgr_create_subdevs(
  *
  */
 static void __cam_req_mgr_destroy_subdev(
-	struct cam_req_mgr_connected_device *l_device)
+	struct cam_req_mgr_connected_device **l_device)
 {
-	kfree(l_device);
-	l_device = NULL;
+	CAM_DBG(CAM_CRM, "*l_device %pK", *l_device);
+	if (*(l_device) != NULL) {
+		kfree(*(l_device));
+		*l_device = NULL;
+	}
 }
 
 /**
@@ -2953,7 +2956,7 @@ static int __cam_req_mgr_unlink(struct cam_req_mgr_core_link *link)
 	__cam_req_mgr_destroy_link_info(link);
 
 	/* Free memory holding data of linked devs */
-	__cam_req_mgr_destroy_subdev(link->l_dev);
+	__cam_req_mgr_destroy_subdev(&link->l_dev);
 
 	/* Destroy the link handle */
 	rc = cam_destroy_device_hdl(link->link_hdl);
@@ -3116,7 +3119,7 @@ int cam_req_mgr_link(struct cam_req_mgr_ver_info *link_info)
 	mutex_unlock(&g_crm_core_dev->crm_lock);
 	return rc;
 setup_failed:
-	__cam_req_mgr_destroy_subdev(link->l_dev);
+	__cam_req_mgr_destroy_subdev(&link->l_dev);
 create_subdev_failed:
 	cam_destroy_device_hdl(link->link_hdl);
 	link_info->u.link_info_v1.link_hdl = -1;
@@ -3225,7 +3228,7 @@ int cam_req_mgr_link_v2(struct cam_req_mgr_ver_info *link_info)
 	mutex_unlock(&g_crm_core_dev->crm_lock);
 	return rc;
 setup_failed:
-	__cam_req_mgr_destroy_subdev(link->l_dev);
+	__cam_req_mgr_destroy_subdev(&link->l_dev);
 create_subdev_failed:
 	cam_destroy_device_hdl(link->link_hdl);
 	link_info->u.link_info_v2.link_hdl = -1;
