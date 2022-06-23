@@ -75,9 +75,6 @@
 #define FREQ_KHZ_TO_HZ(_val) ((_val) * 1000)
 #define FREQ_HZ_TO_KHZ(_val) ((_val) / 1000)
 
-static bool dcvs_enable = true;
-module_param(dcvs_enable, bool, 0664);
-
 enum lmh_hw_trips {
 	LIMITS_TRIP_ARM,
 	LIMITS_TRIP_HI,
@@ -698,7 +695,7 @@ static int limits_dcvs_probe(struct platform_device *pdev)
 	}
 	request_reg = be32_to_cpu(addr[0]) + LIMITS_CLUSTER_REQ_OFFSET;
 
-	if (!dcvs_enable) {
+	if (!IS_ENABLED(CONFIG_QTI_THERMAL_LIMITS_DCVS)) {
 		limits_isens_vref_ldo_init(pdev, hw);
 		devm_kfree(&pdev->dev, hw->cdev_data);
 		devm_kfree(&pdev->dev, hw);
