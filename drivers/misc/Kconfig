@@ -606,6 +606,13 @@ config FORCE_FAST_CHARGE
 	help
 	  This allows users to override default charge rate for USB
 
+config LYB_THERMAL
+	bool "Lybxlpsv's thermal settings driver"
+	default n
+	help
+	   This is not to be used by an amateur as this may cause damage to
+	   the device so use it at your own risk. If in any doubt about, say N.
+
 config BATTERY_SAVER
 	bool "Battery saver mode for kernelspace"
 	help
