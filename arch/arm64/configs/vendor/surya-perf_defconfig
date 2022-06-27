@@ -5089,8 +5089,8 @@ CONFIG_SENSORS_SSC=y
 #
 # Qualcomm RmNet extensions
 #
-CONFIG_RMNET_PERF=y
-CONFIG_RMNET_SHS=y
+# CONFIG_RMNET_PERF is not set
+# CONFIG_RMNET_SHS is not set
 
 #
 # Firmware Drivers
