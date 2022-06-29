@@ -1,5 +1,5 @@
 /* Copyright (c) 2002,2007-2017,2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
  * only version 2 as published by the Free Software Foundation.
@@ -613,11 +613,10 @@ enum kgsl_mmutype kgsl_mmu_get_mmutype(struct kgsl_device *device)
 EXPORT_SYMBOL(kgsl_mmu_get_mmutype);
 
 bool kgsl_mmu_gpuaddr_in_range(struct kgsl_pagetable *pagetable,
-		uint64_t gpuaddr, uint64_t size)
+		uint64_t gpuaddr)
 {
 	if (PT_OP_VALID(pagetable, addr_in_range))
-		return pagetable->pt_ops->addr_in_range(pagetable,
-				gpuaddr, size);
+		return pagetable->pt_ops->addr_in_range(pagetable, gpuaddr);
 
 	return false;
 }
@@ -653,7 +652,7 @@ EXPORT_SYMBOL(kgsl_mmu_get_qtimer_global_entry);
  */
 
 static bool nommu_gpuaddr_in_range(struct kgsl_pagetable *pagetable,
-		uint64_t gpuaddr, uint64_t size)
+		uint64_t gpuaddr)
 {
 	return (gpuaddr != 0) ? true : false;
 }
