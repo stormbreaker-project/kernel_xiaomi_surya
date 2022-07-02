@@ -76,7 +76,7 @@ static int wl2866d_i2c_read(struct wl2866d_chip *chip,
 	return ret;
 }
 
-int wl2866d_camera_power_down_all()
+int wl2866d_camera_power_down_all(void)
 {
     int ret = -1;
 	ret = wl2866d_i2c_write(camera_chip, wl2866d_on_config[VOL_ENABLE].reg, 0);//bit1
