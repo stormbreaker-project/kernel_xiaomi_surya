@@ -3025,7 +3025,7 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	return 0;
 }
 
-void lyb_apply_changes()
+void lyb_apply_changes(void)
 {
 	if (lyb_override >= 1)	{
 		// 1 == AOSP with touch profile
