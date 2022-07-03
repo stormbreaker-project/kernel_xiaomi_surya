@@ -48,7 +48,6 @@
 #include <linux/stat.h>
 #include <linux/module.h>
 #include <linux/uio.h>
-#include <linux/user_namespace.h>
 
 #include "fuse_i.h"
 
@@ -407,7 +406,7 @@ err_unlock:
 err_region:
 	unregister_chrdev_region(devt, 1);
 err:
-	fuse_abort_conn(fc, false);
+	fuse_abort_conn(fc);
 	goto out;
 }
 
@@ -499,11 +498,7 @@ static int cuse_channel_open(struct inode *inode, struct file *file)
 	if (!cc)
 		return -ENOMEM;
 
-	/*
-	 * Limit the cuse channel to requests that can
-	 * be represented in file->f_cred->user_ns.
-	 */
-	fuse_conn_init(&cc->fc, file->f_cred->user_ns);
+	fuse_conn_init(&cc->fc);
 
 	fud = fuse_dev_alloc(&cc->fc);
 	if (!fud) {
@@ -587,7 +582,7 @@ static ssize_t cuse_class_abort_store(struct device *dev,
 {
 	struct cuse_conn *cc = dev_get_drvdata(dev);
 
-	fuse_abort_conn(&cc->fc, false);
+	fuse_abort_conn(&cc->fc);
 	return count;
 }
 static DEVICE_ATTR(abort, 0200, NULL, cuse_class_abort_store);

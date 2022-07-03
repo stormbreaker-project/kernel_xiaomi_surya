@@ -113,9 +113,6 @@
  *  7.26
  *  - add FUSE_HANDLE_KILLPRIV
  *  - add FUSE_POSIX_ACL
- *
- *  7.27
- *  - add FUSE_ABORT_ERROR
  */
 
 #ifndef _LINUX_FUSE_H
@@ -151,7 +148,7 @@
 #define FUSE_KERNEL_VERSION 7
 
 /** Minor version number of this interface */
-#define FUSE_KERNEL_MINOR_VERSION 27
+#define FUSE_KERNEL_MINOR_VERSION 26
 
 /** The node ID of the root inode */
 #define FUSE_ROOT_ID 1
@@ -225,7 +222,6 @@ struct fuse_file_lock {
 #define FOPEN_KEEP_CACHE	(1 << 1)
 #define FOPEN_NONSEEKABLE	(1 << 2)
 #define FOPEN_STREAM		(1 << 4)
-#define FOPEN_PARALLEL_WRITES   (1 << 6)
 
 /**
  * INIT request/reply flags
@@ -251,7 +247,6 @@ struct fuse_file_lock {
  * FUSE_PARALLEL_DIROPS: allow parallel lookups and readdir
  * FUSE_HANDLE_KILLPRIV: fs handles killing suid/sgid/cap on write/chown/trunc
  * FUSE_POSIX_ACL: filesystem supports posix acls
- * FUSE_ABORT_ERROR: reading the device after abort returns ECONNABORTED
  */
 #define FUSE_ASYNC_READ		(1 << 0)
 #define FUSE_POSIX_LOCKS	(1 << 1)
@@ -274,9 +269,6 @@ struct fuse_file_lock {
 #define FUSE_PARALLEL_DIROPS    (1 << 18)
 #define FUSE_HANDLE_KILLPRIV	(1 << 19)
 #define FUSE_POSIX_ACL		(1 << 20)
-#define FUSE_ABORT_ERROR        (1 << 21)
-#define FUSE_SHORTCIRCUIT	(1 << 30)
-#define FUSE_PASSTHROUGH	(1 << 31)
 
 /**
  * CUSE INIT request/reply flags
@@ -509,7 +501,7 @@ struct fuse_create_in {
 struct fuse_open_out {
 	uint64_t	fh;
 	uint32_t	open_flags;
-	uint32_t	passthrough_fh;
+	uint32_t	padding;
 };
 
 struct fuse_release_in {
@@ -710,14 +702,6 @@ struct fuse_in_header {
 	uint32_t	padding;
 };
 
-/* fuse_passthrough_out for passthrough V1 */
-struct fuse_passthrough_out {
-	uint32_t	fd;
-	/* For future implementation */
-	uint32_t	len;
-	void		*vec;
-};
-
 struct fuse_out_header {
 	uint32_t	len;
 	int32_t		error;
@@ -793,10 +777,7 @@ struct fuse_notify_retrieve_in {
 };
 
 /* Device ioctls: */
-#define FUSE_DEV_IOC_MAGIC		229
-#define FUSE_DEV_IOC_CLONE		_IOR(FUSE_DEV_IOC_MAGIC, 0, uint32_t)
-/* 127 is reserved for the V1 interface implementation in Android */
-#define FUSE_DEV_IOC_PASSTHROUGH_OPEN	_IOW(FUSE_DEV_IOC_MAGIC, 127, struct fuse_passthrough_out)
+#define FUSE_DEV_IOC_CLONE	_IOR(229, 0, uint32_t)
 
 struct fuse_lseek_in {
 	uint64_t	fh;
