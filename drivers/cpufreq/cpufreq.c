@@ -713,6 +713,10 @@ static ssize_t show_scaling_cur_freq(struct cpufreq_policy *policy, char *buf)
 	return ret;
 }
 
+bool unblock_frequency;
+
+module_param(unblock_frequency, bool, 0644);
+
 static int cpufreq_set_policy(struct cpufreq_policy *policy,
 				struct cpufreq_policy *new_policy);
 
@@ -726,7 +730,7 @@ static ssize_t store_##file_name					\
 	int ret, temp;							\
 	struct cpufreq_policy new_policy;				\
 									\
-	if ((&policy->object == &policy->min) || (&policy->object == &policy->max))				\
+	if ( !unblock_frequency && (&policy->object == &policy->min) || (&policy->object == &policy->max))				\
 		return count;						\
 									\
 	memcpy(&new_policy, policy, sizeof(*policy));			\
